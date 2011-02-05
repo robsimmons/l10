@@ -1,8 +1,13 @@
 package l10.lang;
 
-public class StructuredTerm implements BasicTerm {
+public class StructuredTerm extends BasicTerm {
 	val f : Symbol;
 	val ts : List[BasicTerm];
+	
+	public def this(f : String, ts : List[BasicTerm]{self!=null}) {
+		this.f = Symbol(f);
+		this.ts = ts;
+	}
 	
 	public def this(f : Symbol, ts : List[BasicTerm]{self!=null}) {
 		this.f = f; 

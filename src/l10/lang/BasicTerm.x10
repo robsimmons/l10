@@ -1,6 +1,8 @@
 package l10.lang;
 
-public interface BasicTerm {
-	def print(parens : Boolean) : void;
+public class BasicTerm {
+	def print(parens : Boolean) {
+		Console.OUT.println("<unprintable term>");
+	}
 }
 

@@ -1,6 +1,6 @@
 package l10.lang;
 
-public class StringTerm implements BasicTerm {
+public class StringTerm extends BasicTerm {
 	val s : String;
 	
 	public def this(s : String) { 

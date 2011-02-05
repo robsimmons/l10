@@ -1,10 +1,15 @@
 package l10.lang;
 
 public class Go {
+	public static def a_random_tm() = { 
+        var x : BasicTerm = null;
+        x = new StringTerm("test string");
+        return x;
+    }
+	
 	public static def main(Array[String]) {
-		var x : List[Int] = null;
-		var tm : BasicTerm = null;
-		tm = new StringTerm("Hello There");
+		val tmhome : GlobalRef[BasicTerm] = 
+			GlobalRef(new StringTerm("test string") as BasicTerm);
 		ateach (p in Dist.makeUnique()) {
 			val w = here.id;
 			val sym1 = Symbol("x");
@@ -23,20 +28,28 @@ public class Go {
 			var tmhere : BasicTerm = null;
 			
 			tmhere = new StringTerm("Hello World");
-			Console.OUT.print("Here's one object at place " + w + ": ");
+			Console.OUT.print("Object created at place " + w + ": ");
 			tmhere.print(true);
 			Console.OUT.println();
  
-			var list : List[BasicTerm] = null;
-			list = null;
-			list = new List(tmhere, list);
+			tmhere = new StructuredTerm("s", new List(new ConstantTerm("z") as BasicTerm, null));
+			Console.OUT.print("Object created at place " + w + ": ");
+			tmhere.print(true); 
+			Console.OUT.println();
 			
-			/* tmhere  = new StructuredTerm(sym1, null);
-			Console.OUT.print("Here's another at place " + w + ": ");
-			tmhere.print(true); */
+			tmhere = at (tmhome.home) tmhome.apply();
+			Console.OUT.print("Object dragged to place " + w + ": ");
+			tmhere.print(true);
+			Console.OUT.println();
 			
 			// Bring terms across worlds
 		    //tmhere = tm;
 		}
 	}
+
+private def GlobalRef(
+  ):
+  void {
+    
+}
 }
