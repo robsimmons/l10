@@ -26,10 +26,14 @@ public class Go {
 			Console.OUT.print("Here's one object at place " + w + ": ");
 			tmhere.print(true);
 			Console.OUT.println();
-
-			tmhere  = new StructuredTerm(sym1, null);
+ 
+			var list : List[BasicTerm] = null;
+			list = null;
+			list = new List(tmhere, list);
+			
+			/* tmhere  = new StructuredTerm(sym1, null);
 			Console.OUT.print("Here's another at place " + w + ": ");
-			tmhere.print(true);
+			tmhere.print(true); */
 			
 			// Bring terms across worlds
 		    //tmhere = tm;

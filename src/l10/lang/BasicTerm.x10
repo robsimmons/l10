@@ -1,6 +1,6 @@
 package l10.lang;
 
-interface BasicTerm {
+public interface BasicTerm {
 	def print(parens : Boolean) : void;
 }
 

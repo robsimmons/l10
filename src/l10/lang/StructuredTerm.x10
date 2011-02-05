@@ -2,9 +2,9 @@ package l10.lang;
 
 public class StructuredTerm implements BasicTerm {
 	val f : Symbol;
-	val ts : List[Term];
+	val ts : List[BasicTerm];
 	
-	public def this(f : Symbol, ts : List[Term]) {
+	public def this(f : Symbol, ts : List[BasicTerm]{self!=null}) {
 		this.f = f; 
 		this.ts = ts;
 	}
@@ -15,8 +15,15 @@ public class StructuredTerm implements BasicTerm {
 	
 	public def this(f : StructuredTerm) {
 		this.f = Symbol("Copied");
-		this.ts = null;
-	}
+		var t : BasicTerm = new StringTerm("Term");
+		var ts : List[BasicTerm] = new List(t, null);
+		//x = new StringTerm("There");
+        //z = new List(new StringTerm("Term"), null);
+        // local final z: l10.lang.List[l10.lang.BasicTerm{self==x, x!=null}]{self!=null}
+        // local final y: l10.lang.List[l10.lang.BasicTerm{self!=null}]
+		//val y : List[BasicTerm] = z;
+		this.ts = ts;
+	} 
 	
 	public def print(parens : Boolean) {
 		if (ts == null)
