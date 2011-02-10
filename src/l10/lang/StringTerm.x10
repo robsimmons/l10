@@ -10,16 +10,10 @@ public class StringTerm extends BasicTerm {
 	public def this(f : StringTerm) {
 		this.s = f.s;
 	}
-
-	public def hashCode() {
-		return super.hashCode();
-	}
-	
-	public def copy() {
-		return new StringTerm(s);
-	}
 	
 	public def print(parens : Boolean) {
 		Console.OUT.print("\"" + this.s + "\"");
 	}
+
+	public def hashCode() { return this.s.hashCode(); }
 }

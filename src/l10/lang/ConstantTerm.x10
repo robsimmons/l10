@@ -12,6 +12,8 @@ public class ConstantTerm extends BasicTerm {
 	}
 	
 	public def print(parens : Boolean) {
-		Console.OUT.print("<const>");
+		Console.OUT.print(c.toString());
 	}
+	
+	public def hashCode() { return this.c.x; }
 }

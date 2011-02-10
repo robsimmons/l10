@@ -7,24 +7,26 @@ public class Go {
         return x;
     }
 	
+	static val cell : Cell[Int] = new Cell[Int](5 as Int);
+	
 	public static def main(Array[String]) {
 		val tmhome : GlobalRef[BasicTerm] = 
 			GlobalRef(new StringTerm("test string") as BasicTerm);
+		
 		ateach (p in Dist.makeUnique()) {
-			val w = here.id;
-			val sym1 = Symbol("x");
-			val sym2 = Symbol("x" + w);
-			Console.OUT.println("Hash for 'x' at " + w + " : " + sym1.x);		
-			Console.OUT.println("Hash for 'x" + w + "' at " + w + " : " + sym2.x);		
-			var x : int = 0;
-			var i : int = 0;
-			Console.OUT.println("Hello 1 from place " + w);
-			for(i = 0; i < 1000000; i++) { x += 1; }
-			Console.OUT.println("Hello 2 from place " + w);
-			for(i = 0; i < 10000000; i++) { x += 1; }
-			Console.OUT.println("Hello 3 from place " + w);
+			var i : Int = 0;
+			var x : Int = 0;
+			var w : Int = here.id;
+			Go.cell.set(here.id); // Creating what may be a race condition on purpose
+
+			// Indicate startup
+			Console.OUT.println("Hello from place " + w);
 			
-			// Test term printing
+			// Brief pause, then tests
+			for(i = 0; i < 1000000; i++) { x += 1; }
+			Console.OUT.println("Beginning tests at place " + w);
+
+			// Test term creation, output, and relocation
 			var tmhere : BasicTerm = null;
 			
 			tmhere = new StringTerm("Hello World");
@@ -37,19 +39,15 @@ public class Go {
 			tmhere.print(true); 
 			Console.OUT.println();
 			
-			tmhere = at (tmhome.home) tmhome.apply();
+			tmhere = at (tmhome.home) tmhome();
 			Console.OUT.print("Object dragged to place " + w + ": ");
 			tmhere.print(true);
 			Console.OUT.println();
 			
-			// Bring terms across worlds
-		    //tmhere = tm;
+			// Exit after a longer pause
+			for(i = 0; i < 1000000000; i++) { x += 1; }
+			Console.OUT.println("Goodbye from place " + w + " (" + i + " iterations)");
+			Console.OUT.println("Static field was set to " + Go.cell());
 		}
 	}
-
-private def GlobalRef(
-  ):
-  void {
-    
-}
 }

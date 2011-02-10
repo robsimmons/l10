@@ -29,13 +29,22 @@ public class StructuredTerm extends BasicTerm {
 		//val y : List[BasicTerm] = z;
 		this.ts = ts;
 	} 
+		
+	private static final def printOne(x : BasicTerm{self != null}) {
+		Console.OUT.print(" ");
+		x.print(true);
+	}
 	
 	public def print(parens : Boolean) {
 		if (ts == null)
-			Console.OUT.print("<term>");
+			Console.OUT.print(f.toString());
 		else {
 			if(parens) Console.OUT.print("(");
-			Console.OUT.print("<term with args>");
+			Console.OUT.print(f.toString());
+			ts.app((x : BasicTerm{self != null}) => { 
+				Console.OUT.print(" "); 
+				x.print(true); 
+			});
 		  	if(parens) Console.OUT.print(")");
 		}
 	}

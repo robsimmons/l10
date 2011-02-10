@@ -1,2 +1,7 @@
 syntax: glob
 bin/*
+*.cc
+*.h
+*.struct_h
+*.inc
+*~
