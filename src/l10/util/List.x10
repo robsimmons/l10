@@ -1,4 +1,4 @@
-package l10.lang;
+package l10.util;
 
 public class List[T] {
 	val head: T{self != null};

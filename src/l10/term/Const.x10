@@ -1,7 +1,8 @@
-package l10.lang;
+package l10.term;
+import l10.util.Symbol;
 
-public class ConstantTerm extends BasicTerm {
-	var c : Symbol;
+public class Const extends Term {
+	public val c : Symbol;
 	
 	public def this(c : Symbol) {
 		this.c = c;

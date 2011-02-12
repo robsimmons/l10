@@ -1,19 +1,16 @@
-package l10.lang;
+package l10.term;
+import l10.util.*;
 
-public class StringTerm extends BasicTerm {
-	val s : String;
+public class IntConst extends Term {
+	public val i : Int;
 	
-	public def this(s : String) { 
-		this.s = s;
-	}
-	
-	public def this(f : StringTerm) {
-		this.s = f.s;
+	public def this(i : Int) { 
+		this.i = i;
 	}
 	
 	public def print(parens : Boolean) {
-		Console.OUT.print("\"" + this.s + "\"");
+		Console.OUT.print(this.i);
 	}
 
-	public def hashCode() { return this.s.hashCode(); }
+	public def hashCode() { return this.i; }
 }

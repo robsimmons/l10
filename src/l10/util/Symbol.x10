@@ -1,7 +1,7 @@
 package l10.util;
 
 public class Symbol {
-	val x : Int;
+	public val x : Int;
 	
 	public def this(str: String) { this.x = Symbol.tabl.findInt(str); }
 	

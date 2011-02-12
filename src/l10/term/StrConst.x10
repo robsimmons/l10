@@ -1,14 +1,10 @@
-package l10.lang;
+package l10.term;
 
-public class StringTerm extends BasicTerm {
+public class StrConst extends Term {
 	val s : String;
 	
 	public def this(s : String) { 
 		this.s = s;
-	}
-	
-	public def this(f : StringTerm) {
-		this.s = f.s;
 	}
 	
 	public def print(parens : Boolean) {
