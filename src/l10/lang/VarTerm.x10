@@ -1,11 +1,11 @@
 package l10.lang;
 
 public class VarTerm extends BasicTerm {
-	val name : String;
+	val name : Symbol;
 	var ndx : Int;
 	
 	public def this(name : String) {
-		this.name = name;
+		this.name = Symbol(name);
 		this.ndx = 0;
 	}
 	
