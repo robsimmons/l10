@@ -1,9 +1,11 @@
-package l10.lang;
+package l10.syntax;
+import l10.util.*;
+import l10.term.Term;
 
 public class World {
 	val name: Symbol;
 	val kind: Kind;
-	val term: BasicTerm;
+	val term: Term;
 	
 	public def hashCode () { return name.hashCode(); }
 	
@@ -13,7 +15,7 @@ public class World {
 		this.term = null;
 	}
 	
-	public def this(name: Symbol, kind: ComplexKind, term: BasicTerm{self != null}) {
+	public def this(name: Symbol, kind: ComplexKind, term: Term{self != null}) {
 		this.name = name;
 		this.kind = kind;
 		this.term = term;
