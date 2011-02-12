@@ -1,4 +1,4 @@
-package l10.lang;
+package l10.syntax;
 
 public class Decl {
 }

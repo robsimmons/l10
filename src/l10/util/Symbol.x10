@@ -1,7 +1,7 @@
 package l10.util;
 
-public class Symbol {
-	public val x : Int;
+public struct Symbol {
+	public val x: Int;
 	
 	public def this(str: String) { this.x = Symbol.tabl.findInt(str); }
 	
@@ -9,7 +9,7 @@ public class Symbol {
 	
 	public def hashCode () { return x; }
 	
-	static private val tabl : SymbolMap{self != null} = new SymbolMap();
+	static private val tabl: SymbolMap{self != null} = new SymbolMap();
 	
 	static private class SymbolMap {
 		static type SI = x10.util.HashMap[String{self!=null},Int];
@@ -46,7 +46,7 @@ public class Symbol {
 			return retval()();
 		}
 		
-		def findString(x : Int) {
+		def findString(x: Int) {
 			return at (Place.FIRST_PLACE) int2str()(x);
 		}
 	}

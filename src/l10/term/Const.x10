@@ -10,6 +10,7 @@ public class Const extends Term {
 	
 	public def this(c : String) {
 		this.c = Symbol(c);
+		Console.OUT.print("" + this.c.x);
 	}
 	
 	public def print(parens : Boolean) {
