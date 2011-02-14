@@ -1,7 +1,6 @@
-package l10.lang;
-
-class Arg {
-}
+package l10.syntax;
+import l10.util.*;
+import l10.term.Term;
 
 class NamedArg extends Arg {
 	val name: Symbol;

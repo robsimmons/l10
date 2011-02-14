@@ -1,6 +1,7 @@
-package l10.lang;
+package l10.term;
+import l10.util.*;
 
-public class VarTerm extends BasicTerm {
+public class Var extends Term {
 	val name : Symbol;
 	var ndx : Int;
 	

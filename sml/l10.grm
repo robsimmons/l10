@@ -1,0 +1,82 @@
+(* L10 grammar, by Rob Simmons *)
+
+structure A = Ast
+structure Map = 
+
+datatype class = 
+   Kind of A.arg list * string 
+ | Type of A.arg list
+ | Rel of A.arg list * A.world
+ | World of A.arg list
+
+datatype decl = DeclClass | DeclDef | DeclOther
+
+datatype syn = 
+   Ascribe of string * syn
+ | Assign of string * syn
+ | Conj of syn * syn
+ | Arrow of syn * syn
+ | At of syn * syn
+ | Pi of string * syn * syn
+ | Ex of string * syn
+ | Var of string
+ | App of string * syn list
+ | Int of int
+ | Str of string
+ | World
+ | Type 
+ | Rel
+
+%%
+%header (functor L10Fn (structure Token : TOKEN))
+
+%term 
+   EOF | LPAREN | RPAREN
+ | COMMA | COLON | EQ | LARROW | RARROW | AT
+ | LCURLY | RCURLY | EXISTS 
+ | UCID of string | LCID of string
+ | INTCONST of int | STRCONST of string
+ | WORLD | TYPE | REL
+
+%nonterm 
+   decl of (decl * unit * unit)
+ | syn of syn
+ | syns of syn list
+
+%verbose      (* print summary of errors *)
+%pos unit     (* positions *)
+%start gdecl  (* parse one declaration at a time *)
+%eop EOF LCID (* possible start symbols for next declaration *)
+%noshift EOF  (* possible start symbols for next declaration *)
+%name L10
+
+%nonassoc EQ COLON
+%left  LARROW
+%right RARROW
+%right COMMA
+%nonassoc AT
+
+%%
+decls : EOF                       ([])
+      | syn PERIOD decls          ((parse syn, synleft, PERIODright) :: decls)
+
+syn   : LPAREN syn RPAREN         (syn)
+      | LCID COLON syn            (Ascribe (LICD, syn))      
+      | LCID EQUALS syn           (Assign (LICD, syn))      
+      | syn COMMA syn             (Conj (syn1, syn2))
+      | syn RARROW syn            (Arrow (syn1, syn2))
+      | syn AT syn                (At (syn1, syn2))
+      | LCURLY syn RCURLY syn     (Pi (LCID, syn1, syn2))
+      | EXISTS LCID PERIOD syn    (Ex (LCID, syn))
+      | UCID                      (Var (UCID))
+      | LCID syns                 (App (LCID, syns))
+      | INTCONST                  (Int (INTCONST))
+      | STRCONST                  (Str (STRCONST))
+      | WORLD                     (World)
+      | TYPE                      (Type)
+      | REL                       (Rel)      
+
+syns  :                           ([])
+      | syn syns                  (syn :: syns)
+
+

@@ -1,5 +1,4 @@
 package l10.term;
-import l10.util.*;
 
 public class IntConst extends Term {
 	public val i : Int;

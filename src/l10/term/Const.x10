@@ -1,5 +1,5 @@
 package l10.term;
-import l10.util.Symbol;
+import l10.util.*;
 
 public class Const extends Term {
 	public val c : Symbol;
