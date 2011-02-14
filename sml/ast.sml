@@ -8,7 +8,8 @@ datatype term =
  | Structured of string * term list
  | Var of string
 
-type arg = string option * string
+type typ = string
+type arg = string option * typ
 type atomic = string * term list
 type world = string * term option
 
@@ -22,11 +23,12 @@ datatype prem =
  | Count of pattern * term
 
 datatype decl = 
-   DeclDatabase of string * atomic list * world
+   DeclConst of string * arg list * string
+ | DeclDatabase of string * atomic list * world
  | DeclDepends of string * string
  | DeclRelation of string * arg list * world
- | DeclRule of pattern list * atomic
- | DeclType of string * arg list
+ | DeclRule of prem list * atomic
+ | DeclType of string 
  | DeclWorld of string * arg list
 
 end

@@ -5,3 +5,8 @@ bin/*
 *.struct_h
 *.inc
 *~
+*/.cm/*
+*.grm.desc
+*.grm.sig
+*.grm.sml
+*.lex.sml
