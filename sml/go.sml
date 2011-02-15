@@ -39,6 +39,7 @@ val () =
               raise Nope ("expected 1 argument, found " 
                           ^ Int.toString (length args)))
 
+      val () = print ("Reading " ^ filein ^ "\n")
       val program = Parse.parse filein
          handle IO.Io {name, function, cause} =>
          raise Nope ("unable to open " ^ name ^ " (error " ^ function ^ ")")
