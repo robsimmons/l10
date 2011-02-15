@@ -10,3 +10,4 @@ bin/*
 *.grm.sig
 *.grm.sml
 *.lex.sml
+.svn
