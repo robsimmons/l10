@@ -8,6 +8,8 @@ structure Parse = struct
 
   open L10LrVals.ParserData.Header
 
+  exception Parse of string
+
   fun parse filename = 
      let
         val instream = TextIO.openIn filename
@@ -39,8 +41,7 @@ structure Parse = struct
             ; if L10Parse.sameToken (dummyEOF, next)
               then (rev decls) 
               else (loop (lexer, decl :: decls))
-           end handle SyntaxError s => 
-                      (print ("Error: " ^ s ^ "\n"); rev decls)
+           end handle SyntaxError s => raise Parse s
      in
         loop (lexer, [])
      end

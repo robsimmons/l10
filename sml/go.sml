@@ -43,6 +43,8 @@ val () =
       val program = Parse.parse filein
          handle IO.Io {name, function, cause} =>
          raise Nope ("unable to open " ^ name ^ " (error " ^ function ^ ")")
+              | Parse.Parse s =>
+         raise Nope ("could not parse " ^ filein ^ ".\nProblem: " ^ s)
    in
       print ("Parsed " ^ Int.toString (length program) ^ " lines(s)\n")
       ; print ("Send output to " ^ fileout ^ "\n")
