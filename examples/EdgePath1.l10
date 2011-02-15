@@ -1,6 +1,6 @@
 w1: world.
 
-edge: {From : t} {To : t} rel @ w1.
+edge: {X : t} {Y : t} rel @ w1.
 path: t -> t -> rel @ w1.
 
 edge X Y -> path X Y.
