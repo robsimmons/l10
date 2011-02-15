@@ -1,0 +1,16 @@
+
+$(SML_LIB)/basis/basis.mlb
+$(SML_LIB)/smlnj-lib/PP/pp-lib.mlb
+$(SML_LIB)/smlnj-lib/Util/smlnj-lib.mlb
+$(SML_LIB)/mlyacc-lib/mlyacc-lib.mlb
+
+local 
+   ast.sml
+   l10.grm.sig
+   l10.grm.sml
+   l10.lex.sml
+   parse.sml
+   go.sml
+in
+   structure Go
+end
