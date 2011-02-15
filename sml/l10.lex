@@ -22,6 +22,7 @@ ucid = [A-Z?][A-Za-z0-9_]*;
 string = \".*\";
 decnum = (0|[1-9][0-9]*);
 ws = [\ \t\011\012\r];
+eol = ("\013\010"|"\010"|"\013");
 
 %%
 
@@ -49,3 +50,7 @@ ws = [\ \t\011\012\r];
 <INITIAL> {lcid}      => (Tokens.LCID (yytext, (), ()));
 <INITIAL> {decnum}    => (to_int yytext);
 <INITIAL> {string}    => (to_string yytext);
+<INITIAL> "//"        => (YYBEGIN COMMENT_LINE; continue ());
+
+<COMMENT_LINE>{eol}   => (YYBEGIN INITIAL; continue ());
+<COMMENT_LINE>. => (continue ());
