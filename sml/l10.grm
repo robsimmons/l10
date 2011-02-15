@@ -152,7 +152,8 @@ fun parse syn =
 %name L10
 
 %nonterm 
-   decl of (A.decl * unit * unit)
+   anno of syn
+ | decl of (A.decl * unit * unit)
  | syn of syn
  | simp of syn
  | sings of syn list
@@ -175,7 +176,7 @@ fun parse syn =
 %nonassoc EQUALS COLON
 %left  LARROW
 %right RARROW
-%right EXISTS LCURLY
+%right EXISTS
 %right COMMA
 %nonassoc AT
 
@@ -183,13 +184,15 @@ fun parse syn =
 
 decl : syn                        ((parse syn, synleft, synright))
 
+anno  : UCID COLON syn            (Ascribe (UCID, syn))
+
 syn   : LCID COLON syn            (Ascribe (LCID, syn))      
       | LCID EQUALS syn           (Assign (LCID, syn))      
       | syn COMMA syn             (Conj (syn1, syn2))
       | syn RARROW syn            (Arrow (syn1, syn2))
       | syn AT syn                (At (syn1, syn2))
-      | LCURLY syn RCURLY syn     (Pi (syn1, syn2))
-      | EXISTS syn PERIOD syn     (Ex (syn1, syn2))
+      | LCURLY anno RCURLY syn    (Pi (anno, syn))
+      | EXISTS UCID PERIOD syn    (Ex (UCID, syn2))
       | simp                      (simp)
       | LCID sings                (App (LCID, sings))     
 

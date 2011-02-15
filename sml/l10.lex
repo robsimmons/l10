@@ -32,6 +32,7 @@ ws = [\ \t\011\012\r];
 <INITIAL> "}"         => (Tokens.RCURLY ((), ()));
 <INITIAL> "("         => (Tokens.LPAREN ((), ()));
 <INITIAL> ")"         => (Tokens.RPAREN ((), ()));
+<INITIAL> "Ex"        => (Tokens.EXISTS ((), ()));
 
 <INITIAL> "."         => (Tokens.PERIOD ((), ()));
 <INITIAL> ","         => (Tokens.COMMA ((), ()));

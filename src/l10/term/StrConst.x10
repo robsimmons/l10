@@ -12,4 +12,10 @@ public class StrConst extends Term {
 	}
 
 	public def hashCode() { return this.s.hashCode(); }
+	
+	public def equals(that : Any) {
+		if (that != null && that instanceof StrConst) {
+			return this.s.equals((that as StrConst).s);
+		} else return false;
+	}
 }

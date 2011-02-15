@@ -18,4 +18,10 @@ public class Const extends Term {
 	}
 	
 	public def hashCode() { return this.c.x; }
+	
+	public def equals(that: Any) {
+		if (that != null && that instanceof StrConst) {
+			return this.c.equals((that as Const).c);
+		} else return false;
+	}
 }

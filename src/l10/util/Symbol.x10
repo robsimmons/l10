@@ -9,6 +9,12 @@ public struct Symbol {
 	
 	public def hashCode () { return x; }
 	
+	public def equals(that : Any) {
+		if (that instanceof Symbol) {
+			return this.x.equals((that as Symbol).x);
+		} else return false;
+	}
+	
 	static private val tabl: SymbolMap{self != null} = new SymbolMap();
 	
 	static private class SymbolMap {

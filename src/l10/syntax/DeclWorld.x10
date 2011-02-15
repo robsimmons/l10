@@ -1,4 +1,5 @@
-package l10.lang;
+package l10.syntax;
+import l10.util.*;
 
 public class DeclWorld extends Decl {
 	val args: List[Arg];

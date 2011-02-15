@@ -12,4 +12,10 @@ public class IntConst extends Term {
 	}
 
 	public def hashCode() { return this.i; }
+	
+	public def equals(that: Any) {
+		if (that != null && that instanceof IntConst) {
+			return this.i.equals((that as IntConst).i);
+		} else return false;
+	}
 }
