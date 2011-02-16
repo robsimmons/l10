@@ -1,0 +1,88 @@
+
+
+
+exp : type.
+
+binop : t -> t -> t -> t -> exp.
+move : t -> t -> exp.
+loadc : t -> t -> exp.
+goto  : t -> exp.
+if       : t -> t -> t -> t -> exp.
+ret     : t -> exp.
+
+w0 : world.
+
+line : nat -> exp.
+plus : nat -> nat -> native.
+succ : nat -> nat -> rel @ w0.
+def : nat -> t -> rel @ w0.
+use : nat -> t -> rel @ w0.
+
+//Extracting relevant information from the program
+
+line L (binop X Y Op Z) -> succ L (plus L 1). 
+line L (move X Y) -> succ L (plus L 1).
+line L (loadc X C) -> succ L (plus L 1). 
+line L (goto L2) -> succ L L2.
+line L (if X Comp C L1) -> succ L L1.
+line L (if X Comp C L1) -> succ L (plus L 1). 
+//no rule for return.
+
+line L (binop X Y Op Z) -> def L X.
+line L (move X Y) -> def L X.
+line L (loadc X C) -> def L X.
+//no rules for goto, if, return.
+
+line L (binop X Y Op Z) -> use L Y.
+line L (binop X Y Op Z) -> use L Z.
+line L (move X Y) -> use L Y.
+//no rules for loadc, goto
+line L (if X Comp C L1) -> use L X.
+line L (return X) -> use L X.
+
+//Liveness analysis
+
+wLive : world.
+live : nat -> t -> rel @ wLive.
+
+use L X -> live L X.
+live L1 U , succ L L1 , not (def L U) -> live L U.
+
+//Interference analysis
+
+wInter : world.
+interferes : t -> t -> rel @ wInter.
+eq : t -> t -> native.
+def L X , not (Ex y. line L (move X y)) , succ L L1, 
+              live L1 Z , not (eq X Z) -> interferes X Z.
+
+line L (move X Y), succ L L1, live L1 Z, not (eq X Z), not (eq Y Z)
+    -> interferes X Z.
+
+//Neededness analysis
+
+nec : nat -> t -> rel @ w0.
+
+line L (if X Comp C L1) -> nec L X.
+line L (return X) -> nec L X.
+
+wNeed : world.
+needed : nat -> t -> rel @ wNeed.
+
+nec L X -> needed L X.
+needed L1 U , succ L L1 , not (def L U) -> needed L U.
+use L Y , def L X , succ L L1 , needed L1 X -> needed L Y.
+
+//Deadcode analysis
+
+wDead : world.
+
+dead : nat -> rel @ wDead.
+def L X , succ L L1 , not (needed L1 X) -> dead L.
+
+
+db1 = (line 0 (loadc p 1) , line 1 (binop p p times x) , line 2 (binop z p plus 1)
+           line 3 (binop x x minus 1) , line 4 (if x grt 0 2) , line 5 (return x)) @ wDead.
+
+db2 = (line 0 (loadc p 1) , line 1 (binop p p times x) , line 2 (binop z z plus 1)
+           line 3 (binop x x minus 1) , line 4 (if x grt 0 2) , line 5 (return x)) @ wLive.
