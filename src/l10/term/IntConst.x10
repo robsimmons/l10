@@ -4,6 +4,7 @@ public class IntConst extends Term {
 	public val i : Int;
 	
 	public def this(i : Int) { 
+		super(true);
 		this.i = i;
 	}
 	
@@ -17,5 +18,9 @@ public class IntConst extends Term {
 		if (that != null && that instanceof IntConst) {
 			return this.i.equals((that as IntConst).i);
 		} else return false;
+	}
+	
+	public def match(t: Ground, s: Subst): Boolean {
+		return t instanceof IntConst && i.equals((t as IntConst).i);
 	}
 }
