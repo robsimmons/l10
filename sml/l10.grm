@@ -76,11 +76,6 @@ fun p_typ syn =
       App (typ, []) => typ
     | _ => raise SyntaxError "Invalid simple type"      
 
-fun p_atomic syn = 
-   case syn of 
-      App (a, terms) => (a, map p_term terms)
-    | _ => raise SyntaxError "Invalid atomic proposition"
-
 fun p_world syn = 
    case syn of 
       App (w, []) => (w, NONE)
@@ -90,6 +85,16 @@ fun p_world syn =
 
 
 
+
+fun p_atomic syn = 
+   case syn of 
+      App (a, terms) => (a, map p_term terms)
+    | _ => raise SyntaxError "Invalid atomic proposition"
+
+fun p_atomics syn = 
+   case syn of 
+      Conj (syn1, syn2) => p_atomics syn1 @ p_atomics syn2
+    | _ => [ p_atomic syn ]
 
 fun p_pat syn =
    case syn of 
@@ -109,9 +114,8 @@ fun p_prems syn =
 
 fun p_rule syn =
    case syn of 
-      Arrow (prems, head) => (p_prems prems, p_atomic head)
-    | _ => ([], p_atomic syn)
-
+      Arrow (prems, head) => (p_prems prems, p_atomics head)
+    | _ => ([], p_atomics syn)
 
 
 
@@ -120,7 +124,7 @@ fun p_class (id, syn) =
       Arrow (typ, s) => cons ((NONE, p_typ typ), p_class (id, s))
     | Pi (Ascribe (x, typ), s) => cons ((SOME x, p_typ typ), p_class (id, s))
     | App (typ, []) => A.DeclConst (id, [], typ)
-    | World => (worlds := (*Set.insert ( *)!worlds(*, id)*); A.DeclWorld (id, []))
+    | World => (worlds := Set.add (!worlds, id); A.DeclWorld (id, []))
     | At (Rel, syn) => A.DeclRelation (id, [], p_world syn)
     | At (syn, _) => 
       raise SyntaxError 
@@ -128,21 +132,16 @@ fun p_class (id, syn) =
     | _ => raise SyntaxError ("Bad classifier")
 
 fun p_dep (App (w1, [App ("depends", []), App ("on", []), App (w2, [])])) =
-    if true (* Set.inDomain (!worlds, w1) *)
+    if Set.member (!worlds, w1)
     then SOME (A.DeclDepends (w1, w2)) 
     else NONE
   | p_dep _ = NONE
-
-fun p_db syn = 
-   case syn of 
-      Conj (syn1, syn2) => p_db syn1 @ p_db syn2
-    | _ => [ p_atomic syn ]
 
 fun parse syn = 
    case syn of 
       Ascribe (id, Type) => A.DeclType id
     | Ascribe (id, syn) => p_class (id, syn)
-    | Assign (id, At (syn, w)) => A.DeclDatabase (id, p_db syn, p_world w)
+    | Assign (id, At (syn, w)) => A.DeclDatabase (id, p_atomics syn, p_world w)
     | syn => 
       (case p_dep syn of
           SOME decl => decl

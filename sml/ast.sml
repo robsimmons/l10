@@ -27,7 +27,7 @@ datatype decl =
  | DeclDatabase of string * atomic list * world
  | DeclDepends of string * string
  | DeclRelation of string * arg list * world
- | DeclRule of prem list * atomic
+ | DeclRule of prem list * atomic list
  | DeclType of string 
  | DeclWorld of string * arg list
 
