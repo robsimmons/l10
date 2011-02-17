@@ -17,8 +17,8 @@ fun to_string yytext =
 %full
 %s STRING COMMENT COMMENT_LINE PRAGMA;
 
-lcid = [a-z_][A-Za-z0-9_]*;
-ucid = [A-Z?][A-Za-z0-9_]*;
+lcid = [a-z][A-Za-z0-9_\']*;
+ucid = [A-Z?][A-Za-z0-9_\']*;
 string = \".*\";
 decnum = (0|[1-9][0-9]*);
 ws = [\ \t\011\012\r];
@@ -42,9 +42,18 @@ eol = ("\013\010"|"\010"|"\013");
 <INITIAL> "->"        => (Tokens.RARROW ((), ()));
 <INITIAL> "@"         => (Tokens.AT ((), ()));
 
+<INITIAL> "=="        => (Tokens.EQEQ ((), ()));
+<INITIAL> "!="        => (Tokens.NEQ ((), ()));
+<INITIAL> ">"         => (Tokens.GT ((), ()));
+<INITIAL> "<"         => (Tokens.LT ((), ()));
+<INITIAL> ">="        => (Tokens.GEQ ((), ()));
+<INITIAL> "<="        => (Tokens.LEQ ((), ()));
+<INITIAL> "+"         => (Tokens.PLUS ((), ()));
+
 <INITIAL> "world"     => (Tokens.WORLD ((), ()));
 <INITIAL> "type"      => (Tokens.TYPE ((), ()));
 <INITIAL> "rel"       => (Tokens.REL ((), ()));
+<INITIAL> "_"         => (Tokens.UNDERSCORE ((), ()));
 
 <INITIAL> {ucid}      => (Tokens.UCID (yytext, (), ()));
 <INITIAL> {lcid}      => (Tokens.LCID (yytext, (), ()));

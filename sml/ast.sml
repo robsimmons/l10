@@ -6,7 +6,7 @@ datatype term =
  | IntConst of int
  | StrConst of string
  | Structured of string * term list
- | Var of string
+ | Var of string option
 
 type typ = string
 type arg = string option * typ

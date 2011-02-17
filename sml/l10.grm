@@ -17,8 +17,8 @@ datatype syn =
  | Arrow of syn * syn
  | At of syn * syn
  | Pi of syn * syn
- | Ex of syn * syn
- | Var of string
+ | Ex of string * syn
+ | Var of string option
  | App of string * syn list
  | Int of int
  | Str of string
@@ -34,8 +34,9 @@ fun string syn =
     | Arrow (s1, s2) => "(" ^ string s1 ^ " -> " ^ string s2 ^ ")"
     | At (s1, s2) => "(" ^ string s1 ^ " @ " ^ string s2 ^ ")"
     | Pi (s1, s2) => "({" ^ string s1 ^ "} " ^ string s2 ^ ")"
-    | Ex (s1, s2) => "(Ex " ^ string s1 ^ ". " ^ string s2 ^ ")"
-    | Var s => s
+    | Ex (s1, s2) => "(Ex " ^ s1 ^ ". " ^ string s2 ^ ")"
+    | Var (SOME s) => s
+    | Var NONE => "_"
     | App (c, s) => "(" ^ c ^ " " ^ String.concatWith " " (map string s) ^ ")"
     | Int i => Int.toString i
     | Str s => "\"" ^ s ^ "\""
@@ -92,8 +93,7 @@ fun p_world syn =
 
 fun p_pat syn =
    case syn of 
-      Ex (App (x, []), syn) => A.Exists (x, p_pat syn)
-    | Ex _ => raise SyntaxError ("Bad argument to exists")
+      Ex (x, syn) => A.Exists (x, p_pat syn)
     | _ => A.Atomic (p_atomic syn)
 
 fun p_prem syn = 
@@ -161,7 +161,8 @@ fun parse syn =
 %term 
    EOF | LPAREN | RPAREN | LCURLY | RCURLY | EXISTS 
  | PERIOD | COMMA | COLON | EQUALS | LARROW | RARROW | AT
- | WORLD | TYPE | REL
+ | EQEQ | NEQ | GT | LT | GEQ | LEQ | PLUS
+ | WORLD | TYPE | REL | UNDERSCORE
  | UCID of string | LCID of string | INTCONST of int | STRCONST of string
 
 %pos unit     (* positions *)
@@ -192,17 +193,25 @@ syn   : LCID COLON syn            (Ascribe (LCID, syn))
       | syn RARROW syn            (Arrow (syn1, syn2))
       | syn AT syn                (At (syn1, syn2))
       | LCURLY anno RCURLY syn    (Pi (anno, syn))
-      | EXISTS UCID PERIOD syn    (Ex (UCID, syn2))
+      | EXISTS UCID PERIOD syn    (Ex (UCID, syn))
       | simp                      (simp)
-      | LCID sings                (App (LCID, sings))     
+      | LCID sings                (App (LCID, sings)) 
+      | syn EQEQ syn              (App ("_eq", [ syn1, syn2 ]))  
+      | syn NEQ syn               (App ("_neq", [ syn1, syn2 ]))  
+      | syn GT syn                (App ("_gt", [ syn1, syn2 ]))  
+      | syn LT syn                (App ("_lt", [ syn1, syn2 ]))  
+      | syn GEQ syn               (App ("_geq", [ syn1, syn2 ]))  
+      | syn LEQ syn               (App ("_leq", [ syn1, syn2 ]))  
+      | syn PLUS syn              (App ("_plus", [ syn1, syn2 ]))  
 
 simp  : LPAREN syn RPAREN         (syn) 
-      | UCID                      (Var (UCID))
+      | UCID                      (Var (SOME UCID))
+      | UNDERSCORE                (Var NONE)
       | WORLD                     (World)
       | TYPE                      (Type)
       | REL                       (Rel) 
-      | INTCONST                  (Int (INTCONST))
-      | STRCONST                  (Str (STRCONST))
+      | INTCONST                  (Int INTCONST)
+      | STRCONST                  (Str STRCONST)
 
 sings :                           ([])
       | simp sings                (simp :: sings)
