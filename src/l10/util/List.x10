@@ -31,6 +31,31 @@ public class List[T] {
 		return newlist_front;
 	}
 	
+	
+	public static def mapPartial[T,S](l: List[T], f: (x: T{self != null}) => S): List[S] {
+		var oldlist_back: List[T] = l;
+		var newlist_front: List[S] = null;
+		while (oldlist_back != null) {
+			val y = f(oldlist_back.head);
+			oldlist_back = oldlist_back.tail;
+			if (y != null) {
+				newlist_front = new List[S](y, null);
+				break;
+			}
+		}
+		
+		var newlist_back: List[S] = newlist_front;
+		while(oldlist_back != null) {
+			val y = f(oldlist_back.head);
+			oldlist_back = oldlist_back.tail;
+			if (y != null)
+				newlist_back.tail = new List[S](y, null);
+				newlist_back = newlist_back.tail;
+		}
+		return newlist_front;
+	}
+
+	
 	public static def zipWith[T,S,R](l1: List[T], l2: List[S], f: (x: T{self!=null}, y: S{self!=null}) => R{self!=null}): List[R] {
 		if (l1 == null || l2 == null) return null;
 		val newlist_front: List[R] = new List[R](f(l1.head, l2.head), null);
