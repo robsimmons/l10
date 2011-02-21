@@ -31,13 +31,20 @@ structure Parse = struct
                  else (print "Wha?\n"; raise Fail "Wha?")
            in
               case decl of 
-                 Ast.DeclConst (s, _, _) => print ("Term constant " ^ s ^ "\n")
-               | Ast.DeclDatabase (s, _, _) => print ("Database " ^ s ^ "\n")
-               | Ast.DeclDepends (w1, w2) => print (w1 ^ " after " ^ w2 ^ "\n")
-               | Ast.DeclRelation (s, _, _) => print ("Relation " ^ s ^ "\n")
-               | Ast.DeclRule (ls, s) => print ("Rule\n")
-               | Ast.DeclType s => print ("Type " ^ s ^ "\n")
-               | Ast.DeclWorld (s, _) => print ("World " ^ s ^ "\n")
+                 Ast.DeclConst (s, _, _) => 
+                 print ("Term constant " ^ Symbol.name s ^ "\n")
+               | Ast.DeclDatabase (s, _, _) => 
+                 print ("Database " ^ Symbol.name s ^ "\n")
+               | Ast.DeclDepends (w1, w2) => 
+                 print (Symbol.name w1 ^ " after " ^ Symbol.name w2 ^ "\n")
+               | Ast.DeclRelation (s, _, _) => 
+                 print ("Relation " ^ Symbol.name s ^ "\n")
+               | Ast.DeclRule (ls, s) => 
+                 print ("Rule\n")
+               | Ast.DeclType s => 
+                 print ("Type " ^ Symbol.name s ^ "\n")
+               | Ast.DeclWorld (s, _) => 
+                 print ("World " ^ Symbol.name s ^ "\n")
             ; if L10Parse.sameToken (dummyEOF, next)
               then (rev decls) 
               else (loop (lexer, decl :: decls))

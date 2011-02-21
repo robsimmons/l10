@@ -1,13 +1,12 @@
 (* L10 grammar, by Rob Simmons *)
 
 structure A = Ast
-structure Set = 
-SplaySetFn(struct type ord_key = string val compare = String.compare end)
+open Symbol
 
 datatype decl = 
-   DeclClass of string 
- | DeclDef of string
- | DeclDependency of string * string
+   DeclClass of Symbol.symbol
+ | DeclDef of Symbol.symbol
+ | DeclDependency of Symbol.symbol * Symbol.symbol
  | DeclRule
 
 datatype syn = 
@@ -61,11 +60,11 @@ fun cons (arg, decl) =
 
 fun p_term syn = 
    case syn of 
-      App (c, []) => A.Const c
-    | App (c, syns) => A.Structured (c, map p_term syns)
-    | Int i => A.IntConst i
+      App (c, []) => A.Const (symbol c)
+    | App (c, syns) => A.Structured (symbol c, map p_term syns)
+    | Int i => A.NatConst (IntInf.fromInt i)
     | Str s => A.StrConst s
-    | Var x => A.Var x
+    | Var x => A.Var (Option.map symbol x)
     | _ => raise SyntaxError "Invalid term"
 
 
@@ -73,13 +72,13 @@ fun p_term syn =
 
 fun p_typ syn = 
    case syn of 
-      App (typ, []) => typ
+      App (typ, []) => symbol typ
     | _ => raise SyntaxError "Invalid simple type"      
 
 fun p_world syn = 
    case syn of 
-      App (w, []) => (w, NONE)
-    | App (w, [ syn ]) => (w, SOME (p_term syn))
+      App (w, []) => A.WConst (symbol w)
+    | App (w, [ syn ]) => A.WStructured (symbol w, (p_term syn))
     | App _ => raise SyntaxError ("World with more than one argument")
     | _ => raise SyntaxError ("Invalid world")
 
@@ -88,7 +87,7 @@ fun p_world syn =
 
 fun p_atomic syn = 
    case syn of 
-      App (a, terms) => (a, map p_term terms)
+      App (a, terms) => (symbol a, map p_term terms)
     | _ => raise SyntaxError "Invalid atomic proposition"
 
 fun p_atomics syn = 
@@ -98,7 +97,7 @@ fun p_atomics syn =
 
 fun p_pat syn =
    case syn of 
-      Ex (x, syn) => A.Exists (x, p_pat syn)
+      Ex (x, syn) => A.Exists (symbol x, p_pat syn)
     | _ => A.Atomic (p_atomic syn)
 
 fun p_prem syn = 
@@ -122,9 +121,11 @@ fun p_rule syn =
 fun p_class (id, syn) = 
    case syn of 
       Arrow (typ, s) => cons ((NONE, p_typ typ), p_class (id, s))
-    | Pi (Ascribe (x, typ), s) => cons ((SOME x, p_typ typ), p_class (id, s))
+    | Pi (Ascribe (x, typ), s) => 
+      cons ((SOME (symbol x), p_typ typ), p_class (id, s))
     | App (typ, []) => A.DeclConst (id, [], typ)
-    | World => (worlds := Set.add (!worlds, id); A.DeclWorld (id, []))
+    | World => 
+      (worlds := Set.add (!worlds, id); A.DeclWorld (id, []))
     | At (Rel, syn) => A.DeclRelation (id, [], p_world syn)
     | At (syn, _) => 
       raise SyntaxError 
@@ -132,16 +133,17 @@ fun p_class (id, syn) =
     | _ => raise SyntaxError ("Bad classifier")
 
 fun p_dep (App (w1, [App ("depends", []), App ("on", []), App (w2, [])])) =
-    if Set.member (!worlds, w1)
-    then SOME (A.DeclDepends (w1, w2)) 
+    if Set.member (!worlds, symbol w1)
+    then SOME (A.DeclDepends (symbol w1, symbol w2)) 
     else NONE
   | p_dep _ = NONE
 
 fun parse syn = 
    case syn of 
-      Ascribe (id, Type) => A.DeclType id
-    | Ascribe (id, syn) => p_class (id, syn)
-    | Assign (id, At (syn, w)) => A.DeclDatabase (id, p_atomics syn, p_world w)
+      Ascribe (id, Type) => A.DeclType (symbol id)
+    | Ascribe (id, syn) => p_class (symbol id, syn)
+    | Assign (id, At (syn, w)) => 
+      A.DeclDatabase (symbol id, p_atomics syn, p_world w)
     | syn => 
       (case p_dep syn of
           SOME decl => decl

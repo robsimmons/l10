@@ -10,6 +10,10 @@ local
    l10.grm.sml
    l10.lex.sml
    parse.sml
+
+   term.sml
+   termmap.sml
+
    go.sml
 in
    structure Go

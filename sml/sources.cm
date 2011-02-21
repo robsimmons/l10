@@ -4,7 +4,13 @@ Group is
    $/smlnj-lib.cm
    $/ml-yacc-lib.cm
 
+   global.sml
+
    ast.sml
    l10.lex
    l10.grm
    parse.sml
+
+   term.sml
+   termmap.sml
+   subst.sml
