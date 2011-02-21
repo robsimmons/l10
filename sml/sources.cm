@@ -4,7 +4,9 @@ Group is
    $/smlnj-lib.cm
    $/ml-yacc-lib.cm
 
+   symbol.sml
    global.sml
+   symtab.sml
 
    ast.sml
    l10.lex
