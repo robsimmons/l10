@@ -47,13 +47,20 @@ fun upd s =
       ; Array.update (!arr, oldNxt, s)
       ; max := newMax
       ; nxt := newNxt
+      ; HashTable.insert ht (s, oldNxt)
       ; oldNxt  
    end
 
 fun symbol s = 
    case HashTable.find ht s of
-      NONE => upd s
-    | SOME x => x
+      NONE => 
+      let 
+         val x = upd s 
+         val () = HashTable.insert ht (s, x)
+      in x end 
+    | SOME x => 
+      let 
+      in x end
 
 fun name x = 
    Array.sub (!arr, x)

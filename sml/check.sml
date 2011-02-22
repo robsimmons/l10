@@ -21,9 +21,9 @@ structure A = Ast
 
 type ctx = typ MapX.map
 
-type whorn = symbol list * SetX.set * pattern
+type whorn = A.term list * A.world list
 
-structure SearchTab = SymTab(type entrytp = whorn)
+structure SearchTab = MultiTab(type entrytp = whorn)
 
 fun uniqueify (set, []) = []
   | uniqueify (set, sym :: syms) = 
@@ -45,7 +45,7 @@ fun buildSearchTab decl =
     | A.DeclDepends ((w1, ts1), (w2, ts2)) =>
       let
          val (syms, pat) = valOf (SearchTab.lookup w1)
-         val exs = 
+         val exs = SetX.
 
 
 end
