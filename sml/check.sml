@@ -1,9 +1,9 @@
-structure DeclTab = 
+(* structure DeclTab = 
 struct
 
 local 
    exception Decl
-   structure Tab = SymTab(type entrytp = A.decl)
+   structure Tab = Symtab(type entrytp = A.decl)
 in
 open Tab
 fun declWorld x = 
@@ -12,40 +12,92 @@ fun declWorld x =
     | _ => raise Decl
 
 end
-end
-
+end *)
+ 
 
 structure Check = struct
 
 structure A = Ast
-
-type ctx = typ MapX.map
+structure T = Term
 
 type whorn = A.term list * A.world list
 
-structure SearchTab = MultiTab(type entrytp = whorn)
+structure SearchTab = Multitab(type entrytp = whorn)
 
-fun uniqueify (set, []) = []
-  | uniqueify (set, sym :: syms) = 
-    let val sym = Symbol.unique (set, sym) 
-    in sym :: uniqueify (SetX.add (set, sym), syms) end
+exception MatchFail
+exception Invariant
 
-fun buildSearchTab decl = 
-   case decl of 
-      A.DeclWorld (w, args) => 
-      let
-         (* Come up with variable names for the world arguments *)
-         val symCand = map (fn (SOME x, _) => x 
-                             | (_, y) => Symbol.symbol ("?" ^ Symbol.name y))
-         val sym = uniqueify (SetX.empty, symCand) 
+fun assert b subst = if b then subst else raise MatchFail
+
+fun matchTerm pat term subst = 
+   case (pat, T.prj term) of 
+      (A.Const x, T.Structured (y, [])) => assert (x = y) subst
+    | (A.Structured (x, pats), T.Structured (y, terms)) =>
+      if x <> y then raise MatchFail
+      else matchTerms pats terms subst
+    | (A.NatConst n1, T.NatConst n2) => assert (n1 = n2) subst
+    | (A.StrConst s1, T.StrConst s2) => assert (s1 = s2) subst
+    | (A.Var NONE, _) => subst
+    | (A.Var (SOME x), _) => 
+      (case Subst.find subst x of
+          NONE => Subst.extend subst (x, term)
+        | SOME t1 => assert (Term.eq (t1, term)) subst)
+    | _ => raise Invariant 
+
+and matchTerms [] [] subst = subst
+  | matchTerms (pat :: pats) (term :: terms) subst =
+    matchTerms pats terms (matchTerm pat term subst)
+  | matchTerms _ _ _ = raise Invariant
+
+fun strWorld (w, terms) = 
+  case terms of 
+     [] => Symbol.name w
+   | _ => Symbol.name w ^ " " ^ String.concatWith " " (map Term.to_string terms)
+
+fun search (w, terms) = 
+   let 
+      val () = print ("Searching for: " ^ strWorld (w, terms) ^ "\n")
+
+      fun folder ((pats, prems), set) = 
+         let 
+            val subst = matchTerms pats terms Subst.empty
+            fun addPrem ((w, pats), set) = 
+               PredMap.insert (set, (w, map (Subst.apply subst) pats), ())
+         in
+            List.foldl addPrem set prems
+         end
+         handle MatchFail => set
+
+      val results = List.foldl folder PredMap.empty (SearchTab.lookup w)
+   in
+      app (fn world => 
+              print ("Immediate dependency: " ^ strWorld world ^ "\n")) 
+          (PredMap.list results)
+   end
+
+fun check decl = 
+   case decl of
+      A.DeclConst (s, _, _) => 
+      print ("=== Term constant " ^ Symbol.name s ^ " ===\n")
+    | Ast.DeclDatabase (db, _, (w, terms)) => 
+      let 
+         val world = (w, map (Subst.apply Subst.empty) terms) 
       in
-         SearchTab.bind (w, (syms, A.One))
-         ; DeclTab.bind (w, decl)
-      end       
-    | A.DeclDepends ((w1, ts1), (w2, ts2)) =>
-      let
-         val (syms, pat) = valOf (SearchTab.lookup w1)
-         val exs = SetX.
-
+         print ("=== Database: " ^ Symbol.name db ^ "===\n")
+         ; search world
+      end
+    | Ast.DeclDepends ((w, pats), worlds) => 
+      let in
+         print ("=== Dependency for " ^ Symbol.name w ^ " ===\n")
+         ; SearchTab.bind (w, (pats, worlds))
+      end
+    | Ast.DeclRelation (s, _, _) => 
+      print ("=== Relation " ^ Symbol.name s ^ " ===\n")
+    | Ast.DeclRule (ls, s) => 
+      print ("=== Rule ===\n")
+    | Ast.DeclType s => 
+      print ("=== Type " ^ Symbol.name s ^ " ===\n")
+    | Ast.DeclWorld (s, _) => 
+      print ("=== World " ^ Symbol.name s ^ " ===\n")
 
 end

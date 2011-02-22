@@ -17,7 +17,9 @@ local
 
    term.sml
    termmap.sml
+   predmap.sml
    subst.sml
+   check.sml
 
    go.sml
 in
