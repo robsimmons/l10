@@ -11,14 +11,13 @@ datatype term =
 type typ = Symbol.symbol
 type arg = Symbol.symbol option * typ
 type atomic = Symbol.symbol * term list
-
-datatype world = 
-   WConst of Symbol.symbol
- | WStructured of Symbol.symbol * term
+type world = Symbol.symbol * term list
 
 datatype pattern = 
    Atomic of atomic
  | Exists of Symbol.symbol * pattern
+ | Conj of pattern * pattern
+ | One
 
 datatype prem = 
    Normal of pattern
@@ -28,10 +27,19 @@ datatype prem =
 datatype decl = 
    DeclConst of Symbol.symbol * arg list * string
  | DeclDatabase of Symbol.symbol * atomic list * world
- | DeclDepends of Symbol.symbol * Symbol.symbol
+ | DeclDepends of world * world list
  | DeclRelation of Symbol.symbol * arg list * world
  | DeclRule of prem list * atomic list
  | DeclType of Symbol.symbol 
  | DeclWorld of Symbol.symbol * arg list
+
+fun termFV t =
+   case t of 
+      Var (SOME x) => SetX.singleton x
+    | Structured (_, tms) => termsFV tms
+    | _ => SetX.empty
+
+and termsFV ts = 
+   List.foldr (fn (t, set) => SetX.union (termFV t, set)) SetX.empty ts
 
 end

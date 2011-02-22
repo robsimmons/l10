@@ -66,13 +66,17 @@ RedBlackSetFn(struct type ord_key = symbol val compare = Int.compare end)
 structure Map = 
 RedBlackMapFn(struct type ord_key = symbol val compare = Int.compare end)
 
-fun unique set s = 
+fun uniq f s = 
    let 
       fun loop n = 
          let val x = symbol (s ^ Int.toString n) in
-            if Set.member (set, x) then loop (n+1) else x
+            if f x then loop (n+1) else x
          end
    in loop 1 end
+
+
+fun unique set = uniq (fn x => Set.member (set, x))
+fun unique' map = uniq (fn x => Map.inDomain (map, x))
 
 end
 

@@ -5,6 +5,10 @@ $(SML_LIB)/smlnj-lib/Util/smlnj-lib.mlb
 $(SML_LIB)/mlyacc-lib/mlyacc-lib.mlb
 
 local 
+   symbol.sml
+   global.sml
+   symtab.sml
+
    ast.sml
    l10.grm.sig
    l10.grm.sml
@@ -13,6 +17,7 @@ local
 
    term.sml
    termmap.sml
+   subst.sml
 
    go.sml
 in

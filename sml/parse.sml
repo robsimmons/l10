@@ -35,8 +35,8 @@ structure Parse = struct
                  print ("Term constant " ^ Symbol.name s ^ "\n")
                | Ast.DeclDatabase (s, _, _) => 
                  print ("Database " ^ Symbol.name s ^ "\n")
-               | Ast.DeclDepends (w1, w2) => 
-                 print (Symbol.name w1 ^ " after " ^ Symbol.name w2 ^ "\n")
+               | Ast.DeclDepends ((w1, tms), w2) => 
+                 print ("Dependency for " ^ Symbol.name w1 ^ "\n")
                | Ast.DeclRelation (s, _, _) => 
                  print ("Relation " ^ Symbol.name s ^ "\n")
                | Ast.DeclRule (ls, s) => 

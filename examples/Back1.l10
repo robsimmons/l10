@@ -1,0 +1,11 @@
+tree: type.
+leaf: tree.
+limb: tree -> tree.
+branch: tree -> tree -> tree.
+
+w0: world.
+w1: tree -> world.
+
+w1 (branch X Y) <- w1 X, w1 Y.
+w1 (limb X) <- w1 X.
+w1 leaf <- w0.

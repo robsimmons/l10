@@ -40,6 +40,7 @@ eol = ("\013\010"|"\010"|"\013");
 <INITIAL> ":"         => (Tokens.COLON ((), ()));
 <INITIAL> "="         => (Tokens.EQUALS ((), ()));
 <INITIAL> "->"        => (Tokens.RARROW ((), ()));
+<INITIAL> "<-"        => (Tokens.LARROW ((), ()));
 <INITIAL> "@"         => (Tokens.AT ((), ()));
 
 <INITIAL> "=="        => (Tokens.EQEQ ((), ()));
