@@ -1,43 +1,33 @@
-
+// Regular expressions
 
 regexp : type.
-tok:  t -> regexp.                
+tok:  string -> regexp.                
 emp:  regexp.                     
 some: regexp -> regexp.           
 seq:  regexp -> regexp -> regexp. 
 alt:  regexp -> regexp -> regexp. 
-both: regexp -> regexp -> regexp. 
-neg:  regexp -> regexp.          
 
+// Parsing regular expressions
 
-w0 : world.
-w1 : regexp -> world.
+w0: world.
+w1: regexp -> world.
+token: string -> nat -> rel @ w0.
+match: {RE: regexp} nat -> nat -> rel @ w1 RE.
 
-token: t -> nat -> regexp.
-match: { RE : regexp } nat -> nat -> (rel @ (w1 RE)).
-succ: nat -> nat -> native.
-lteq: nat -> nat -> native.
+token T I -> match (tok T) I (I+1).
 
-token T I, succ I J -> match (tok T) I J.
 token _ I -> match emp I I.
-match RE I J, match (some RE) J K -> match (some RE) I K.
-match RE1 I J, match RE2 J K -> match (seq RE1 RE2) I K.
+
+match RE I J -> match (some RE) I J.
+
+match RE I J, 
+match (some RE) J K -> 
+   match (some RE) I K.
+
+match RE1 I J, 
+match RE2 J K -> 
+   match (seq RE1 RE2) I K.
+
 match RE1 I J -> match (alt RE1 RE2) I J.
+
 match RE2 I J -> match (alt RE1 RE2) I J.
-match RE1 I J, match RE2 I J -> match (both RE1 RE2) I J.
-token _ I, token _ J, lteq I J, not (match RE1 I J) -> match (neg RE1) I J.
-
-db1 = (token d 0, token a 1, token a 2, token eof 3) 
-  @ w1 (seq
-         (neg (alt (tok a) (alt (tok b) (tok c)))) 
-         (some (tok a))).
-db2 = (token b 0, token a 1, token a 2, token eof 3) 
-  @ w1 (seq
-         (neg (alt (tok a) (alt (tok b) (tok c)))) 
-         (some (tok a))).
-
-db3=(token f 0, token o 1, token o 2, token eof 3) 
-   @ w1 (seq (tok f) (some (tok o))).
-
-db4=(token b 0, token o 1, token o 2, token eof 3) 
-   @ w1 (seq (tok f) (some (tok o))).

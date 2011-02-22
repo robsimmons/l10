@@ -172,9 +172,10 @@ fun parse syn =
 %nonassoc EQUALS COLON
 %left  LARROW
 %right RARROW
-%right EXISTS
 %right COMMA
 %nonassoc AT
+%nonassoc NEQ EQEQ LEQ GEQ LT GT
+%left PLUS
 
 %%
 
