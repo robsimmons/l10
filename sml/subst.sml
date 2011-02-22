@@ -40,7 +40,7 @@ type subst = Term.term MapX.map
 
 fun to_string subst = 
    let 
-      fun elem_to_str (x, tm) = (Symbol.name x ^ "=" ^ Term.to_string tm)
+      fun elem_to_str (x, tm) = (Symbol.name x ^ "=" ^ Term.strTerm tm)
       val elems = map elem_to_str (MapX.listItemsi subst)
    in
       "{" ^ String.concatWith ", " elems ^ "}"

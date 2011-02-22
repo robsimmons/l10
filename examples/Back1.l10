@@ -9,3 +9,6 @@ w1: tree -> world.
 w1 (branch X Y) <- w1 X, w1 Y.
 w1 (limb X) <- w1 X.
 w1 leaf <- w0.
+
+true: rel @ w0.
+db1 = true @ w1 (branch (branch leaf (limb leaf)) (limb (limb (limb leaf)))).

@@ -125,7 +125,6 @@ fun p_class (id, syn) =
 
 fun p_worldhead (App (x, syns)) =
    let val x = symbol x in
-      print "FOO\n";
       if (Set.member (!worlds, x)) 
       then SOME (x, map p_term syns)
       else NONE

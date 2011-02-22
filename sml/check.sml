@@ -42,17 +42,19 @@ fun matchTerm pat term subst =
       (case Subst.find subst x of
           NONE => Subst.extend subst (x, term)
         | SOME t1 => assert (Term.eq (t1, term)) subst)
-    | _ => raise Invariant 
+    | _ => raise MatchFail
 
 and matchTerms [] [] subst = subst
   | matchTerms (pat :: pats) (term :: terms) subst =
     matchTerms pats terms (matchTerm pat term subst)
-  | matchTerms _ _ _ = raise Invariant
+  | matchTerms _ _ _ = (print "matchTerms\n"; raise Invariant)
 
 fun strWorld (w, terms) = 
   case terms of 
      [] => Symbol.name w
-   | _ => Symbol.name w ^ " " ^ String.concatWith " " (map Term.to_string terms)
+   | _ => 
+     Symbol.name w
+     ^ String.concat (map (fn term => " " ^ Term.strTerm' true term) terms)
 
 fun search (w, terms) = 
    let 

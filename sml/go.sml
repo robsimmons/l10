@@ -2,7 +2,7 @@ structure Go = struct
 
 exception Nope of string 
 
-fun run force =
+fun run filein force =
    let 
       fun loop NONE = (print "Success!\n"; OS.Process.exit OS.Process.success)
         | loop (SOME stream) = 
@@ -15,7 +15,7 @@ fun run force =
    in
       loop
    end handle Parse.Parse s =>
-              raise Nope ("could not parse " ^ filein ^ ".\nProblem: " ^ s)
+              raise Nope ("Error parsing " ^ filein ^ ".\nProblem: " ^ s)
 
 
 val () = 
@@ -61,7 +61,7 @@ val () =
          raise Nope ("unable to open " ^ name ^ " (error " ^ function ^ ")")
    in
       print ("Send output to " ^ fileout ^ "\n")
-      ; run force stream
+      ; run filein force stream
    end handle Nope s => 
       (print ("Error: " ^ s ^ ".\n"); OS.Process.exit OS.Process.success)
 

@@ -18,6 +18,8 @@ type stream =
 
 open L10LrVals.ParserData.Header
 
+exception Parse of string
+
 fun parse filename = 
    let
       val instream = TextIO.openIn filename
@@ -41,7 +43,7 @@ fun parse filename =
             if L10Parse.sameToken (dummyEOF, next)
             then (decl, NONE) 
             else (decl, SOME lexer) 
-         end handle SyntaxError s => raise Fail s
+         end handle SyntaxError s => raise Parse s
    in
       (SOME lexer, loop)
       (* XXX won't parse the empty file correctly *)
