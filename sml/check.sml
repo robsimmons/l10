@@ -114,9 +114,94 @@ fun search' (depmap, refmap, goalmap) =
       end
 
 fun search goal = 
-    search' (PredMap.empty,
-             PredMap.empty,
-             PredMap.insert (PredMap.empty, goal, ()))
+   search' (PredMap.empty,
+            PredMap.insert (PredMap.empty, goal, 0),
+            PredMap.insert (PredMap.empty, goal, ()))
+
+structure Heap = HeapFn(type priority = int val compare = Int.compare)
+
+fun schedule (depmap, refmap) numplaces = 
+    let
+       val heap = Heap.empty ()
+       fun insert (world, refs) = Heap.insert heap refs world
+       val handles = PredMap.mapi insert refmap
+       val sched = Array.array (numplaces, (0, []))
+       val schedmap = ref PredMap.empty
+       exception Done
+
+       (* Obtains all the currently-schedulable worlds *)
+       fun pull worlds =
+          case Heap.min heap of 
+             NONE => worlds
+           | SOME (0, world, hand) => 
+             (Heap.delete heap hand; pull (world :: worlds))
+           | SOME (_, world, hand) => worlds
+
+       (* Decrements a world in the priority queue *)
+       fun decr world = 
+          let 
+             val hand = valOf (PredMap.find (handles, world))
+             val (priority, _) = Heap.get heap hand
+          in
+             Heap.adjust heap hand (priority - 1)
+          end
+
+       (* Handles the scheduling of worlds to places *)
+       fun place n [] = n
+         | place n (world :: worlds) = 
+           let
+              val (seq, placeSched) = Array.sub (sched, n)
+              val worldSched = {place = n, seq = seq}
+           in
+              Array.update (sched, n, (seq+1, world :: placeSched))
+              ; schedmap := PredMap.insert (!schedmap, world, worldSched)
+              ; List.app decr (valOf (PredMap.find (depmap, world))) 
+              ; place ((n + 1) mod numplaces) worlds
+           end
+
+       (* Pulls schedulable worlds and the schedules them *)
+       fun loop n = 
+          case pull [] of
+             [] => Global.assert (fn () => not (isSome (Heap.min heap))) 
+           | worlds => loop (place 0 worlds)
+
+       val rawSchedule = (loop 0; Array.vector sched)
+
+       fun printRawSchedule (place, (n, worlds: gworld list)) = 
+          let
+             fun printWorld (world, n) = 
+                let 
+                   (* val {place, seq} = 
+                          valOf (PredMap.find (!schedmap, world)) *)
+                in
+                   print (Int.toString n ^ ": " ^ strWorld world)
+                   (* ; print (" place:" ^ Int.toString place) *)
+                   (* ; print (" seq:" ^ Int.toString seq) *)
+                   ; print "\n"
+                   ; n+1
+                end
+          in
+             print ("Place " ^ Int.toString place ^ ", " ^ Int.toString n
+                    ^ " world(s) scheduled\n")
+             ; ignore (List.foldr printWorld 0 worlds)
+             ; print "\n"
+          end
+
+    in
+       Vector.appi printRawSchedule rawSchedule
+    end
+           
+(*   let
+      val sched = Array.array (numplaces, [])
+                   
+   (* 
+      fun getZeroes () =
+         PredMap.fold 
+             numplaces
+      *)       
+
+      fun decrease_priority  *)
+                      
 
 fun check decl = 
    case decl of
@@ -125,9 +210,10 @@ fun check decl =
     | Ast.DeclDatabase (db, _, (w, terms)) => 
       let 
          val world = (w, map (Subst.apply Subst.empty) terms) 
+         val () = print ("=== Database: " ^ Symbol.name db ^ "===\n")
+         val sched = schedule (search world) 2
       in
-         print ("=== Database: " ^ Symbol.name db ^ "===\n")
-         ; ignore (search world)
+         ()
       end
     | Ast.DeclDepends ((w, pats), worlds) => 
       let in

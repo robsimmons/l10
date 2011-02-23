@@ -2,9 +2,14 @@ structure PredMap :> sig
 
    type 'a map
    type entry = Symbol.symbol * Term.term list
+
+   (* Expected map functions *)
    val empty: 'a map
    val insert: 'a map * entry * 'a -> 'a map
    val find: 'a map * entry -> 'a option
+   val mapi: (entry * 'a -> 'b) -> 'a map -> 'b map
+
+   (* Treats map like a worklist; tries to remove first element *)
    val remove: 'a map -> ('a map * entry * 'a) option
 
 end = 
@@ -34,6 +39,11 @@ fun find' (terms, []) = NONE
 
 fun find (map, (w, terms)) = find' (terms, lookup (map, w)) 
 
+fun fold f y = 
+   MapX.foldli 
+      (fn (w, termss, y) => 
+          List.foldl (fn ((terms, x), y) => f ((w, terms), x, y)) termss)
+
 (* fun list map = 
    List.concat 
       (List.map 
@@ -51,5 +61,10 @@ fun remove map =
           (map, (w, terms), x)
         | (map, (terms, x) :: termss) => 
           (MapX.insert (map, w, termss), (w, terms), x))
+
+fun mapi f = 
+   MapX.mapi 
+      (fn (w, termss) => 
+          List.map (fn (terms, x) => (terms, f ((w, terms), x))) termss)
 
 end

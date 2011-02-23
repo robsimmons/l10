@@ -5,6 +5,9 @@ $(SML_LIB)/smlnj-lib/Util/smlnj-lib.mlb
 $(SML_LIB)/mlyacc-lib/mlyacc-lib.mlb
 
 local 
+   util/heap-sig.sml
+   util/heap.sml
+
    symbol.sml
    global.sml
    symtab.sml
