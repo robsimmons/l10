@@ -4,27 +4,24 @@ $(SML_LIB)/smlnj-lib/PP/pp-lib.mlb
 $(SML_LIB)/smlnj-lib/Util/smlnj-lib.mlb
 $(SML_LIB)/mlyacc-lib/mlyacc-lib.mlb
 
-local 
-   util/heap-sig.sml
-   util/heap.sml
+util/heap-sig.sml
+util/heap.sml
 
-   symbol.sml
-   global.sml
-   symtab.sml
+symbol.sml
+global.sml
+ast.sml
+symtab.sml
 
-   ast.sml
-   l10.grm.sig
-   l10.grm.sml
-   l10.lex.sml
-   parse.sml
+parse/l10.grm.sig
+parse/l10.grm.sml
+parse/l10.lex.sml
+parse/parse.sml
 
-   term.sml
-   termmap.sml
-   predmap.sml
-   subst.sml
-   check.sml
+term/term.sml
+term/termmap.sml
+term/predmap.sml
+term/subst.sml
 
-   go.sml
-in
-   structure Go
-end
+check/check.sml
+
+frontend/go.sml

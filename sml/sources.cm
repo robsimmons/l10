@@ -9,15 +9,16 @@ Group is
 
    symbol.sml
    global.sml
+   ast.sml
    symtab.sml
 
-   ast.sml
-   l10.lex
-   l10.grm
-   parse.sml
+   parse/l10.lex
+   parse/l10.grm
+   parse/parse.sml
 
-   term.sml
-   termmap.sml
-   predmap.sml
-   subst.sml
-   check.sml
+   term/term.sml
+   term/termmap.sml
+   term/predmap.sml
+   term/subst.sml
+
+   check/check.sml
