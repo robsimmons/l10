@@ -49,6 +49,8 @@ and matchTerms [] [] subst = subst
     matchTerms pats terms (matchTerm pat term subst)
   | matchTerms _ _ _ = (print "matchTerms\n"; raise Invariant)
 
+type gworld = Symbol.symbol * Term.term list
+
 fun strWorld (w, terms) = 
   case terms of 
      [] => Symbol.name w
@@ -56,26 +58,65 @@ fun strWorld (w, terms) =
      Symbol.name w
      ^ String.concat (map (fn term => " " ^ Term.strTerm' true term) terms)
 
-fun search (w, terms) = 
+fun eqWorld ((w1, terms1): gworld, (w2, terms2)) = 
+   w1 = w2 andalso ListPair.all Term.eq (terms1, terms2)
+
+(* Gets all immediate world dependencies of a world based on SearchTab *)
+fun immediateDependencies (world as (w, terms)) = 
    let 
-      val () = print ("Searching for: " ^ strWorld (w, terms) ^ "\n")
-
-      fun folder ((pats, prems), set) = 
-         let 
-            val subst = matchTerms pats terms Subst.empty
-            fun addPrem ((w, pats), set) = 
-               PredMap.insert (set, (w, map (Subst.apply subst) pats), ())
-         in
-            List.foldl addPrem set prems
-         end
-         handle MatchFail => set
-
-      val results = List.foldl folder PredMap.empty (SearchTab.lookup w)
+      val filter: gworld list -> gworld list =
+         List.filter (fn world' => not (eqWorld (world, world')))
+      val apply: Subst.subst -> A.world -> gworld =
+         fn subst => fn (w, pats) => (w, map (Subst.apply subst) pats)
+      fun mapper (pats, prems) = 
+         filter (map (apply (matchTerms pats terms Subst.empty)) prems)
+         handle MatchFail => []
    in
-      app (fn world => 
-              print ("Immediate dependency: " ^ strWorld world ^ "\n")) 
-          (PredMap.list results)
+      List.concat (map mapper (SearchTab.lookup w))
    end
+
+(* Ascertain all dependencies for a given world
+  Invariants
+  - Keys(refmap) = Keys(depmap) ∪ Keys(goalmap)
+  - depmap contains all the immediate dependencies of 
+  - refmap(world) = occurances of world in depmap
+  - goalmap is the set of all unfilled goals in depmap
+*)
+fun search' (depmap, refmap, goalmap) = 
+   case PredMap.remove goalmap of
+      NONE => (depmap, refmap)
+    | SOME (goalmap, world, ()) => 
+      let
+         val () = print ("Immediate dependencies of " ^ strWorld world ^ "\n")
+
+         val deps = immediateDependencies world
+
+         val () = print ("There are " ^ Int.toString (length deps) ^ "\n")
+
+         fun dependencies (world, goalmap) = 
+            if isSome (PredMap.find (depmap, world)) 
+            then (print ("World " ^ strWorld world ^ " already considered\n")
+                  ; goalmap)
+            else if isSome (PredMap.find (goalmap, world)) (* XXX cosmetic *)
+            then (print ("World " ^ strWorld world ^ " already among goals\n")
+                  ; goalmap)
+            else (print ("World " ^ strWorld world ^ " not yet consdiered\n")
+                  ; PredMap.insert (goalmap, world, ()))
+
+         fun references (world, refmap) = 
+            case PredMap.find (refmap, world) of
+               NONE => PredMap.insert (refmap, world, 1)
+             | SOME n => PredMap.insert (refmap, world, n+1)
+      in
+         search' (PredMap.insert (depmap, world, deps)
+                  , List.foldl references refmap deps
+                  , List.foldl dependencies goalmap deps)
+      end
+
+fun search goal = 
+    search' (PredMap.empty,
+             PredMap.empty,
+             PredMap.insert (PredMap.empty, goal, ()))
 
 fun check decl = 
    case decl of
@@ -86,7 +127,7 @@ fun check decl =
          val world = (w, map (Subst.apply Subst.empty) terms) 
       in
          print ("=== Database: " ^ Symbol.name db ^ "===\n")
-         ; search world
+         ; ignore (search world)
       end
     | Ast.DeclDepends ((w, pats), worlds) => 
       let in

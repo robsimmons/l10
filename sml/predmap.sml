@@ -5,7 +5,7 @@ structure PredMap :> sig
    val empty: 'a map
    val insert: 'a map * entry * 'a -> 'a map
    val find: 'a map * entry -> 'a option
-   val list: 'a map -> entry list
+   val remove: 'a map -> ('a map * entry * 'a) option
 
 end = 
 struct
@@ -34,10 +34,22 @@ fun find' (terms, []) = NONE
 
 fun find (map, (w, terms)) = find' (terms, lookup (map, w)) 
 
-fun list map = 
+(* fun list map = 
    List.concat 
       (List.map 
          (fn (w, termss) => List.map (fn (terms, _) => (w, terms)) termss)
-         (MapX.listItemsi map))
+         (MapX.listItemsi map)) *)
+
+exception Invariant
+fun remove map = 
+   case MapX.firsti map of 
+      NONE => NONE
+    | SOME (w, _) => SOME
+      (case MapX.remove (map, w) of 
+          (map, []) => raise Invariant
+        | (map, [ (terms, x) ]) => 
+          (map, (w, terms), x)
+        | (map, (terms, x) :: termss) => 
+          (MapX.insert (map, w, termss), (w, terms), x))
 
 end
