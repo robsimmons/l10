@@ -87,21 +87,21 @@ fun search' (depmap, refmap, goalmap) =
       NONE => (depmap, refmap)
     | SOME (goalmap, world, ()) => 
       let
-         val () = print ("Immediate dependencies of " ^ strWorld world ^ "\n")
+         (* val () = print ("Immediate deps of " ^ strWorld world ^ "\n") *)
 
          val deps = immediateDependencies world
 
-         val () = print ("There are " ^ Int.toString (length deps) ^ "\n")
+         (* val () = print ("There are " ^ Int.toString (length deps) ^ "\n") *)
 
          fun dependencies (world, goalmap) = 
             if isSome (PredMap.find (depmap, world)) 
-            then (print ("World " ^ strWorld world ^ " already considered\n")
-                  ; goalmap)
-            else if isSome (PredMap.find (goalmap, world)) (* XXX cosmetic *)
-            then (print ("World " ^ strWorld world ^ " already among goals\n")
-                  ; goalmap)
-            else (print ("World " ^ strWorld world ^ " not yet consdiered\n")
-                  ; PredMap.insert (goalmap, world, ()))
+            then ((*print ("World " ^ strWorld world ^ " already considered\n")
+                  ;*) goalmap)
+            (* else if isSome (PredMap.find (goalmap, world)) (* XXX cosmetic *)
+            then ((*print ("World " ^ strWorld world ^ " already among goals\n")
+                  ;*) goalmap) *)
+            else ((*print ("World " ^ strWorld world ^ " not yet consdiered\n")
+                  ;*) PredMap.insert (goalmap, world, ()))
 
          fun references (world, refmap) = 
             case PredMap.find (refmap, world) of
