@@ -1,9 +1,9 @@
 MLTON = mlton -const "Exn.keepHistory true" -default-ann "redundantMatch error" -default-ann "sequenceNonUnit error" -output 
 
-frontend: sml/*.sml sml/parse/l10.lex sml/parse/l10.grm
+smlten: sml/*.sml sml/parse/l10.lex sml/parse/l10.grm
 	mllex sml/parse/l10.lex
 	mlyacc sml/parse/l10.grm
-	$(MLTON) bin/l10front sml/sources.mlb
+	$(MLTON) bin/smlten sml/sources.mlb
 
 frontend-basic: sml/*.sml sml/l10.lex sml/l10.grm
 	mlton -output bin/l10front sml/sources.mlb

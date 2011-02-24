@@ -6,11 +6,11 @@ $(SML_LIB)/mlyacc-lib/mlyacc-lib.mlb
 
 util/heap-sig.sml
 util/heap.sml
+util/symbol.sml
 
-symbol.sml
-global.sml
-ast.sml
-symtab.sml
+core/global.sml
+core/ast.sml
+core/symtab.sml
 
 parse/l10.grm.sig
 parse/l10.grm.sml
