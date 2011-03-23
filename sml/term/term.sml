@@ -22,7 +22,8 @@ structure Term :> sig
    val NatConst' : IntInf.int -> term
    val eq : term * term -> bool
    val compare : term * term -> order
-   val to_string : term -> string
+   val strTerm' : bool -> term -> string
+   val strTerm : term -> string
 
 end = 
 struct
@@ -83,5 +84,20 @@ fun to_string term =
       Symbol.name x ^ "(" ^ String.concatWith ", " (map to_string tms) ^ ")"
     | StrConst s => "\"" ^ s ^ "\""
     | NatConst n => IntInf.toString n
+
+fun lp parens = if parens then "(" else ""
+fun rp parens = if parens then ")" else ""
+
+fun strTerm' parens term = 
+   case prj term of 
+      Structured (x, []) => Symbol.name x
+    | Structured (x, terms) => 
+      lp parens ^ Symbol.name x 
+      ^ String.concat (map (fn term => " " ^ strTerm' true term) terms) 
+      ^ rp parens
+    | StrConst s => "\"" ^ s ^ "\""
+    | NatConst n => IntInf.toString n
+
+val strTerm = strTerm' false
  
 end

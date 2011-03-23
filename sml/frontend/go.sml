@@ -2,6 +2,22 @@ structure Go = struct
 
 exception Nope of string 
 
+fun run filein force =
+   let 
+      fun loop NONE = (print "Success!\n"; OS.Process.exit OS.Process.success)
+        | loop (SOME stream) = 
+          let 
+             val (decl, stream) = force stream
+          in 
+             Check.check decl
+             ; loop stream
+          end
+   in
+      loop
+   end handle Parse.Parse s =>
+              raise Nope ("Error parsing " ^ filein ^ ".\nProblem: " ^ s)
+
+
 val () = 
    let 
       fun join (dir, file) = OS.Path.joinDirFile {dir = dir, file = file}
@@ -40,16 +56,12 @@ val () =
                           ^ Int.toString (length args)))
 
       val () = print ("Reading " ^ filein ^ "\n")
-      val program = Parse.parse filein
+      val (stream, force) = Parse.parse filein
          handle IO.Io {name, function, cause} =>
          raise Nope ("unable to open " ^ name ^ " (error " ^ function ^ ")")
-              | Parse.Parse s =>
-         raise Nope ("could not parse " ^ filein ^ ".\nProblem: " ^ s)
    in
-      print ("Parsed " ^ Int.toString (length program) ^ " lines(s)\n")
-      ; print ("Send output to " ^ fileout ^ "\n")
-      ; print ("Success!\n")
-      ; OS.Process.exit OS.Process.success
+      print ("Send output to " ^ fileout ^ "\n")
+      ; run filein force stream
    end handle Nope s => 
       (print ("Error: " ^ s ^ ".\n"); OS.Process.exit OS.Process.success)
 

@@ -33,6 +33,24 @@ datatype decl =
  | DeclType of Symbol.symbol 
  | DeclWorld of Symbol.symbol * arg list
 
+fun lp parens = if parens then "(" else ""
+fun rp parens = if parens then ")" else ""
+
+fun strTerm' parens term = 
+   case term of 
+      Const c => Symbol.name c
+    | NatConst i => IntInf.toString i
+    | StrConst s => "\"" ^ s ^ "\""
+    | Structured (f, terms) => 
+      lp parens 
+      ^ Symbol.name f 
+      ^ String.concat (map (fn term => " " ^ strTerm' true term) terms)
+      ^ rp parens
+    | Var NONE => "_"
+    | Var (SOME x) => Symbol.name x
+
+fun strTerm term = strTerm' false term
+
 fun termFV t =
    case t of 
       Var (SOME x) => SetX.singleton x
