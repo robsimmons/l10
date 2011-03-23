@@ -51,6 +51,27 @@ fun strTerm' parens term =
 
 fun strTerm term = strTerm' false term
 
+fun strWorld' parens (w, []) = Symbol.name w
+  | strWorld' parens (w, terms) =
+    lp parens
+    ^ Symbol.name w 
+    ^ String.concat (map (fn term => " " ^ (strTerm' true) term) terms)
+    ^ rp parens
+
+fun strAtomic' parens (a, []) = Symbol.name a
+  | strAtomic' parens (a, terms) =
+    lp parens
+    ^ Symbol.name a
+    ^ String.concat (map (fn term => " " ^ (strTerm' true) term) terms)
+    ^ rp parens
+
+fun strPattern pat = 
+   case pat of
+      Atomic atm => strAtomic' false atm
+    | Exists (x, pat0) => "(Ex " ^ Symbol.name x ^ ". " ^ strPattern pat0 ^ ")"
+    | Conj (pat1, pat2) => strPattern pat1 ^ ", " ^ strPattern pat2
+    | One => "<<one>>"
+
 fun termFV t =
    case t of 
       Var (SOME x) => SetX.singleton x

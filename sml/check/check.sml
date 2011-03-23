@@ -22,10 +22,30 @@ structure T = Term
 
 type whorn = A.term list * A.world list
 
+structure RelTab = Symtab(type entrytp = A.arg list * A.world)
 structure SearchTab = Multitab(type entrytp = whorn)
 
 exception MatchFail
 exception Invariant
+
+fun pullWorld (a, terms) = 
+   case RelTab.lookup a of
+      NONE => raise Fail ("Undeclared relation " ^ Symbol.name a)
+    | SOME (args, (w, worldterms)) =>
+      let 
+         fun folder ((arg, _), term, map) =
+            case arg of 
+               NONE => map
+             | SOME x => MapX.insert (map, x, term)
+         val map = ListPair.foldl folder MapX.empty (args, terms)
+         val worldterms' = 
+            List.map (fn (A.Var (SOME x)) => MapX.lookup (map, x)) worldterms
+      in
+         (w, worldterms')
+      end
+
+fun pullDependency (prems, []) = (print "no concs"; raise Invariant)
+  | pullDependency (prems, conc :: concs) = pullWorld conc
 
 fun assert b subst = if b then subst else raise MatchFail
 
@@ -207,7 +227,7 @@ fun check decl =
    case decl of
       A.DeclConst (s, _, _) => 
       print ("=== Term constant " ^ Symbol.name s ^ " ===\n")
-    | Ast.DeclDatabase (db, _, (w, terms)) => 
+    | A.DeclDatabase (db, _, (w, terms)) => 
       let 
          val world = (w, map (Subst.apply Subst.empty) terms) 
          val () = print ("=== Database: " ^ Symbol.name db ^ "===\n")
@@ -215,18 +235,28 @@ fun check decl =
       in
          ()
       end
-    | Ast.DeclDepends ((w, pats), worlds) => 
+    | A.DeclDepends ((w, pats), worlds) => 
       let in
          print ("=== Dependency for " ^ Symbol.name w ^ " ===\n")
          ; SearchTab.bind (w, (pats, worlds))
+         ; print (A.strWorld' false (w, pats))
+         ; print " <-" 
+         ; print (String.concat
+                     (map (fn world => " " ^ A.strWorld' true world) worlds))
       end
-    | Ast.DeclRelation (s, _, _) => 
-      print ("=== Relation " ^ Symbol.name s ^ " ===\n")
-    | Ast.DeclRule (ls, s) => 
-      print ("=== Rule ===\n")
-    | Ast.DeclType s => 
+    | A.DeclRelation (s, args, world) => 
+      let in
+         print ("=== Relation " ^ Symbol.name s ^ " ===\n")
+         ; RelTab.bind (s, (args, world))
+      end
+    | A.DeclRule (prems, concs) => 
+      let in
+         print ("=== Rule ===\nAt world ")
+         ; print (A.strWorld' false (pullDependency (prems, concs)) ^ "\n")
+      end
+    | A.DeclType s => 
       print ("=== Type " ^ Symbol.name s ^ " ===\n")
-    | Ast.DeclWorld (s, _) => 
+    | A.DeclWorld (s, _) => 
       print ("=== World " ^ Symbol.name s ^ " ===\n")
 
 end
