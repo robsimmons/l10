@@ -1,7 +1,54 @@
+// Commands
 
+w0: world.
+line: nat -> inst -> rel @ w0.
 
+inst: type.
+binop:  t -> t -> t -> t -> inst.
+move:   t -> t -> inst.
+loadc:  t -> t -> inst.
+goto:   nat -> inst.
+if:     t -> t -> t -> nat -> inst.
+return: t -> inst.
 
-// WORLD 2: Liveness analysis
+// Extracting relevant information 
+
+succ: nat -> nat -> rel @ w0.
+def:  nat -> t -> rel @ w0.
+use:  nat -> t -> rel @ w0.
+
+line L (binop X Y Op Z) -> 
+   succ L (L+1),
+   def L X,
+   use L Y, use L Z.
+
+line L (move X Y) -> 
+   succ L (L+1),
+   def L X,
+   use L Y.
+
+line L (loadc X C) ->
+   succ L (L+1),
+   def L X.
+   // no variables used
+
+line L (goto L') ->
+   succ L L'.
+   // no variables defined
+   // no variables used
+
+line L (if X Cmp C1 L') ->
+   succ L L', succ L (L+1),
+   // no variables defined
+   use L X.
+
+line L (return X) ->
+   // no successors
+   // no variables defined
+   use L X.
+
+// Liveness analysis
+
 wLive: world.
 live: nat -> t -> rel @ wLive.
 
@@ -12,48 +59,55 @@ succ L L',
 not (def L U) -> 
    live L U.
 
-// WORLD 3: Interference analysis
+// Constructing the interference graph
+
 wInter: world.
 interferes: t -> t -> rel @ wInter.
 
 def L X, 
-not (Ex Y. line L (move X Y)), 
-succ L L1, 
-live L1 Z, 
+not (line L (move X _)), 
+succ L L', 
+live L' Z, 
 X != Z -> 
    interferes X Z.
 
 line L (move X Y), 
-succ L L1, 
-live L1 Z, 
-not (eq X Z), 
-not (eq Y Z) -> 
+succ L L', 
+live L' Z, 
+X != Z, 
+Y != Z -> 
    interferes X Z.
 
-//Neededness analysis
+// Necessary variables
 
-nec : nat -> t -> rel @ w0.
-
+nec: nat -> t -> rel @ w0.
 line L (if X Comp C L1) -> nec L X.
 line L (return X) -> nec L X.
 
-wNeed : world.
-needed : nat -> t -> rel @ wNeed.
+// Neededness analysis
+
+wNeed: world.
+needed: nat -> t -> rel @ wNeed.
 
 nec L X -> needed L X.
-needed L1 U , succ L L1 , not (def L U) -> needed L U.
-use L Y , def L X , succ L L1 , needed L1 X -> needed L Y.
 
-//Deadcode analysis
+needed L' X, 
+succ L L', 
+not (def L X) ->
+   needed L X.
 
-wDead : world.
+use L Y, 
+def L X, 
+succ L L', 
+needed L' X ->
+   needed L Y.
 
-dead : nat -> rel @ wDead.
-def L X , succ L L1 , not (needed L1 X) -> dead L.
+// Dead-code analysis
 
+wDead: world.
+dead: nat -> rel @ wDead.
 
-db1 = (line 0 (loadc p 1) , line 1 (binop p p times x) , line 2 (binop z p plus 1)
-           line 3 (binop x x minus 1) , line 4 (if x grt 0 2) , line 5 (return x)) @ wDead.
-
-db2 = (line 0 (loadc p 1) , line 1 (binop p p times x) , line 2 (binop z z plus 1)
-           line 3 (binop x x minus 1) , line 4 (if x grt 0 2) , line 5 (return x)) @ wLive.
+def L X, 
+succ L L', 
+not (needed L' X) -> 
+   dead L.

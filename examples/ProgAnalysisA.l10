@@ -1,0 +1,49 @@
+// Commands
+
+w0: world.
+line: nat -> inst -> rel @ w0.
+
+inst: type.
+binop:  t -> t -> t -> t -> inst.
+move:   t -> t -> inst.
+loadc:  t -> t -> inst.
+goto:   nat -> inst.
+if:     t -> t -> t -> nat -> inst.
+return: t -> inst.
+
+// Extracting relevant information 
+
+succ: nat -> nat -> rel @ w0.
+def:  nat -> t -> rel @ w0.
+use:  nat -> t -> rel @ w0.
+
+line L (binop X Y Op Z) -> 
+   succ L (L+1),
+   def L X,
+   use L Y, use L Z.
+
+line L (move X Y) -> 
+   succ L (L+1),
+   def L X,
+   use L Y.
+
+line L (loadc X C) ->
+   succ L (L+1),
+   def L X.
+   // no variables used
+
+line L (goto L') ->
+   succ L L'.
+   // no variables defined
+   // no variables used
+
+line L (if X Cmp C1 L') ->
+   succ L L', succ L (L+1),
+   // no variables defined
+   use L X.
+
+line L (return X) ->
+   // no successors
+   // no variables defined
+   use L X.
+

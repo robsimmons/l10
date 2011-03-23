@@ -1,0 +1,24 @@
+// Necessary variables
+
+nec: nat -> t -> rel @ w0.
+line L (if X Comp C L1) -> nec L X.
+line L (return X) -> nec L X.
+
+// Neededness analysis
+
+wNeed: world.
+needed: nat -> t -> rel @ wNeed.
+
+nec L X -> needed L X.
+
+needed L' X, 
+succ L L', 
+not (def L X) ->
+   needed L X.
+
+use L Y, 
+def L X, 
+succ L L', 
+needed L' X ->
+   needed L Y.
+

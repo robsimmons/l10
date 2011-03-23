@@ -1,0 +1,12 @@
+// Liveness analysis
+
+wLive: world.
+live: nat -> t -> rel @ wLive.
+
+use L X -> live L X.
+
+live L' U, 
+succ L L', 
+not (def L U) -> 
+   live L U.
+
