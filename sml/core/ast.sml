@@ -19,10 +19,13 @@ datatype pattern =
  | Conj of pattern * pattern
  | One
 
+datatype binrel = Eq | Neq | Gt | Lt | Geq | Leq 
+
 datatype prem = 
    Normal of pattern
  | Negated of pattern
  | Count of pattern * term
+ | Binrel of binrel * term * term
 
 datatype decl = 
    DeclConst of Symbol.symbol * arg list * Symbol.symbol
@@ -35,6 +38,11 @@ datatype decl =
 
 fun lp parens = if parens then "(" else ""
 fun rp parens = if parens then ")" else ""
+
+fun strBinrel binrel = 
+   case binrel of 
+      Eq => "==" | Neq => "!=" 
+    | Gt => ">" | Lt => "<" | Geq => ">=" | Leq => "<="
 
 fun strTerm' parens term = 
    case term of 
@@ -64,6 +72,7 @@ fun strAtomic' parens (a, []) = Symbol.name a
     ^ Symbol.name a
     ^ String.concat (map (fn term => " " ^ (strTerm' true) term) terms)
     ^ rp parens
+val strAtomic = strAtomic' false
 
 fun strPattern pat = 
    case pat of
@@ -71,6 +80,14 @@ fun strPattern pat =
     | Exists (x, pat0) => "(Ex " ^ Symbol.name x ^ ". " ^ strPattern pat0 ^ ")"
     | Conj (pat1, pat2) => strPattern pat1 ^ ", " ^ strPattern pat2
     | One => "<<one>>"
+
+fun strPrem prem = 
+   case prem of 
+      Normal pattern => strPattern pattern
+    | Negated pattern => "not (" ^ strPattern pattern ^ ")"
+    | Count pattern => "countxxxx"
+    | Binrel (br, term1, term2) => 
+      strTerm term1 ^ " " ^ strBinrel br ^ " " ^ strTerm term2
 
 val strTyps = 
    String.concat o map (fn typ => Symbol.name typ ^ " -> ")

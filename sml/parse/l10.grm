@@ -24,6 +24,7 @@ datatype syn =
  | World
  | Type 
  | Rel
+ | Binrel of A.binrel * syn * syn
 
 fun string syn =
    case syn of  
@@ -42,6 +43,8 @@ fun string syn =
     | World => "world"
     | Type => "type"
     | Rel => "rel"
+    | Binrel (br, s1, s2) => 
+      "(" ^ string s1 ^ " " ^ A.strBinrel br ^ " " ^ string s2 ^ ")"
 
 exception Internal
 exception SyntaxError of string
@@ -95,6 +98,7 @@ fun p_prem syn =
    case syn of 
       App ("not", [ syn ]) => A.Negated (p_pat syn)
     | App ("count", [ syn1 , syn2 ]) => A.Count (p_pat syn1, p_term syn2)
+    | Binrel (br, syn1, syn2) => A.Binrel (br, p_term syn1, p_term syn2)
     | _ => A.Normal (p_pat syn)
 
 fun p_prems syn = 
@@ -193,12 +197,12 @@ syn   : LCID COLON syn            (Ascribe (LCID, syn))
       | EXISTS UCID PERIOD syn    (Ex (UCID, syn))
       | simp                      (simp)
       | LCID sings                (App (LCID, sings)) 
-      | syn EQEQ syn              (App ("_eq", [ syn1, syn2 ]))  
-      | syn NEQ syn               (App ("_neq", [ syn1, syn2 ]))  
-      | syn GT syn                (App ("_gt", [ syn1, syn2 ]))  
-      | syn LT syn                (App ("_lt", [ syn1, syn2 ]))  
-      | syn GEQ syn               (App ("_geq", [ syn1, syn2 ]))  
-      | syn LEQ syn               (App ("_leq", [ syn1, syn2 ]))  
+      | syn EQEQ syn              (Binrel (A.Eq,  syn1, syn2))  
+      | syn NEQ syn               (Binrel (A.Neq, syn1, syn2))  
+      | syn GT syn                (Binrel (A.Gt,  syn1, syn2))
+      | syn LT syn                (Binrel (A.Lt,  syn1, syn2))
+      | syn GEQ syn               (Binrel (A.Geq, syn1, syn2))
+      | syn LEQ syn               (Binrel (A.Leq, syn1, syn2))
       | syn PLUS syn              (App ("_plus", [ syn1, syn2 ]))  
 
 simp  : LPAREN syn RPAREN         (syn) 

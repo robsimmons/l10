@@ -13,7 +13,7 @@ struct
    val t = Symbol.symbol "t"
    val nat = Symbol.symbol "nat"
    val string = Symbol.symbol "string"
-   val setup = 
+   val _ = 
       let in
          bind (t, CONSTANTS)
          ; bind (nat, SPECIAL)
@@ -32,7 +32,16 @@ structure WorldTab = Symtab(type entrytp = Ast.typ list)
  *
  * For a term constant a : tp1 -> ... -> tpn -> tp, 
  * ConTab.lookup a = SOME ([ tp1, ..., tpn ], tp) *)
-structure ConTab = Symtab(type entrytp = Ast.typ list * Ast.typ)
+structure ConTab = 
+struct
+   structure S = Symtab(type entrytp = Ast.typ list * Ast.typ)
+   open S
+   val plus = Symbol.symbol "_plus"
+   val _ = 
+      let in
+         bind (plus, ([ TypeTab.nat, TypeTab.nat ], TypeTab.nat))
+      end
+end
 
 (* Relation constant table
  *

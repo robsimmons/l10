@@ -33,35 +33,35 @@ fun loadDecl decl =
 
     | A.DeclConst (c, args, typ) => 
       let val typs = map #2 args in
-         print (name c ^ ": " ^ A.strTyps typs ^ name typ ^ "\n")
+         print (name c ^ ": " ^ A.strTyps typs ^ name typ ^ ".\n")
          ; ConTab.bind (c, (map #2 args, typ))
       end
 
     | A.DeclRelation (r, args, world) => 
       let in
          print (name r ^ ": " ^ A.strArgs args 
-                ^ "rel @ " ^ A.strWorld world ^ "\n")
+                ^ "rel @ " ^ A.strWorld world ^ ".\n")
          ; RelTab.bind (r, (args, world))
       end
 
     | A.DeclDepends (world, worlds) => 
       let in
-         print (A.strWorld world ^ " <- ...\n")
+         print (A.strWorld world ^ " <- "
+                ^ String.concatWith ", " (map A.strWorld worlds) ^ ".\n")
       end
 
     | A.DeclRule (prems, concs) => 
       let in
-         print ("... -> ....\n")
+         print (String.concatWith ", " (map A.strPrem prems) ^ "\n")
+         ; print (" -> " ^ String.concatWith ", " (map A.strAtomic concs) 
+                  ^ ".\n")
       end
 
-    | A.DeclDatabase (db, prems, world) => 
+    | A.DeclDatabase (db, facts, world) => 
       let in 
-         print (name db ^ " = (...) @ " ^ A.strWorld world ^ "\n") 
+         print (name db ^ " = (" 
+                ^ String.concatWith ", " (map A.strAtomic facts) 
+                ^ ")\n   @ " ^ A.strWorld world ^ "\n") 
       end
-
-val setup = 
-  (TypeTab.bind (Symbol.symbol "t", TypeTab.CONSTANTS)
-   ; TypeTab.bind (Symbol.symbol "nat", TypeTab.SPECIAL)
-   ; TypeTab.bind (Symbol.symbol "string", TypeTab.SPECIAL))
 
 end
