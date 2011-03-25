@@ -25,7 +25,7 @@ datatype prem =
  | Count of pattern * term
 
 datatype decl = 
-   DeclConst of Symbol.symbol * arg list * string
+   DeclConst of Symbol.symbol * arg list * Symbol.symbol
  | DeclDatabase of Symbol.symbol * atomic list * world
  | DeclDepends of world * world list
  | DeclRelation of Symbol.symbol * arg list * world
@@ -48,8 +48,7 @@ fun strTerm' parens term =
       ^ rp parens
     | Var NONE => "_"
     | Var (SOME x) => Symbol.name x
-
-fun strTerm term = strTerm' false term
+val strTerm = strTerm' false 
 
 fun strWorld' parens (w, []) = Symbol.name w
   | strWorld' parens (w, terms) =
@@ -57,6 +56,7 @@ fun strWorld' parens (w, []) = Symbol.name w
     ^ Symbol.name w 
     ^ String.concat (map (fn term => " " ^ (strTerm' true) term) terms)
     ^ rp parens
+val strWorld = strWorld' false
 
 fun strAtomic' parens (a, []) = Symbol.name a
   | strAtomic' parens (a, terms) =
@@ -71,6 +71,15 @@ fun strPattern pat =
     | Exists (x, pat0) => "(Ex " ^ Symbol.name x ^ ". " ^ strPattern pat0 ^ ")"
     | Conj (pat1, pat2) => strPattern pat1 ^ ", " ^ strPattern pat2
     | One => "<<one>>"
+
+val strTyps = 
+   String.concat o map (fn typ => Symbol.name typ ^ " -> ")
+
+val strArgs = 
+   String.concat 
+   o map (fn (NONE, typ) => Symbol.name typ ^ " -> "
+           | (SOME x, typ) => 
+             "{" ^ Symbol.name x ^ ": " ^ Symbol.name typ ^ "} ")
 
 fun termFV t =
    case t of 

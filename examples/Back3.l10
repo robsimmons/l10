@@ -1,14 +1,14 @@
-nat: type.
-zero: nat.
-suc: nat -> nat.
+n: type.
+zero: n.
+suc: n -> n.
 
-w: nat -> nat -> nat -> world.
+w: n -> n -> n -> world.
 
 w (suc N) M P <- w N M P.
 w N (suc M) P <- w N M P.
 w N M (suc P) <- w N M P.
 
-true : rel @ w zero zero.
+true : rel @ w zero zero zero.
 db0 = true @ w (suc zero) (suc zero) (suc zero).
 db1 = true @ w (suc (suc (suc (suc (suc (suc zero)))))) zero zero.
 db2 = true @ w (suc (suc (suc zero))) (suc (suc (suc zero))) (suc (suc zero)).

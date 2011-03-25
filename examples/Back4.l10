@@ -1,0 +1,12 @@
+n: type.
+zero: n.
+suc: n -> n.
+
+w0: n -> world.
+w1: n -> n -> world.
+
+w1 (suc N) M <- w1 N M, w1 N (suc M).
+w1 N M <- w0 N, w0 M.
+
+true : rel @ w0 zero.
+db0 = true @ w1 (suc (suc zero)) (suc (suc zero)).

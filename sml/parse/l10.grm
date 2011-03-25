@@ -50,7 +50,7 @@ val worlds = ref Set.empty (* map of the worlds *)
 
 fun cons (arg, decl) =
    case decl of 
-      A.DeclConst (id, args, w) => A.DeclConst (id, arg :: args, w)
+      A.DeclConst (id, args, typ) => A.DeclConst (id, arg :: args, typ)
     | A.DeclRelation (id, args, w) => A.DeclRelation (id, arg :: args, w) 
     | A.DeclWorld (id, args) => A.DeclWorld (id, arg :: args)
     | _ => raise Internal
@@ -114,7 +114,7 @@ fun p_class (id, syn) =
       Arrow (typ, s) => cons ((NONE, p_typ typ), p_class (id, s))
     | Pi (Ascribe (x, typ), s) => 
       cons ((SOME (symbol x), p_typ typ), p_class (id, s))
-    | App (typ, []) => A.DeclConst (id, [], typ)
+    | App (typ, []) => A.DeclConst (id, [], symbol typ)
     | World => 
       (worlds := Set.add (!worlds, id); A.DeclWorld (id, []))
     | At (Rel, syn) => A.DeclRelation (id, [], p_atomic syn)

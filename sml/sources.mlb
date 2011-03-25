@@ -22,6 +22,9 @@ term/termmap.sml
 term/predmap.sml
 term/subst.sml
 
+check/tabs.sml
+check/types.sml
+check/load.sml
 check/check.sml
 
 frontend/go.sml

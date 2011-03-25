@@ -9,7 +9,9 @@ fun run filein force =
           let 
              val (decl, stream) = force stream
           in 
-             Check.check decl
+             Types.checkDecl decl
+             ; Load.loadDecl decl
+             (* ; Check.check decl *)
              ; loop stream
           end
    in
