@@ -8,6 +8,27 @@ datatype term =
  | Structured of Symbol.symbol * term list
  | Var of Symbol.symbol option
 
+(* Total substitution *)
+fun subTerm (map, term) =
+   case term of 
+      Const c => SOME (Const c)
+    | NatConst n => SOME (NatConst n)
+    | StrConst s => SOME (StrConst s)
+    | Structured (f, terms) =>  
+      (case subTerms (map, terms) of
+          NONE => NONE
+        | SOME terms => SOME (Structured (f, terms)))
+    | Var NONE => NONE
+    | Var (SOME x) =>
+      (case MapX.lookup (map, x) of
+          NONE => NONE
+        | SOME term => SOME term)
+and subTerms (map, []) = SOME []
+  | subTerms (map, term :: terms) = 
+    case (subTerm (map, term), subTerms (map, terms)) of 
+       (SOME term, SOME terms) => SOME (term :: terms) 
+     | _ => NONE
+
 type typ = Symbol.symbol
 type arg = Symbol.symbol option * typ
 type atomic = Symbol.symbol * term list

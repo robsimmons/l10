@@ -28,24 +28,6 @@ structure SearchTab = Multitab(type entrytp = whorn)
 exception MatchFail
 exception Invariant
 
-fun pullWorld (a, terms) = 
-   case RelTab.lookup a of
-      NONE => raise Fail ("Undeclared relation " ^ Symbol.name a)
-    | SOME (args, (w, worldterms)) =>
-      let 
-         fun folder ((arg, _), term, map) =
-            case arg of 
-               NONE => map
-             | SOME x => MapX.insert (map, x, term)
-         val map = ListPair.foldl folder MapX.empty (args, terms)
-         val worldterms' = 
-            List.map (fn (A.Var (SOME x)) => MapX.lookup (map, x)) worldterms
-      in
-         (w, worldterms')
-      end
-
-fun pullDependency (prems, []) = (print "no concs"; raise Invariant)
-  | pullDependency (prems, conc :: concs) = pullWorld conc
 
 fun assert b subst = if b then subst else raise MatchFail
 
@@ -251,8 +233,7 @@ fun check decl =
       end
     | A.DeclRule (prems, concs) => 
       let in
-         print ("=== Rule ===\nAt world ")
-         ; print (A.strWorld' false (pullDependency (prems, concs)) ^ "\n")
+         print ("=== Rule ===\n")
       end
     | A.DeclType s => 
       print ("=== Type " ^ Symbol.name s ^ " ===\n")
