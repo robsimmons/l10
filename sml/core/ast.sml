@@ -42,7 +42,7 @@ type arg = Symbol.symbol option * typ
 type atomic = Symbol.symbol * term list
 type world = Symbol.symbol * term list
 
-fun eqWorld ((w1, terms1), (w2, terms2)) = 
+fun eqWorld (w1, terms1) (w2, terms2) = 
    w1 = w2 andalso List.all eqTerm (ListPair.zip (terms1, terms2))
 
 datatype pattern = 
@@ -140,6 +140,9 @@ and fvTerms terms =
    List.foldr (fn (t, set) => SetX.union (fvTerm t, set)) SetX.empty terms
 
 fun fvWorld (a, terms) = fvTerms terms
+
+fun fvWorlds worlds = 
+   List.foldr (fn (t, set) => SetX.union (fvWorld t, set)) SetX.empty worlds
 
 fun uscoresInTerm term = 
    case term of 

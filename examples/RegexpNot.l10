@@ -11,9 +11,9 @@ not (match RE I J) ->
 db3 = (token "d" 0, token "a" 1, 
        token "a" 2, token "EOF" 3) 
   @ w1 (seq (neg (alt (tok "b") (tok "c")))
-         (some (tok a))).
+         (some (tok "a"))).
 
 db4 = (token "b" 0, token "a" 1, 
        token "a" 2, token "EOF" 3) 
   @ w1 (seq (neg (alt (tok "b") (tok "c")))
-         (some (tok a))).
+         (some (tok "a"))).

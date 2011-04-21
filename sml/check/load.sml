@@ -3,7 +3,6 @@ structure Load :> sig
    (* loadDecl decl
     * 
     * Preconditions:  decl has been typechecked (types.sml)
-    *                 decl has been modechecked (mode.sml)
     * Exceptions:     none
     * Effects:        Adds new types, worlds, constants, and relations
     *                 to the symbol tables in check/tabs.sml 
@@ -17,6 +16,8 @@ end = struct
 
 open Symbol
 structure A = Ast
+
+fun bindDependency ((w, pats), worlds) = SearchTab.bind (w, (pats, worlds))
 
 fun loadDecl decl = 
    case decl of
@@ -46,16 +47,26 @@ fun loadDecl decl =
       end
 
     | A.DeclDepends (world, worlds) => 
-      let in
-         print (A.strWorld world ^ " <- "
+      let
+         val fv = Mode.checkDependency (world, worlds)
+      in
+         bindDependency (world, worlds)
+         ; print (A.strWorld world ^ " <- "
                 ^ String.concatWith ", " (map A.strWorld worlds) ^ ".\n")
       end
 
     | A.DeclRule (prems, concs) => 
-      let in
-         print (String.concatWith ", " (map A.strPrem prems) ^ "\n")
+      let 
+         val (world, worlds) = Mode.pullDependency (prems, concs)
+         val fv = Mode.checkDependency (world, worlds)
+         val (checked_prems, concs) = Mode.checkRule ((prems, concs), fv)
+      in
+         bindDependency (world, worlds)
+         ; print (String.concatWith ", " (map A.strPrem prems) ^ "\n")
          ; print (" -> " ^ String.concatWith ", " (map A.strAtomic concs) 
                   ^ ".\n")
+         ; print (A.strWorld world ^ " <- "
+                ^ String.concatWith ", " (map A.strWorld worlds) ^ ".\n")
       end
 
     | A.DeclDatabase (db, facts, world) => 
@@ -63,6 +74,9 @@ fun loadDecl decl =
          print (name db ^ " = (" 
                 ^ String.concatWith ", " (map A.strAtomic facts) 
                 ^ ")\n   @ " ^ A.strWorld world ^ "\n") 
+         ; print "=== begin scheduling ===\n"
+         ; Check.schedule (Check.search (Subst.applyWorld Subst.empty world)) 2
+         ; print "=== end scheduling ===\n"
       end
 
 end

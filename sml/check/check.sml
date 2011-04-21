@@ -22,8 +22,8 @@ structure T = Term
 
 type whorn = A.term list * A.world list
 
-structure RelTab = Symtab(type entrytp = A.arg list * A.world)
-structure SearchTab = Multitab(type entrytp = whorn)
+(* structure RelTab = Symtab(type entrytp = A.arg list * A.world) *)
+(* structure SearchTab = Multitab(type entrytp = whorn) *)
 
 exception MatchFail
 exception Invariant

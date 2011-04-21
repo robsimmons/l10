@@ -14,10 +14,10 @@ type subst = term MapX.map
 val eqTerm:   term * term -> bool
 val fvTerm:   term -> SetX.set
 val fvTerms:  term list -> SetX.set
-val subTerm:  subst * term -> term option
-val subTerms: subst * term list -> (term list) option
 val strTerm': bool -> term -> string
 val strTerm:  term -> string
+val subTerm:  subst * term -> term option
+val subTerms: subst * term list -> (term list) option
 val uscoresInTerm: term -> bool
 val uscoresInTerms: term list -> bool
 
@@ -28,8 +28,9 @@ type arg = Symbol.symbol option * typ
 val strArgs: arg list -> string
 
 type world = Symbol.symbol * term list
-val eqWorld:   world * world -> bool
+val eqWorld:   world -> world -> bool
 val fvWorld:   world -> SetX.set
+val fvWorlds:  world list -> SetX.set
 val strWorld': bool -> world -> string
 val strWorld:  world -> string
 

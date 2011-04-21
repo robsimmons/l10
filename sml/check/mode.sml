@@ -25,17 +25,49 @@ fun pullConcs [] = raise Fail "Invariant"
   | pullConcs [ conc ] = pullWorld conc
   | pullConcs (conc :: concs) = 
     let val world = pullConcs concs in
-       if A.eqWorld (pullWorld conc, world) then world
+       if A.eqWorld world (pullWorld conc) then world
        else raise Fail ("Conclusion " ^ A.strAtomic conc ^ " at world " 
                         ^ A.strWorld (pullWorld conc) 
                         ^ ", but earlier conclusions were at world " 
                         ^ A.strWorld world)
     end
 
+fun pullPrems concWorld prems = 
+   let
+      fun pullPat pat = 
+         case pat of 
+            A.Atomic atomic => [ pullWorld atomic ]
+          | A.Exists (x, pat1) => 
+            let val worlds = pullPat pat1 in
+               if SetX.member (A.fvWorlds worlds, x)
+               then raise Fail ("Local variable " ^ Symbol.name x ^ 
+                                " used in world-sensitive position")
+               else worlds
+            end
+          | A.Conj (pat1, pat2) => pullPat pat1 @ pullPat pat2
+          | A.One => []
+
+      fun pullPrem prem = 
+         case prem of 
+            A.Normal pat => pullPat pat
+          | A.Negated pat => 
+            let val worlds = pullPat pat in
+               (* XXX this check alone is not, I think, enough; 
+                * the variables could be different and substituted for the
+                * same terms. - RJS 4/21/11 *)
+               if List.exists (A.eqWorld concWorld) worlds
+               then raise Fail "Negated premise at the same world as conclusion"
+               else worlds
+            end
+          | A.Count _ => raise Fail "Count not supported yet"
+          | A.Binrel _ => []
+   in List.concat (map pullPrem prems) end
 
 (* pullDependency takes a rule and produces a dependency; it only checks
  * that all the conclusions are at the same world. *)
-fun pullDependency (prems, concs) = (pullConcs concs, map pullWorld prems) 
+fun pullDependency (prems, concs) = 
+   let val concWorld = pullConcs concs
+   in (concWorld, pullPrems concWorld prems) end
 
 (* Checks that a dependency is well-moded *)
 (* Returns the free variables grounded by the world *)
@@ -43,8 +75,9 @@ fun pullDependency (prems, concs) = (pullConcs concs, map pullWorld prems)
 fun checkDependency (world, worlds) = 
    let
       val headFV = A.fvWorld world
+
       fun checkprem world =
-         case SetX.listItems (SetX.difference (headFV, A.fvWorld world)) of
+         case SetX.listItems (SetX.difference (A.fvWorld world, headFV)) of
             [] => ()
           | (x :: _) => 
             raise Fail ("Variable " ^ Symbol.name x 
@@ -58,7 +91,7 @@ fun checkDependency (world, worlds) =
 (* Checks that a rule is well-moded given variables known to be ground *)
 (* Pulls one trick: swaps the order of equality judgments so that the first
  * one is always ground. This is the only change it makes to the premeses *)
-fun checkWorld ((prems, concs), groundedByWorld) =
+fun checkRule ((prems, concs), groundedByWorld) =
    let
       fun checkNormalPrem (pat, ground) =
          case pat of 
@@ -104,7 +137,8 @@ fun checkWorld ((prems, concs), groundedByWorld) =
                else raise Fail "Equality between two non-ground terms"
             end
           | A.Binrel (_, term1, term2) =>
-            if SetX.isSubset (A.fvTerm term1, A.fvTerm term2)
+            if SetX.isSubset 
+                   (SetX.union (A.fvTerm term1, A.fvTerm term2), ground)
             then (prem, ground)
             else raise Fail "Terms must be ground before inequality check"
 

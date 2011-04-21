@@ -1,7 +1,7 @@
 db1 = (token "f" 0, token "o" 1, 
        token "o" 2, token "EOF" 3) 
-  @ w1 (seq (tok f) (some (tok o))).
+  @ w1 (seq (tok "f") (some (tok "o"))).
 
 db2 = (token "b" 0, token "o" 1, 
        token "o" 2, token "EOF" 3) 
-  @ w1 (seq (tok f) (some (tok o))).
+  @ w1 (seq (tok "f") (some (tok "o"))).

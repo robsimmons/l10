@@ -81,7 +81,8 @@ fun tc_term env (term, typ) =
           then tc_terms env (ListPair.zip (terms, typs))
           else raise Fail ("Function symbol " ^ name f ^ " should have " 
                            ^ Int.toString (length typs)
-                           ^ " argument(s), was given none."))
+                           ^ " argument(s), was given " 
+                           ^ Int.toString (length terms) ^ "."))
     | A.Var NONE => env
     | A.Var (SOME x) =>  
       (case MapX.find (env, x) of 

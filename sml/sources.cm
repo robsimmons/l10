@@ -28,3 +28,4 @@ Group is
    check/load.sml
    check/check.sml
 
+   frontend/go.sml

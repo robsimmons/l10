@@ -37,7 +37,7 @@ fun string syn =
     | Ex (s1, s2) => "(Ex " ^ s1 ^ ". " ^ string s2 ^ ")"
     | Var (SOME s) => s
     | Var NONE => "_"
-    | App (c, s) => "(" ^ c ^ " " ^ String.concatWith " " (map string s) ^ ")"
+    | App (c, s) => "(" ^ c ^ " ^ " ^ String.concatWith " " (map string s) ^ ")"
     | Int i => Int.toString i
     | Str s => "\"" ^ s ^ "\""
     | World => "world"
@@ -140,7 +140,9 @@ fun parse syn =
       Ascribe (id, Type) => A.DeclType (symbol id)
     | Ascribe (id, syn) => p_class (symbol id, syn)
     | Assign (id, At (syn, w)) => 
-      A.DeclDatabase (symbol id, p_atomics syn, p_atomic w)
+      let (* val () = print ("---\n" ^ string w ^ "---\n")  *) in
+         A.DeclDatabase (symbol id, p_atomics syn, p_atomic w)
+      end
     | Arrow (prems, head) =>
       (case p_worldhead head of 
           NONE => A.DeclRule (p_rule syn)
