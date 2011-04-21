@@ -55,6 +55,10 @@ structure RelTab = Symtab(type entrytp = Ast.arg list * Ast.world)
  * SearchTab.lookup w contains ([ t1, ..., tn ], [ w1, ..., wm ]) *)
 structure SearchTab = Multitab(type entrytp = Ast.term list * Ast.world list)
 
+(*
+structure 
+*)
+
 structure Reset = struct
    fun reset () = 
       (TypeTab.reset ()
