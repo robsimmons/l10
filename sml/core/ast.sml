@@ -1,4 +1,4 @@
-structure Ast = 
+structure Ast :> AST = 
 struct
 
 datatype term = 
@@ -19,20 +19,31 @@ fun subTerm (map, term) =
           NONE => NONE
         | SOME terms => SOME (Structured (f, terms)))
     | Var NONE => NONE
-    | Var (SOME x) =>
-      (case MapX.lookup (map, x) of
-          NONE => NONE
-        | SOME term => SOME term)
+    | Var (SOME x) => MapX.find (map, x)
 and subTerms (map, []) = SOME []
   | subTerms (map, term :: terms) = 
     case (subTerm (map, term), subTerms (map, terms)) of 
        (SOME term, SOME terms) => SOME (term :: terms) 
      | _ => NONE
 
+fun eqTerm (term1, term2) = 
+   case (term1, term2) of
+      (Const c1, Const c2) => c1 = c2
+    | (NatConst n1, NatConst n2) => n1 = n2
+    | (StrConst s1, StrConst s2) => s1 = s2
+    | (Structured (f1, terms1), Structured (f2, terms2)) => 
+      f1 = f2 andalso List.all eqTerm (ListPair.zip (terms1, terms2))
+    | (Var v1, Var v2) => v1 = v2
+    | (_, _) => false
+
+type subst = term MapX.map
 type typ = Symbol.symbol
 type arg = Symbol.symbol option * typ
 type atomic = Symbol.symbol * term list
 type world = Symbol.symbol * term list
+
+fun eqWorld ((w1, terms1), (w2, terms2)) = 
+   w1 = w2 andalso List.all eqTerm (ListPair.zip (terms1, terms2))
 
 datatype pattern = 
    Atomic of atomic
@@ -119,13 +130,26 @@ val strArgs =
            | (SOME x, typ) => 
              "{" ^ Symbol.name x ^ ": " ^ Symbol.name typ ^ "} ")
 
-fun termFV t =
-   case t of 
+fun fvTerm term =
+   case term of 
       Var (SOME x) => SetX.singleton x
-    | Structured (_, tms) => termsFV tms
+    | Structured (_, terms) => fvTerms terms
     | _ => SetX.empty
 
-and termsFV ts = 
-   List.foldr (fn (t, set) => SetX.union (termFV t, set)) SetX.empty ts
+and fvTerms terms = 
+   List.foldr (fn (t, set) => SetX.union (fvTerm t, set)) SetX.empty terms
+
+fun fvWorld (a, terms) = fvTerms terms
+
+fun uscoresInTerm term = 
+   case term of 
+      Var NONE => true
+    | Structured (_, terms) => uscoresInTerms terms
+    | _ => false
+
+and uscoresInTerms terms = 
+   List.foldr (fn (term, b) => b orelse uscoresInTerm term) false terms
+
+fun uscoresInAtomic (_, terms) = uscoresInTerms terms
 
 end

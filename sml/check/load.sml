@@ -2,7 +2,8 @@ structure Load :> sig
   
    (* loadDecl decl
     * 
-    * Preconditions:  decl has been typechecked
+    * Preconditions:  decl has been typechecked (types.sml)
+    *                 decl has been modechecked (mode.sml)
     * Exceptions:     none
     * Effects:        Adds new types, worlds, constants, and relations
     *                 to the symbol tables in check/tabs.sml 

@@ -10,6 +10,7 @@ Group is
 
    core/global.sml
    core/ast.sml
+   core/ast-sig.sml
    core/symtab.sml
 
    parse/l10.lex
@@ -21,4 +22,9 @@ Group is
    term/predmap.sml
    term/subst.sml
 
+   check/tabs.sml
+   check/types.sml
+   check/mode.sml
+   check/load.sml
    check/check.sml
+
