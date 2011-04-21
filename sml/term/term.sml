@@ -15,15 +15,19 @@ structure Term :> sig
       Structured of Symbol.symbol * term list
     | StrConst of string
     | NatConst of IntInf.int 
-   val inj : term_rep -> term
-   val prj : term -> term_rep
-   val Structured' : Symbol.symbol * term list -> term
-   val StrConst' : string -> term
-   val NatConst' : IntInf.int -> term
-   val eq : term * term -> bool
-   val compare : term * term -> order
-   val strTerm' : bool -> term -> string
-   val strTerm : term -> string
+   val inj:         term_rep -> term
+   val prj:         term -> term_rep
+   val Structured': Symbol.symbol * term list -> term
+   val StrConst':   string -> term
+   val NatConst':   IntInf.int -> term
+   val eq:          term * term -> bool
+   val compare:     term * term -> order
+   val strTerm':    bool -> term -> string
+   val strTerm:     term -> string
+
+   type world = Symbol.symbol * term list
+   val eqWorld:     world * world -> bool
+   val strWorld:    world -> string
 
 end = 
 struct
@@ -33,6 +37,8 @@ datatype term_rep =
  | StrConst of string
  | NatConst of IntInf.int 
 and term = R of term_rep
+
+type world = Symbol.symbol * term list
 
 val prj = fn (R x) => x
 val inj = fn x => (R x)
@@ -100,4 +106,14 @@ fun strTerm' parens term =
 
 val strTerm = strTerm' false
  
+fun eqWorld ((w1, terms1) : world, (w2, terms2)) = 
+   w1 = w2 andalso ListPair.all eq (terms1, terms2)
+
+fun strWorld (w, terms) = 
+  case terms of 
+     [] => Symbol.name w
+   | _ => 
+     Symbol.name w
+     ^ String.concat (map (fn term => " " ^ strTerm' true term) terms)
+
 end

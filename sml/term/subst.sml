@@ -20,7 +20,7 @@ structure Subst :> sig
 
    (* Apply a grounding substitution to a term with free variables. *)
    val apply : subst -> Ast.term -> Term.term
-   val applyWorld : subst -> Ast.world -> (Symbol.symbol * Term.term list)
+   val applyWorld : subst -> Ast.world -> Term.world
 
    (* Merges two substitutions (must be identical on the intersection!) *)
    val merge : subst * subst -> subst

@@ -28,4 +28,6 @@ Group is
    check/load.sml
    check/check.sml
 
+   opsem/search.sml
+
    frontend/go.sml

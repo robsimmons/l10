@@ -4,7 +4,7 @@ exception Nope of string
 
 fun run filein force =
    let 
-      fun loop NONE = (print "Success!\n"; OS.Process.success)
+      fun loop NONE = print ("[ == Closing " ^ filein ^ " == ]\n")
         | loop (SOME stream) = 
           let 
              val (decl, stream) = force stream
@@ -19,6 +19,17 @@ fun run filein force =
    end handle Parse.Parse s =>
               raise Nope ("Error parsing " ^ filein ^ ".\nProblem: " ^ s)
 
+fun readfile filein = 
+   let
+      val () = print ("[ == Opening " ^ filein ^ " == ]\n\n")
+      val (stream, force) = Parse.parse filein
+         handle IO.Io {name, function, cause} =>
+         raise Nope ("unable to open " ^ name ^ " (error " ^ function ^ ")")
+   in 
+      run filein force stream 
+   end 
+
+fun readfiles files = app readfile files
 
 fun go (filein, fileout) = 
    let 
@@ -48,7 +59,8 @@ fun go (filein, fileout) =
    in
       print ("Send output to " ^ fileout ^ "\n")
       ; run filein force stream
+      ; OS.Process.success
    end handle Nope s => 
-      (print ("Error: " ^ s ^ ".\n"); OS.Process.success)
+      (print ("Error: " ^ s ^ ".\n"); OS.Process.failure)
 
 end
