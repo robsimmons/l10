@@ -8,14 +8,14 @@ goto:   nat -> inst.
 if:     t -> t -> t -> nat -> inst.
 return: t -> inst.
 
-w0: world.
-line: nat -> inst -> rel @ w0.
+wCode: world.
+line: nat -> inst -> rel @ wCode.
 
 // Extracting relevant information 
 
-succ: nat -> nat -> rel @ w0.
-def:  nat -> t -> rel @ w0.
-use:  nat -> t -> rel @ w0.
+succ: nat -> nat -> rel @ wCode.
+def:  nat -> t -> rel @ wCode.
+use:  nat -> t -> rel @ wCode.
 
 line L (binop X Y Op Z) -> 
    succ L (L+1),

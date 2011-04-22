@@ -1,4 +1,4 @@
-nec: nat -> t -> rel @ w0.
+nec: nat -> t -> rel @ wCode.
 line L (if X Comp C L1) -> nec L X.
 line L (return X) -> nec L X.
 
