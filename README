@@ -14,21 +14,28 @@ or the [examples](robsimmons.bitbucket.org/l10/examples.html) page.
 Running the SML Interpreter (Smlten)
 ====================================
 
-  bash-3.2$ cd l10
-  bash-3.2$ sml -m sml/sources.cm  
-  - open Symbol;
-  - open Ast;
-  - Go.readfiles ["examples/Regexp.l10", 
-                  "examples/RegexpQuery.l10", 
-                  "examples/RegexpNot.l10"];
-  - fun matches db = 
-       (print "Regexp matches for the full string:\n";
-        app (fn x => print (Subst.to_string x ^ "\n")) 
-           (PredSet.match (db, Subst.empty,
-              (symbol "match", [ Var (SOME (symbol "RE")), 
-                                  NatConst 0,
-                                  NatConst 3 ]))));
-  - matches (Deduce.deduceStored "db1");
-  - matches (Deduce.deduceStored "db2");
-  - matches (Deduce.deduceStored "db3");
-  - matches (Deduce.deduceStored "db4");
+    bash-3.2$ cd l10
+    bash-3.2$ sml -m sml/sources.cm   
+    - Go.readfiles ["examples/EdgePath1.l10"];
+    - val db1 = Deduce.deduceStored "db1";
+    - PredSet.printSet db1;
+    - Reset.reset ();
+    - Go.readfiles ["examples/Regexp.l10", 
+                    "examples/RegexpQuery.l10", 
+                    "examples/RegexpNot.l10"];
+    - fun matches db = 
+         let 
+            open Ast
+            open Symbol
+         in 
+            print "Regexp matches for the full string:\n";
+            app (fn x => print (Subst.to_string x ^ "\n")) 
+               (PredSet.match (db, Subst.empty,
+                  (symbol "match", [ Var (SOME (symbol "RE")), 
+                                     NatConst 0,
+                                     NatConst 3 ])))
+          end;
+    - matches (Deduce.deduceStored "db1");
+    - matches (Deduce.deduceStored "db2");
+    - matches (Deduce.deduceStored "db3");
+    - matches (Deduce.deduceStored "db4");

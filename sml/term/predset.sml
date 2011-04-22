@@ -5,7 +5,8 @@ structure PredSet :> sig
    val add: Term.atomic * set -> set
    val size: set -> int
    val match: set * Subst.subst * Ast.atomic -> Subst.subst list
-
+   val printSet: set -> unit
+ 
 end = 
 struct
 
@@ -26,5 +27,16 @@ fun match ((n, set) : set, subst : Subst.subst, (a, terms) : Ast.atomic) =
    case MapX.find (set, a) of 
       NONE => []
     | SOME termss => List.mapPartial (Match.matchTerms subst terms) termss
+
+fun printSet (_, set) = 
+   MapX.appi
+      (fn (a, termss) => 
+          List.app 
+              (fn terms => 
+                  (print (Symbol.name a ^ " ")
+                   ; print (String.concatWith " " (map Term.strTerm terms))
+                   ; print "\n"))
+          termss)
+      set
 
 end
