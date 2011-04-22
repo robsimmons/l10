@@ -21,7 +21,7 @@ Group is
    term/termmap.sml
    term/predmap.sml
    term/subst.sml
-   term/pull.sml
+   term/match.sml
    term/predset.sml
 
    check/tabs.sml
