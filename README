@@ -14,6 +14,12 @@ or the [examples](robsimmons.bitbucket.org/l10/examples.html) page.
 Running the SML Interpreter (Smlten)
 ====================================
 
+The following is an example of loading two different L10 programs in the SML
+interpreter for L10. For the first example, a standard edge/path example, we
+run the program to saturation and use PredSet.printSet to print out the
+entire database. For the second example, a regular expression matcher, we 
+use PredSet.match to selectively query the resulting database of facts. 
+
     bash-3.2$ cd l10
     bash-3.2$ sml -m sml/sources.cm   
     - Go.readfiles ["examples/EdgePath1.l10"];
