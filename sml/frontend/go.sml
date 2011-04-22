@@ -17,14 +17,14 @@ fun run filein force =
    in
       loop
    end handle Parse.Parse s =>
-              raise Nope ("Error parsing " ^ filein ^ ".\nProblem: " ^ s)
+              raise Fail ("Error parsing " ^ filein ^ ".\nProblem: " ^ s)
 
 fun readfile filein = 
    let
       val () = print ("[ == Opening " ^ filein ^ " == ]\n\n")
       val (stream, force) = Parse.parse filein
          handle IO.Io {name, function, cause} =>
-         raise Nope ("unable to open " ^ name ^ " (error " ^ function ^ ")")
+         raise Fail ("unable to open " ^ name ^ " (error " ^ function ^ ")")
    in 
       run filein force stream 
    end 

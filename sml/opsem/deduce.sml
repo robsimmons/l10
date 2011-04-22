@@ -79,7 +79,7 @@ fun runWorld (world, predset) =
          let
             val () = print ("   Iteration " ^ Int.toString n)
             val old_size = PredSet.size old_predset
-            val new_predset = List.foldl runRule predset rules
+            val new_predset = List.foldl runRule old_predset rules
             val added = PredSet.size new_predset - old_size
             val () = print (" -- " ^ Int.toString added ^ " new fact(s)\n")
          in

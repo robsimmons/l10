@@ -30,7 +30,7 @@ fun matchTerm subst term term' =
     | (Ast.Var (SOME x), _) => 
       (case Subst.find subst x of
           NONE => SOME (Subst.extend subst (x, term'))
-        | SOME term => if Term.eq (term, term') then NONE else SOME subst)
+        | SOME term => if not (Term.eq (term, term')) then NONE else SOME subst)
     | _ => raise Fail "Invariant"
 
 and matchTerms subst terms terms' =

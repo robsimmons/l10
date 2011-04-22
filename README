@@ -3,7 +3,32 @@
 L10 Logic Programming Language
 ==============================
 
-This is a source repository for the L10 programming language. This repository
-is not yet active; for information on L10 see the 
-[preliminary design document](http://robsimmons.bitbucket.org/l10/spec.html) or
-the [examples](robsimmons.bitbucket.org/l10/examples.html) page.
+This is a source repository for the L10 programming language. Currently, the
+repository contains a working version of the interpreter, for L10; a compiler 
+to Standard ML and the X10 parallel programming language are in development.
+
+For information on L10 see the 
+[preliminary design document](http://robsimmons.bitbucket.org/l10/spec.html),
+or the [examples](robsimmons.bitbucket.org/l10/examples.html) page.
+
+Running the SML Interpreter (Smlten)
+====================================
+
+  bash-3.2$ cd l10
+  bash-3.2$ sml -m sml/sources.cm  
+  - open Symbol;
+  - open Ast;
+  - Go.readfiles ["examples/Regexp.l10", 
+                  "examples/RegexpQuery.l10", 
+                  "examples/RegexpNot.l10"];
+  - fun matches db = 
+       (print "Regexp matches for the full string:\n";
+        app (fn x => print (Subst.to_string x ^ "\n")) 
+           (PredSet.match (db, Subst.empty,
+              (symbol "match", [ Var (SOME (symbol "RE")), 
+                                  NatConst 0,
+                                  NatConst 3 ]))));
+  - matches (Deduce.deduceStored "db1");
+  - matches (Deduce.deduceStored "db2");
+  - matches (Deduce.deduceStored "db3");
+  - matches (Deduce.deduceStored "db4");

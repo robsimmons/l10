@@ -13,13 +13,14 @@ struct
    val t = Symbol.symbol "t"
    val nat = Symbol.symbol "nat"
    val string = Symbol.symbol "string"
-   val _ = 
+   fun reset () = 
       let in
-         bind (t, CONSTANTS)
+         S.reset ()
+         ; bind (t, CONSTANTS)
          ; bind (nat, SPECIAL)
          ; bind (string, SPECIAL)
       end
-
+   val () = reset ()
 end 
 
 (* World constant table
@@ -37,10 +38,12 @@ struct
    structure S = Symtab(type entrytp = Ast.typ list * Ast.typ)
    open S
    val plus = Symbol.symbol "_plus"
-   val _ = 
+   fun reset () = 
       let in
-         bind (plus, ([ TypeTab.nat, TypeTab.nat ], TypeTab.nat))
+         S.reset ()
+         ; bind (plus, ([ TypeTab.nat, TypeTab.nat ], TypeTab.nat))
       end
+   val () = reset ()
 end
 
 (* Database table *)
