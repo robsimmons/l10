@@ -1,0 +1,16 @@
+wInter: world.
+interferes: t -> t -> rel @ wInter.
+
+def L X, 
+not (line L (move X _)), 
+succ L L', 
+live L' Z, 
+X != Z -> 
+   interferes X Z.
+
+line L (move X Y), 
+succ L L', 
+live L' Z, 
+X != Z, 
+Y != Z -> 
+   interferes X Z.
