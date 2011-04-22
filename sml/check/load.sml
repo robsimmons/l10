@@ -67,6 +67,7 @@ fun loadDecl decl =
          val (checked_prems, concs) = Mode.checkRule ((prems, concs), fv)
       in
          bindDependency (world, worlds)
+         ; RuleTab.register (world, (prems, concs))
          ; print (String.concatWith ", " (map A.strPrem prems) ^ "\n")
          ; print (" -> " ^ String.concatWith ", " (map A.strAtomic concs) 
                   ^ ".\n")

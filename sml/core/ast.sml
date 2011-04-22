@@ -59,6 +59,8 @@ datatype prem =
  | Count of pattern * term
  | Binrel of binrel * term * term
 
+type rule = prem list * atomic list
+
 datatype decl = 
    DeclConst of Symbol.symbol * arg list * Symbol.symbol
  | DeclDatabase of Symbol.symbol * atomic list * world

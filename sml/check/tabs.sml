@@ -55,9 +55,24 @@ structure RelTab = Symtab(type entrytp = Ast.arg list * Ast.world)
  * SearchTab.lookup w contains ([ t1, ..., tn ], [ w1, ..., wm ]) *)
 structure SearchTab = Multitab(type entrytp = Ast.term list * Ast.world list)
 
-(*
-structure 
-*)
+structure RuleTab :> sig
+   val reset: unit -> unit
+   val register: Ast.world * Ast.rule -> unit
+   val lookup: Term.world -> (Subst.subst * Ast.rule) list 
+end = struct
+
+   val database: (Ast.world * Ast.rule) list ref = ref []
+   fun reset () = database := []
+   fun register data = database := data :: !database
+
+   fun lookup' world' (world, rule) = 
+      case Match.matchWorld Subst.empty world world' of
+         NONE => NONE
+       | SOME subst => SOME (subst, rule)
+
+   fun lookup world = List.mapPartial (lookup' world) (!database)
+
+end
 
 structure Reset = struct
    fun reset () = 
@@ -65,5 +80,6 @@ structure Reset = struct
        ; WorldTab.reset ()
        ; ConTab.reset ()
        ; RelTab.reset ()
-       ; SearchTab.reset ())
+       ; SearchTab.reset ()
+       ; RuleTab.reset ())
 end

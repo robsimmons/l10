@@ -2,7 +2,7 @@ structure Search :> sig
 
    type dependencies
    val search:   Term.world -> dependencies
-   val schedule: dependencies -> int -> unit
+   val schedule: dependencies -> int -> (int * Term.world list) vector
 
 end = struct
 
@@ -147,12 +147,17 @@ fun schedule (depmap, refmap) numplaces =
           let
              fun printWorld (world, n) = 
                 let 
+                   val rules = RuleTab.lookup world
+                   val num = length rules
                    (* val {place, seq} = 
                           valOf (PredMap.find (!schedmap, world)) *)
                 in
                    print (Int.toString n ^ ": " ^ T.strWorld world)
                    (* ; print (" place:" ^ Int.toString place) *)
                    (* ; print (" seq:" ^ Int.toString seq) *)
+                   ; if num = 1
+                     then print (" -- 1 rule applies")
+                     else print (" -- " ^ Int.toString num ^ " rules apply")
                    ; print "\n"
                    ; n+1
                 end
@@ -165,6 +170,7 @@ fun schedule (depmap, refmap) numplaces =
 
     in
        Vector.appi printRawSchedule rawSchedule
+       ; rawSchedule
     end
            
 end
