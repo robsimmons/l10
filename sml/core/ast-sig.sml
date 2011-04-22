@@ -45,7 +45,7 @@ datatype pattern =
  | Conj of pattern * pattern
  | One
 
-datatype binrel = Eq | Neq | Gt | Lt | Geq | Leq 
+datatype binrel = Eq | Neq | Gt | Geq 
 val strBinrel: binrel -> string 
 
 datatype prem = 

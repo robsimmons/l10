@@ -128,6 +128,7 @@ fun checkRule ((prems, concs), groundedByWorld) =
           | A.Negated pat => 
             (checkNegatedPrem (pat, ground, SetX.empty); (prem, ground))
           | A.Count _ => raise Fail "Count not supported yet"
+          (* XXX probably need to check for underscores - RJS 4/22/11 *)
           | A.Binrel (A.Eq, term1, term2) =>
             let val (fv1, fv2) = (A.fvTerm term1, A.fvTerm term2) in
                if SetX.isSubset (fv1, ground) 

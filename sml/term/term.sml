@@ -21,6 +21,7 @@ structure Term :> sig
    val StrConst':   string -> term
    val NatConst':   IntInf.int -> term
    val eq:          term * term -> bool
+   val eqs:         term list * term list -> bool
    val compare:     term * term -> order
    val strTerm':    bool -> term -> string
    val strTerm:     term -> string
@@ -44,8 +45,12 @@ and term = R of term_rep
 
 type world = Symbol.symbol * term list
 
+val plussymb = Symbol.symbol "_plus"
+fun inj (x as Structured (f, [ R (NatConst i), R (NatConst j) ])) =
+    if f = plussymb then R (NatConst (i + j)) else R x
+  | inj x = R x
+
 val prj = fn (R x) => x
-val inj = fn x => (R x)
 val Structured' = inj o Structured
 val StrConst' = inj o StrConst
 val NatConst' = inj o NatConst

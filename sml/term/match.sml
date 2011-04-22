@@ -1,6 +1,18 @@
 structure Match = 
 struct
 
+fun pullTerm subst term = 
+   case term of 
+      Ast.Const c => Term.Structured' (c, [])
+    | Ast.Structured (f, terms) => 
+      Term.Structured' (f, map (pullTerm subst) terms)
+    | Ast.NatConst i => Term.NatConst' i
+    | Ast.StrConst s => Term.StrConst' s
+    | Ast.Var NONE => raise Fail "Invariant"
+    | Ast.Var (SOME x) => valOf (Subst.find subst x)
+
+fun pullAtomic subst (a, terms) = (a, map (pullTerm subst) terms)
+
 fun matchTerm subst term term' = 
    case (term, Term.prj term') of
       (Ast.Const c, Term.Structured (c', [])) => 
@@ -33,5 +45,7 @@ and matchTerms subst terms terms' =
 fun matchWorld subst (w: Symbol.symbol, terms) (w', terms') =
    if w <> w' then NONE
    else matchTerms subst terms terms'
+
+val matchAtomic = matchWorld
 
 end

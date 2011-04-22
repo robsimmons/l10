@@ -51,7 +51,7 @@ datatype pattern =
  | Conj of pattern * pattern
  | One
 
-datatype binrel = Eq | Neq | Gt | Lt | Geq | Leq 
+datatype binrel = Eq | Neq | Gt | Geq
 
 datatype prem = 
    Normal of pattern
@@ -76,7 +76,7 @@ fun rp parens = if parens then ")" else ""
 fun strBinrel binrel = 
    case binrel of 
       Eq => "==" | Neq => "!=" 
-    | Gt => ">" | Lt => "<" | Geq => ">=" | Leq => "<="
+    | Gt => ">" | Geq => ">=" 
 
 fun strTerm' parens term = 
    case term of 
