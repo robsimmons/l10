@@ -3,6 +3,6 @@ live: nat -> t -> rel @ wLive.
 
 use L X -> live L X.
 
-live L' U, 
+live L' X, 
 succ L L', 
-not (def L U) -> live L U.
+not (def L X) -> live L X.
