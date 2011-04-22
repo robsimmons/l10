@@ -29,6 +29,10 @@ structure Term :> sig
    val eqWorld:     world * world -> bool
    val strWorld:    world -> string
 
+   type atomic = Symbol.symbol * term list
+   val eqAtomic:    atomic * atomic -> bool
+   val strAtomic:   atomic -> string
+
 end = 
 struct
  
@@ -115,5 +119,9 @@ fun strWorld (w, terms) =
    | _ => 
      Symbol.name w
      ^ String.concat (map (fn term => " " ^ strTerm' true term) terms)
+
+type atomic = world
+val eqAtomic = eqWorld
+val strAtomic = strWorld
 
 end

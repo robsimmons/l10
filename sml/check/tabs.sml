@@ -43,6 +43,9 @@ struct
       end
 end
 
+(* Database table *)
+structure DbTab = Symtab(type entrytp = Term.atomic list * Term.world)
+
 (* Relation constant table
  *
  * For a relation constant r : tp1 -> ... -> {Tn: tpn} -> rel @ W,

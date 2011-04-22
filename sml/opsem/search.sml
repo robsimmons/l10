@@ -169,8 +169,8 @@ fun schedule (depmap, refmap) numplaces =
           end
 
     in
-       Vector.appi printRawSchedule rawSchedule
-       ; rawSchedule
+       (* Vector.appi printRawSchedule rawSchedule
+       ; *) rawSchedule
     end
            
 end

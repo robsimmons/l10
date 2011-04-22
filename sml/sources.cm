@@ -31,5 +31,6 @@ Group is
    check/check.sml
 
    opsem/search.sml
+   opsem/deduce.sml
 
    frontend/go.sml

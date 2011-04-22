@@ -77,15 +77,14 @@ fun loadDecl decl =
       end
 
     | A.DeclDatabase (db, facts, world) => 
-      let in 
+      let
+         val facts' = map (Subst.applyAtomic Subst.empty) facts
+         val world' = Subst.applyWorld Subst.empty world
+      in 
          print (name db ^ " = (" 
                 ^ String.concatWith ", " (map A.strAtomic facts) 
-                ^ ")\n   @ " ^ A.strWorld world ^ "\n") 
-         ; print "=== begin scheduling ===\n"
-         ; Search.schedule
-             (Search.search (Subst.applyWorld Subst.empty world)) 2
-         ; print "=== end scheduling ===\n"
-         ; print "\n"
+                ^ ")\n   @ " ^ A.strWorld world ^ "\n\n") 
+         ; DbTab.bind (db, (facts', world'))
       end
 
 end

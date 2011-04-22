@@ -21,6 +21,7 @@ structure Subst :> sig
    (* Apply a grounding substitution to a term with free variables. *)
    val apply : subst -> Ast.term -> Term.term
    val applyWorld : subst -> Ast.world -> Term.world
+   val applyAtomic : subst -> Ast.atomic -> Term.atomic
 
    (* Merges two substitutions (must be identical on the intersection!) *)
    val merge : subst * subst -> subst
@@ -72,6 +73,7 @@ fun apply subst term =
     | StrConst s => Term.StrConst' s
 
 fun applyWorld subst (w, terms) = (w, map (apply subst) terms)
+val applyAtomic = applyWorld
 
 fun filter set = MapX.filteri (fn (x,tm) => SetX.member(set,x)) 
 
