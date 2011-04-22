@@ -1,9 +1,0 @@
-// Dead-code analysis
-
-wDead: world.
-dead: nat -> rel @ wDead.
-
-def L X, 
-succ L L', 
-not (needed L' X) -> 
-   dead L.

@@ -28,7 +28,8 @@ use PredSet.match to selectively query the resulting database of facts.
     - Reset.reset ();
     - Go.readfiles ["examples/Regexp.l10", 
                     "examples/RegexpQuery.l10", 
-                    "examples/RegexpNot.l10"];
+                    "examples/RegexpNot.l10", 
+                    "examples/RegexpNot2.l10"];
     - fun matches db = 
          let 
             open Ast
@@ -43,5 +44,5 @@ use PredSet.match to selectively query the resulting database of facts.
           end;
     - matches (Deduce.deduceStored "db1");
     - matches (Deduce.deduceStored "db2");
-    - matches (Deduce.deduceStored "db3");
-    - matches (Deduce.deduceStored "db4");
+    - matches (Deduce.deduceStored "db3''");
+    - matches (Deduce.deduceStored "db4''");
