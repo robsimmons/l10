@@ -234,6 +234,7 @@ fun termStruct () =
       emit ("structure " ^ preface ^ "Terms:> " ^ preface ^ "TERMS = ")
       ; emit "struct"
       ; incr ()
+      ; emit "(* Datatype views *)\n"
       ; emit "datatype Fake = fake"
       ; app (fn x => 
                (emitEncodedTypeView true x
@@ -241,17 +242,15 @@ fun termStruct () =
                         ^ " = inj" ^ NameOfType x
                         ^ " of " ^ nameOfView x)))
            encodedTypes
-      ; emit ""
-      ; emit "(* Projection functions *)\n"
+      ; emit "\n"
+      ; emit "(* Constructor-specific projections, injections, and aborts *)\n"
       ; app emitEncodedPrj encodedTypes
+      ; app emitEncodedInjConstructors encodedTypes
       ; app emitEncodedAbortStruct encodedTypes
       ; emit "\n"
       ; emit "(* String encoding functions *)\n"
       ; emit "fun strfake () = raise Match"
       ; app emitEncodedToString encodedTypes
-      ; emit "\n"
-      ; emit "(* Injections composed with constructors *)\n"
-      ; app emitEncodedInjConstructors encodedTypes
       ; decr ()
       ; emit "end"
    end
