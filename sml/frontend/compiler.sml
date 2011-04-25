@@ -76,9 +76,9 @@ fun emitEncodedSigParts x =
       ; emit ("val layout" ^ Name ^ ": " ^ name ^ " -> Layout.t")
       ; emit ("val inj" ^ Name ^ ": " ^ name ^ "View -> " ^ name)
       ; emit ("val prj" ^ Name ^ ": " ^ name ^ " -> " ^ name ^ "View")
-      ; emit ("strucutre Set" ^ Name 
+      ; emit ("structure Set" ^ Name 
               ^ ": ORD_SET where type Key.ord_key = " ^ name)
-      ; emit ("strucutre Map" ^ Name 
+      ; emit ("structure Map" ^ Name 
               ^ ": ORD_MAP where type Key.ord_key = " ^ name)
    end
 
