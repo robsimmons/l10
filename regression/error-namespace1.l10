@@ -1,0 +1,7 @@
+// Should be an error: relations and worlds inhabit the same namespace
+// Necessary for syntatic differentiation of rules and explicit dependencies
+w: world.
+foo: world.
+bar: world.
+foo: t -> t -> rel @ w.
+bar: t -> t -> rel @ w.

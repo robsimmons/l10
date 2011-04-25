@@ -1,0 +1,7 @@
+// Should be an error: worlds and types inhabit the same namespaces
+// Transitive consequence of types <--> relations <--> worlds
+
+foo: type.
+bar: type.
+foo: world.
+bar: world.
