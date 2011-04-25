@@ -39,6 +39,7 @@ fun loadDecl decl =
       let val typs = map #2 args in
          print (name c ^ ": " ^ A.strTyps typs ^ name typ ^ ".\n")
          ; ConTab.bind (c, (map #2 args, typ))
+         ; TypeConTab.bind (typ, c)
          ; print "\n"
       end
 

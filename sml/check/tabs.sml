@@ -46,6 +46,11 @@ struct
    val () = reset ()
 end
 
+(* TypeCon table
+ * Reverse lookup - lists all the constructors that can be used to make 
+ * a term of a particular type *)
+structure TypeConTab = Multitab(type entrytp = Symbol.symbol)
+
 (* Database table *)
 structure DbTab = Symtab(type entrytp = Term.atomic list * Term.world)
 

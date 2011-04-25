@@ -34,3 +34,4 @@ Group is
    opsem/deduce.sml
 
    frontend/go.sml
+   frontend/compiler.sml

@@ -1,0 +1,10 @@
+foo: type.
+myfoo: foo.
+bar: type.
+foobar: foo -> bar.
+barfoo: bar -> foo.
+foo: world.
+bar: world.
+foo: foo -> bar -> rel @ foo.
+bar: foo -> bar -> rel @ bar.
+
