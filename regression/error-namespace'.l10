@@ -1,0 +1,5 @@
+// Needs to be an error: due to the way the compiler works, constructors
+// shouldn't be able to have single-quotes on the end.
+foo: type.
+bar: foo.
+bar': foo.

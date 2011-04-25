@@ -68,11 +68,7 @@ end
 
 fun indent (t, n) = T {length = length t, tree = Indent (t, n)}
 
-val tabSize: int = 8
-
-fun blanks (n: int): string =
-   concat [String.implode (List.tabulate (n div tabSize, fn _ => #"\t")),
-           String.implode (List.tabulate (n mod tabSize, fn _ => #" "))]
+fun blanks (n: int): string = String.implode (List.tabulate (n, fn _ => #" "))
 
 fun toString t =
    let

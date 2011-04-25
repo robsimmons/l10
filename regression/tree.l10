@@ -1,0 +1,16 @@
+empty: type.
+
+tree: type.
+node: nat -> tree -> tree -> tree.
+leaf: tree.
+
+rbtree: type.
+red: nat -> rbtree -> rbtree -> rbtree.
+black: nat -> rbtree -> rbtree -> rbtree.
+nil: rbtree.
+
+even: type.
+odd: type.
+zero: even.
+succ1: even -> odd.
+succ2: odd -> even.
