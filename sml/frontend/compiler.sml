@@ -72,10 +72,14 @@ fun emitEncodedSigParts x =
       val name = nameOfType x
       val Name = embiggen name
    in
-      emit ("val str" ^ Name ^ " = " ^ name ^ " -> String.string")
-      ; emit ("val layout" ^ Name ^ " = " ^ name ^ " -> Layout.t")
-      ; emit ("val inj" ^ Name ^ " = " ^ name ^ "View -> " ^ name)
-      ; emit ("val prj" ^ Name ^ " = " ^ name ^ " -> " ^ name ^ "View")
+      emit ("val str" ^ Name ^ ": " ^ name ^ " -> String.string")
+      ; emit ("val layout" ^ Name ^ ": " ^ name ^ " -> Layout.t")
+      ; emit ("val inj" ^ Name ^ ": " ^ name ^ "View -> " ^ name)
+      ; emit ("val prj" ^ Name ^ ": " ^ name ^ " -> " ^ name ^ "View")
+      ; emit ("strucutre Set" ^ Name 
+              ^ ": ORD_SET where type Key.ord_key = " ^ name)
+      ; emit ("strucutre Map" ^ Name 
+              ^ ": ORD_MAP where type Key.ord_key = " ^ name)
    end
 
 fun types () = 
