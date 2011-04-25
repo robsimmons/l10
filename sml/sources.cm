@@ -7,6 +7,8 @@ Group is
    util/heap-sig.sml
    util/heap.sml
    util/symbol.sml
+   util/layout-sig.sml
+   util/layout.sml
 
    core/global.sml
    core/ast.sml

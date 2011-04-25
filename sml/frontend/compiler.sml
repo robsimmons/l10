@@ -73,6 +73,7 @@ fun emitEncodedSigParts x =
       val Name = embiggen name
    in
       emit ("val str" ^ Name ^ " = " ^ name ^ " -> String.string")
+      ; emit ("val layout" ^ Name ^ " = " ^ name ^ " -> Layout.t")
       ; emit ("val inj" ^ Name ^ " = " ^ name ^ "View -> " ^ name)
       ; emit ("val prj" ^ Name ^ " = " ^ name ^ " -> " ^ name ^ "View")
    end

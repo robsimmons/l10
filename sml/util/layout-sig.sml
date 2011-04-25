@@ -22,17 +22,12 @@ signature LAYOUT =
       val empty: t
       val ignore: 'a -> t
       val isEmpty: t -> bool
-      val makeOutput: ('a -> t) -> 'a * Outstream0.t -> unit
       (* layout the objects on separate lines, if necessary *)
       val mayAlign: t list -> t
       val namedRecord: string * (string * t) list -> t
       (* indent the entire object *)
       val indent: t * int -> t
       val list: t list -> t
-      val output: t * Outstream0.t -> unit
-      val outputl: t * Outstream0.t -> unit
-      val outputTree: t * Outstream0.t -> unit
-      val outputWidth: t * int * Outstream0.t -> unit
       val paren: t -> t
       (* print the object *)
       val print: t * (string -> unit) -> unit

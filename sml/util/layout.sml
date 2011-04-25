@@ -9,14 +9,10 @@
 structure Layout: LAYOUT =
 struct
 
-structure Out = Outstream0   
-structure Int = Pervasive.Int
 val detailed = ref false
 
 fun switch {detailed = d,normal = n} x =
    if !detailed then d x else n x
-
-structure String = String0
 
 datatype t = T of {length: int,
                    tree: tree}
@@ -75,31 +71,8 @@ fun indent (t, n) = T {length = length t, tree = Indent (t, n)}
 val tabSize: int = 8
 
 fun blanks (n: int): string =
-   concat [String.make (n div tabSize, #"\t"),
-           String.make (n mod tabSize, #" ")]
-
-fun outputTree (t, out) =
-   let val print = Out.outputc out
-      fun loop (T {tree, length}) =
-         (print "(length "
-          ; print (Int.toString length)
-          ; print ")"
-          ; (case tree of
-                Empty => print "Empty"
-              | String s => (print "(String "; print s; print ")")
-              | Sequence ts => loops ("Sequence", ts)
-              | Align {rows, ...} => loops ("Align", rows)
-              | Indent (t, n) => (print "(Indent "
-                                  ; print (Int.toString n)
-                                  ; print " "
-                                  ; loop t
-                                  ; print ")")))
-      and loops (s, ts) = (print "("
-                           ; print s
-                           ; app (fn t => (print " " ; loop t)) ts
-                           ; print ")")
-   in loop t
-   end
+   concat [String.implode (List.tabulate (n div tabSize, fn _ => #"\t")),
+           String.implode (List.tabulate (n mod tabSize, fn _ => #" "))]
 
 fun toString t =
    let
@@ -180,22 +153,13 @@ fun print {tree: t,
    in ignore (loop (tree, {at = 0, printAt = 0}))
    end
 
-fun outputWidth (t, width, out) =
-   print {tree = t,
-          lineWidth = width,
-          print = Out.outputc out}
-
 local
    val defaultWidth: int = 80
 in
-   fun output (t, out) = outputWidth (t, defaultWidth, out)
    val print =
       fn (t, p) => print {tree = t, lineWidth = defaultWidth, print = p}
 end
 
-fun outputl (t, out) = (output (t, out); Out.newline out)
-
-fun makeOutput layoutX (x, out) = output (layoutX x, out)
 
 fun ignore _ = empty
 
@@ -241,11 +205,11 @@ in
       (map (fn (f, t) => seq [str (f ^ " = "), t]) fts)
 end
 
-fun vector v = tuple (Pervasive.Vector.foldr (op ::) [] v)
+fun vector v = tuple (Vector.foldr (op ::) [] v)
 
 structure Array =
    struct
-      open Pervasive.Array
+      open Array
 
       fun toList a = foldr (op ::) [] a
    end
