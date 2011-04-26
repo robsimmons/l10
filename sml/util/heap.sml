@@ -1,3 +1,5 @@
+(* Implementation of imperative priority queues *)
+(* Tom Murphy VII, taken from sml-lib *)
 
 functor HeapFn(type priority
                val compare : priority * priority -> order)

@@ -1,3 +1,6 @@
+(* Global sets and data structures *)
+(* Robert J. Simmons *)
+
 structure SetS = 
 RedBlackSetFn(struct type ord_key = string val compare = String.compare end)
 

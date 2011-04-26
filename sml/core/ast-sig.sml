@@ -1,4 +1,5 @@
-(* Abstract syntax tree signature. *)
+(* Abstract syntax tree for L10 *)
+(* Robert J. Simmons *)
 
 signature AST = 
 sig

@@ -1,3 +1,6 @@
+(* Internalized representations of strings *)
+(* Robert J. Simmons, based on the C0 compiler by Frank Pfenning *)
+
 structure Symbol :> sig
  
    eqtype symbol
@@ -14,7 +17,7 @@ structure Symbol :> sig
    structure Set: ORD_SET where type Key.ord_key = symbol
    structure Map: ORD_MAP where type Key.ord_key = symbol
 
-   (* Returns a symbol that is unique from a set of symbols *)
+   (* Returns a symbol that is distinct from a set of symbols *)
    val unique: Set.set -> string -> symbol
 
 end = struct

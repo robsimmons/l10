@@ -1,5 +1,6 @@
+(* Imperative priority queues, implemented as a heap. *)
+(* Tom Murphy VII, taken from sml-lib *)
 
-(* imperative priority queues, implemented as a heap. *)
 signature HEAP =
 sig
 

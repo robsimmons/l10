@@ -1,3 +1,6 @@
+(* Abstract syntax tree for L10 *)
+(* Robert J. Simmons *)
+
 structure Ast :> AST = 
 struct
 
