@@ -7,6 +7,8 @@ w: n -> n -> n -> world.
 w (suc N) M P <- w N M P.
 w N (suc M) P <- w N M P.
 w N M (suc P) <- w N M P.
+w (suc (suc (suc N))) (suc (suc M)) (suc P) <- w N M P.
+w (suc N) M P <- w N M P.
 
 true : rel @ w zero zero zero.
 db0 = true @ w (suc zero) (suc zero) (suc zero).
