@@ -1,0 +1,68 @@
+// A variable can be an underscore or a symbol 
+var: type.
+underscore: var.
+some: t -> var.
+
+// Terms and lists of terms are mutually recursive 
+term: type.
+terms: type.
+
+const: t -> term.
+natConst: nat -> term.
+strConst: string -> term.
+structured: t -> terms -> term.
+var: var -> term.
+
+nil: terms.
+cons: term -> terms -> terms.
+
+// Free variables of a term
+wFv: world.
+fvTerm: term -> rel @ wFv.
+fvTerms: terms -> rel @ wFv.
+fv: var -> rel @ wFv.
+
+// Presence or absense of underscores in a term
+wUscores: world.
+uscoresTerm: term -> rel @ wUscores.
+uscoresTerms: terms -> rel @ wUscores.
+uscores: rel @ wUscores.
+
+// Substituting for free variables
+// As far as I can tell, this is just as happy being a forward or backward 
+// chaining logic program...
+wVSubst: world.
+vsubst: t -> term -> rel @ wVSubst.
+
+wSubst: term -> world.
+wSubsts: terms -> world.
+subst: {T: term} {S: term} rel @ wSubst T.
+substs: {Ts: terms} {Ss: terms} rel @ wSubsts Ts.
+
+// No way to substitute for an underscore
+subst (var underscore) (var underscore).
+
+// Substitute for all existing variables, leave variables not in substituion
+subst (var (some X)) S
+   <- vsubst X S.
+
+// subst (var (some X)) (var (some X)) 
+//    <- not (Ex S. vsubst X S).
+
+subst (const X) (const X).
+subst (natConst N) (natConst N).
+subst (strConst S) (strConst S).
+subst (structured F Ts) (structured F Ss)
+   <- substs Ts Ss.
+substs nil nil.
+substs (cons T Ts) (cons S Ss)
+   <- subst T S, substs Ts Ss.
+
+db1 = (vsubst x (const foo),
+       vsubst y (structured f (cons (const foo) (cons (const baz) nil))),
+       vsubst z (structured g (cons (const baz) nil))) 
+      @ wSubst (structured h (cons (var (some x))
+                              (cons (var (some z))
+                               (cons (var (some y))
+                                (cons (var underscore)
+                                 nil))))).

@@ -69,8 +69,9 @@ fun loadDecl decl =
       in
          bindDependency (world, worlds)
          ; RuleTab.register (world, (prems, concs))
-         ; print (String.concatWith ", " (map A.strPrem prems) ^ "\n")
-         ; print (" -> " ^ String.concatWith ", " (map A.strAtomic concs) 
+         ; if null prems then ()
+           else print (String.concatWith ", " (map A.strPrem prems) ^ "\n -> ")
+         ; print (String.concatWith ", " (map A.strAtomic concs) 
                   ^ ".\n")
          (* ; print (A.strWorld world ^ " <- "
                 ^ String.concatWith ", " (map A.strWorld worlds) ^ ".\n") *)

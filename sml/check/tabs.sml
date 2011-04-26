@@ -90,6 +90,7 @@ structure Reset = struct
       (TypeTab.reset ()
        ; WorldTab.reset ()
        ; ConTab.reset ()
+       ; TypeConTab.reset ()
        ; RelTab.reset ()
        ; SearchTab.reset ()
        ; RuleTab.reset ())

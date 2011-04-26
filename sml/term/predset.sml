@@ -34,7 +34,8 @@ fun printSet (_, set) =
           List.app 
               (fn terms => 
                   (print (Symbol.name a ^ " ")
-                   ; print (String.concatWith " " (map Term.strTerm terms))
+                   ; print (String.concatWith " " 
+                            (map (Term.strTerm' true) terms))
                    ; print "\n"))
           termss)
       set

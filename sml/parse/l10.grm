@@ -146,7 +146,11 @@ fun parse syn =
     | Arrow (prems, head) =>
       (case p_worldhead head of 
           NONE => A.DeclRule (p_rule syn)
-        | SOME w => A.DeclDepends(w, p_atomics prems))
+        | SOME w => A.DeclDepends (w, p_atomics prems))
+    | App _ =>
+      (case p_worldhead syn of 
+          NONE => A.DeclRule (p_rule syn)
+        | SOME w => A.DeclDepends (w, []))
     | _ => raise SyntaxError ("Invalid toplevel statement")
 
 %%
