@@ -1,3 +1,4 @@
+(* Compilation utilities *)
 (* Robert J. Simmons *)
 
 structure SMLCompileUtil:> sig

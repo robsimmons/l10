@@ -1,3 +1,5 @@
+(* Compilation *)
+
 structure SMLCompileTypes:> sig
    
    (* Symbols corresponding to built-in types *)

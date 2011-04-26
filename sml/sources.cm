@@ -31,6 +31,7 @@ Group is
    check/mode.sml
    check/load.sml
    check/check.sml
+   check/coverage.sml
 
    opsem/search.sml
    opsem/deduce.sml
@@ -40,3 +41,4 @@ Group is
    compile-sml/util.sml
    compile-sml/types.sml
    compile-sml/terms.sml 
+   compile-sml/worlds.sml

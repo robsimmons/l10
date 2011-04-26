@@ -2,6 +2,8 @@
 
 structure SMLCompileTerms:> sig
 
+val matchTerm: Ast.term -> string
+val buildTerm: Ast.term -> string
 val termsSig: unit -> unit
 val terms: unit -> unit
 
@@ -11,6 +13,29 @@ struct
 open SMLCompileUtil
 open SMLCompileTypes
 
+fun termprefix () = getPrefix true "" ^ "Terms."
+
+fun matchTerm term = 
+   case term of
+      Ast.Const x => termprefix () ^ embiggen (Symbol.name x)
+    | Ast.NatConst i => IntInf.toString i
+    | Ast.StrConst s => "\"" ^ String.toCString s ^ "\""
+    | Ast.Structured (f, terms) => 
+      termprefix () ^ embiggen (Symbol.name f) 
+      ^ "(" ^ String.concatWith ", " (map matchTerm terms) ^ ")"
+    | Ast.Var NONE => "_"
+    | Ast.Var (SOME x) => "x_" ^ Symbol.name x
+
+fun buildTerm term = 
+   case term of
+      Ast.Const x => termprefix () ^ embiggen (Symbol.name x) ^ "'"
+    | Ast.NatConst i => IntInf.toString i
+    | Ast.StrConst s => "\"" ^ String.toCString s ^ "\""
+    | Ast.Structured (f, terms) => 
+      termprefix () ^ embiggen (Symbol.name f)  ^ "'"
+      ^ "(" ^ String.concatWith ", " (map buildTerm terms) ^ ")"
+    | Ast.Var NONE => raise Fail "Building term with unknown part"
+    | Ast.Var (SOME x) => "x_" ^ Symbol.name x
 
 (* The fundamental view datatype *)
 fun emitView isRec x = 
