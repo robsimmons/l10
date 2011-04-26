@@ -1,4 +1,4 @@
-(* A set (database) of atomic propositions *)
+(* Sets (databases) of atomic propositions *)
 (* XXX PERF implemented the least efficiently way you could imagine *)
 (* Robert J. Simmons *)
 
