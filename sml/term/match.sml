@@ -1,4 +1,23 @@
-structure Match = 
+(* Mediating between patterns (Ast terms), ground terms, and substitutions. *)
+(* Robert J. Simmons *)
+
+structure Match:> sig
+
+   (* Map a substitution over an abstract syntax tree pattern *)
+   val pullTerm: Subst.subst -> Ast.term -> Term.term
+   val pullAtomic: Subst.subst -> Ast.atomic -> Term.atomic
+
+   (* Match a pattern against a concrete term *)
+   val matchTerm: Subst.subst -> Ast.term -> Term.term 
+      -> Subst.subst option
+   val matchTerms: Subst.subst -> Ast.term list -> Term.term list
+      -> Subst.subst option
+   val matchWorld: Subst.subst -> Ast.world -> Term.world 
+      -> Subst.subst option
+   val matchAtomic: Subst.subst -> Ast.atomic -> Term.atomic 
+      -> Subst.subst option
+
+end = 
 struct
 
 fun pullTerm subst term = 

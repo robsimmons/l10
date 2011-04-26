@@ -1,3 +1,6 @@
+(* Map using atomic propositions (functionally similar to terms) as keys *)
+(* Robert J. Simmons *)
+
 structure PredMap :> sig
 
    type 'a map

@@ -1,3 +1,7 @@
+(* A set (database) of atomic propositions *)
+(* XXX PERF implemented the least efficiently way you could imagine *)
+(* Robert J. Simmons *)
+
 structure PredSet :> sig
 
    type set

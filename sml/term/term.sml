@@ -1,4 +1,4 @@
-(* Tinybot internal term representation
+(* Internal term representation
  * Robert J. Simmons
  * 
  * NOTE: This does not satisfy the McAllester complexity result! 

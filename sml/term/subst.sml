@@ -1,6 +1,5 @@
-(* Tinybot grounding substitutions 
- * Robert J. Simmons 
- * Essentially just maps from strings to terms  *)
+(* Grounding substitutions - essentially maps from symbols to terms *)
+(* Robert J. Simmons *)
 
 structure Subst :> sig
 

@@ -1,3 +1,6 @@
+(* Map using terms as keys *)
+(* Robert J. Simmons *)
+
 structure TermMap :> sig
 
    type 'a map 
