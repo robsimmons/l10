@@ -44,6 +44,7 @@ type typ = Symbol.symbol
 type arg = Symbol.symbol option * typ
 type atomic = Symbol.symbol * term list
 type world = Symbol.symbol * term list
+type dependency = world * world list
 
 fun eqWorld (w1, terms1) (w2, terms2) = 
    w1 = w2 andalso List.all eqTerm (ListPair.zip (terms1, terms2))

@@ -1,3 +1,6 @@
+(* Dependency search and static scheduling *)
+(* Robert J. Simmons *)
+
 structure Search :> sig
 
    type dependencies

@@ -1,3 +1,6 @@
+(* Type checking *)
+(* Robert J. Simmons *)
+
 structure Types :> sig
   
    (* checkDecl decl

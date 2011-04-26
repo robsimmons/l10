@@ -1,9 +1,12 @@
+(* Loading signatures known to be well-typed *)
+(* Robert J. Simmons *)
+
 structure Load :> sig
   
    (* loadDecl decl
     * 
     * Preconditions:  decl has been typechecked (types.sml)
-    * Exceptions:     none
+    * Exceptions:     Those that can come from mode checking. 
     * Effects:        Adds new types, worlds, constants, and relations
     *                 to the symbol tables in check/tabs.sml 
     *                 Prints out reconstructed declaration. *)

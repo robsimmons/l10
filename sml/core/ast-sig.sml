@@ -56,12 +56,13 @@ datatype prem =
  | Binrel of binrel * term * term
 val strPrem: prem -> string
 
+type dependency = world * world list
 type rule = prem list * atomic list
 
 datatype decl = 
    DeclConst of Symbol.symbol * arg list * Symbol.symbol
  | DeclDatabase of Symbol.symbol * atomic list * world
- | DeclDepends of world * world list
+ | DeclDepends of dependency
  | DeclRelation of Symbol.symbol * arg list * world
  | DeclRule of rule
  | DeclType of Symbol.symbol 

@@ -1,4 +1,8 @@
 (* Tables - state that is updated as signatures are loaded and checked *)
+(* Robert J. Simmons *)
+
+(* All stored information from the signature should be referenced here 
+ * and reset with the master Reset.reset () *)
 
 (* Type table
  * 
@@ -36,13 +40,17 @@ structure WorldTab = Symtab(type entrytp = Ast.typ list)
 structure ConTab = 
 struct
    structure S = Symtab(type entrytp = Ast.typ list * Ast.typ)
+
    open S
+
    val plus = Symbol.symbol "_plus"
+
    fun reset () = 
       let in
          S.reset ()
          ; bind (plus, ([ TypeTab.nat, TypeTab.nat ], TypeTab.nat))
       end
+
    val () = reset ()
 end
 
@@ -66,6 +74,7 @@ structure RelTab = Symtab(type entrytp = Ast.arg list * Ast.world)
  * SearchTab.lookup w contains ([ t1, ..., tn ], [ w1, ..., wm ]) *)
 structure SearchTab = Multitab(type entrytp = Ast.term list * Ast.world list)
 
+(* Rule table *)
 structure RuleTab :> sig
    val reset: unit -> unit
    val register: Ast.world * Ast.rule -> unit
@@ -74,6 +83,7 @@ end = struct
 
    val database: (Ast.world * Ast.rule) list ref = ref []
    fun reset () = database := []
+
    fun register data = database := data :: !database
 
    fun lookup' world' (world, rule) = 
@@ -82,9 +92,9 @@ end = struct
        | SOME subst => SOME (subst, rule)
 
    fun lookup world = List.mapPartial (lookup' world) (!database)
-
 end
 
+(* Reset all tables *)
 structure Reset = struct
    fun reset () = 
       (TypeTab.reset ()

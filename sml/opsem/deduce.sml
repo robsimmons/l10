@@ -1,3 +1,6 @@
+(* Forward chaining *)
+(* Robert J. Simmons *)
+
 structure Deduce = 
 struct
 

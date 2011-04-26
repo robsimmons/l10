@@ -1,4 +1,22 @@
-structure Mode = 
+(* Mode checking *)
+(* Robert J. Simmons *)
+
+structure Mode:> sig
+
+   (* Takes a rule, pulls its implicit world dependency.
+    * Checkes that all conclusions are at the same world. *)
+   val pullDependency : Ast.rule -> Ast.dependency
+
+   (* Checks that a dependency is well-moded.
+    * Returns the free variables grounded by the world *)
+   val checkDependency : Ast.dependency -> SetX.set
+
+   (* Checks that a rule is well-moded given variables known to be ground.
+    * Pulls one trick: swaps the order of equality judgments so that the first
+    * one is always ground. This is the only change it makes to the premeses *)
+   val checkRule: Ast.rule * SetX.set -> Ast.rule
+
+end = 
 struct
 
 structure A = Ast
@@ -63,7 +81,7 @@ fun pullPrems concWorld prems =
           | A.Binrel _ => []
    in List.concat (map pullPrem prems) end
 
-(* pullDependency takes a rule and produces a dependency; it only checks
+(* pullDependency takes a rule and produces a dependency; checks
  * that all the conclusions are at the same world. *)
 fun pullDependency (prems, concs) = 
    let val concWorld = pullConcs concs

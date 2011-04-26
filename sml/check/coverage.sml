@@ -1,4 +1,26 @@
-structure Coverage = 
+(* Coverage tools *)
+(* Robert J. Simmons *)
+
+(* Currently, this is only used in the complier; no coverage checking is done *)
+
+structure Coverage:> sig
+
+   (* A pathtree represents a covering set of patterns over a datatype *)
+   datatype paths = 
+      Unsplit
+    | Split of (Ast.typ * paths) list MapX.map
+    | StringSplit of SetS.set 
+    | IntSplit of SetII.set
+    | SymbolSplit of SetX.set
+   type pathtree = Ast.typ * paths
+
+   val isUnsplit: paths -> bool
+
+   val makepaths: Ast.term * Ast.typ -> pathtree
+
+   val extendpaths: Ast.term * pathtree -> pathtree
+
+end = 
 struct
 
 structure A = Ast
