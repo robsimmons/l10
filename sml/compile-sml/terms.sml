@@ -186,6 +186,7 @@ fun emitSig x =
       ; emit ("val prj" ^ Name ^ ": " ^ name ^ " -> " ^ view)
       ; emit ("val eq" ^ Name ^ ": " ^ name ^ " -> " ^ name ^ " -> bool") 
       ; emitAbortSig x 
+     (* ; emit ("structure Map" ^ Name ^ ": DISC_PATHS where type key = " ^ name) *)
 (*      ; emit ("structure Set" ^ Name 
               ^ ": ORD_SET where type Key.ord_key = " ^ name)
       ; emit ("structure Map" ^ Name 

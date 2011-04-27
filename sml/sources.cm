@@ -9,6 +9,7 @@ Group is
    util/symbol.sml
    util/symtab.sml
    util/multitab.sml
+   util/disctree.sml
    (* util/layout-sig.sml
    util/layout.sml *)
 
