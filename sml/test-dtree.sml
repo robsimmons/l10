@@ -1,33 +1,66 @@
 CM.make "sml/sources.cm"; 
 Control.Print.printDepth := 200;
 
+datatype xtree = 
+   XLeaf of Symbol.symbol
+ | XNode of Symbol.symbol * xtree * xtree
+
+fun unzipXtree x = 
+   case x of
+      XLeaf x_1 =>
+      DiscMap.unzipX x_1 o
+      DiscMap.unzip (0, 2)
+    | XNode (x_1, x_2, x_3) =>
+      unzipXtree x_3 o
+      unzipXtree x_2 o
+      DiscMap.unzipX x_1 o
+      DiscMap.unzip (1, 2)
+
+fun subXtree x = 
+   case x of
+      XLeaf x_1 =>
+      DiscMap.subX x_1 o
+      DiscMap.sub 0
+    | XNode (x_1, x_2, x_3) =>
+      subXtree x_3 o
+      subXtree x_2 o
+      DiscMap.subX x_1 o
+      DiscMap.sub 1
+
 datatype tree = 
    Leaf
  | Node of tree * tree 
 
-fun makePathTree x = 
+fun unzipTree x = 
    case x of 
       Leaf => 
       DiscMap.unzip (0, 2)
     | Node (x_1, x_2) => 
-      makePathTree x_2 o 
-      makePathTree x_1 o 
+      unzipTree x_2 o 
+      unzipTree x_1 o 
       DiscMap.unzip (1, 2)
 
-fun followPathTree x =
+fun subTree x =
    case x of 
       Leaf =>
       DiscMap.sub 0
     | Node (x_1, x_2) =>
-      followPathTree x_2 o
-      followPathTree x_1 o
+      subTree x_2 o
+      subTree x_1 o
       DiscMap.sub 1
    
 structure MapTree = DiscMapFn 
 (struct
    type key = tree
-   val makePath = makePathTree
-   val followPath = followPathTree
+   val unzip = unzipTree
+   val sub = subTree
+end)
+
+structure MapXtree = DiscMapFn 
+(struct
+   type key = xtree
+   val unzip = unzipXtree
+   val sub = subXtree
 end)
 
 val map1 = MapTree.singleton (Leaf, 1);
