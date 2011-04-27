@@ -10,6 +10,11 @@ w N M (suc P) <- w N M P.
 w (suc (suc (suc N))) (suc (suc M)) (suc P) <- w N M P.
 w (suc N) M P <- w N M P.
 
+w2: n -> n -> world.
+w2 N zero <- w N N N.
+w2 N (suc N) <- w (suc N) (suc N) (suc N).
+w2 N (suc (suc M)) <- w2 M N.
+
 true : rel @ w zero zero zero.
 db0 = true @ w (suc zero) (suc zero) (suc zero).
 db1 = true @ w (suc (suc (suc (suc (suc (suc zero)))))) zero zero.
