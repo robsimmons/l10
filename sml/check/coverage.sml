@@ -10,7 +10,7 @@ structure Coverage:> sig
       Unsplit
     | Split of (Ast.typ * paths) list MapX.map
     | StringSplit of SetS.set 
-    | IntSplit of SetII.set
+    | NatSplit of SetII.set
     | SymbolSplit of SetX.set
    type pathtree = Ast.typ * paths
 
@@ -33,7 +33,7 @@ datatype paths =
    Unsplit
  | Split of (A.typ * paths) list MapX.map
  | StringSplit of SetS.set 
- | IntSplit of SetII.set
+ | NatSplit of SetII.set
  | SymbolSplit of SetX.set
 
 fun isUnsplit Unsplit = true
@@ -49,13 +49,12 @@ fun makepaths (term, typ) : pathtree =
       fun subpath (f, terms) (constructor, pathtrees) = 
          let 
             val types = (#1 (valOf (ConTab.lookup constructor)))
-            val termtypes = ListPair.zip (terms, types)
-            val function =
-               if f <> constructor
-               then (fn _ => (typ, Unsplit)) 
-               else makepaths
          in
-            MapX.insert (pathtrees, constructor, map function termtypes)
+            if f <> constructor
+            then MapX.insert (pathtrees, constructor, 
+                              map (fn typ => (typ, Unsplit)) types)
+            else MapX.insert (pathtrees, constructor, 
+                              map makepaths (ListPair.zip (terms, types)))
          end
          
       fun splitpath ((f, terms), typ) = 
@@ -69,19 +68,19 @@ fun makepaths (term, typ) : pathtree =
          else (typ, Split (splitpath ((x, []), typ)))
        | A.Structured (f, terms) => (typ, Split (splitpath ((f, terms), typ)))
        | A.StrConst s => (typ, StringSplit (SetS.singleton s))
-       | A.NatConst i => (typ, IntSplit (SetII.singleton i))
+       | A.NatConst i => (typ, NatSplit (SetII.singleton i))
    end
 
 (* Given a term and a path tree at the same type, extend the path tree
  * until it generalizes the term. *)
 fun extendpaths (term, (typ, paths)) : pathtree = 
    case (term, paths) of 
-      (A.Var _, Unsplit) => (typ, Unsplit)
+      (A.Var _, _) => (typ, paths)
     | (_, Unsplit) => makepaths (term, typ)
     | (A.StrConst s, StringSplit set) => 
       (typ, StringSplit (SetS.add (set, s)))
-    | (A.NatConst i, IntSplit set) => 
-      (typ, IntSplit (SetII.add (set, i)))
+    | (A.NatConst i, NatSplit set) => 
+      (typ, NatSplit (SetII.add (set, i)))
     | (A.Const _, Split _) => 
       (typ, paths) (* By invariant, constant is already map *)
     | (A.Structured (f, terms), Split subtrees) =>

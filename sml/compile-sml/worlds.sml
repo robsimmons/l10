@@ -1,11 +1,11 @@
 (* Robert J. Simmons *)
 
-structure SMLCompileWorlds:> sig
+structure SMLCompileWorlds (* :> sig
 
    val worldsSig: unit -> unit 
    val worlds: unit -> unit 
 
-end = 
+end *) = 
 struct
 
 open SMLCompileUtil
@@ -40,7 +40,86 @@ fun seekWorld (world, args) =
           else " (" ^ String.concatWith ", " (map buildTerm args) ^ ")"
    in Name ^ strargs end
 
-(* Specal case for when *)
+type patharg = int list * Coverage.pathtree
+
+(* Using SearchTab, come up with a sufficiently expanded set of pathtrees *)
+fun makePaths world args =
+   let 
+      val seed: patharg list = 
+         map (fn (n, typ) => ([ n ], (typ, Coverage.Unsplit))) args
+
+      fun mapper (term, (is, pathtree)) =
+         (is, Coverage.extendpaths (term, pathtree))
+      fun folder (terms, pathargs) = 
+         map mapper (ListPair.zipEq (terms, pathargs))
+   in
+      List.foldr folder seed (map #1 (SearchTab.lookup world))
+   end
+
+fun strarg (is, _) = "x_" ^ String.concatWith "_" (map Int.toString is)
+
+fun nameOfPrj x = 
+   case valOf (TypeTab.lookup x) of
+      TypeTab.YES => "prj" ^ NameOfType x ^ " "
+    | TypeTab.NO => "prj" ^ NameOfType x ^ " "
+    | _ => ""
+
+fun strprj (is, (typ, pathtree)) =
+   nameOfPrj typ ^ "x_" ^ String.concatWith "_" (map Int.toString is)
+
+fun filterUnsplit (pathargs: patharg list) = 
+   List.filter (not o Coverage.isUnsplit o #2 o #2) pathargs
+
+fun emitCase [] = emit "()"
+  | emitCase (pathargs: patharg list) = 
+    let
+    in
+       emit ("case (" ^ String.concatWith ", " (map strprj pathargs) ^ ") of")
+       ; emitMatches "  " pathargs [] 
+       ; emit ")"
+    end
+    
+and emitMatch prefix matches = 
+    let 
+       fun singlePatharg (is, (constructor, subpaths)) = 
+          let 
+             val pathargs: patharg list = 
+                map (fn (i, subpath) => (is @ [ i ], subpath)) (mapi subpaths)
+          in 
+             (filterUnsplit pathargs,
+              (embiggen (Symbol.name constructor) 
+               ^ (if null pathargs then ""
+                  else (" (" ^ String.concatWith ", " (map strarg pathargs) 
+                        ^ ")"))))
+          end
+           
+       val (pathargs, patterns) = ListPair.unzip (map singlePatharg matches)
+    in
+       emit (prefix ^ "(" ^ String.concatWith ", " patterns ^ ") => (")
+       ; incr ()
+       ; emitCase (List.concat pathargs)
+       ; decr ()
+    end
+
+and emitMatches prefix [] matches = emitMatch prefix (rev matches)
+  | emitMatches prefix ((is, (typ, pathtree)) :: pathargs) matches =
+    (case pathtree of 
+        Coverage.Unsplit => raise Fail "Invariant"
+      | Coverage.Split subtrees => 
+        let
+           val newmatches = MapX.listItemsi subtrees
+        in
+           emitMatches prefix pathargs ((is, hd newmatches) :: matches)
+           ; app (fn match =>
+                     emitMatches ")|" pathargs ((is, match) :: matches))
+                (tl newmatches)
+        end
+      | Coverage.StringSplit _ => 
+        raise Fail "Splitting on strings unimplemented"
+      | Coverage.NatSplit _ => 
+        raise Fail "Splitting on naturals unimplemented"
+      | Coverage.SymbolSplit _ => 
+        raise Fail "Splitting on symbols unimplemented")
 
 fun emitWorld world =
    let 
@@ -48,8 +127,7 @@ fun emitWorld world =
       val Name = embiggen (Symbol.name world)
       val typs = valOf (WorldTab.lookup world)
       val args = mapi typs
-      val pathargs = map (fn (x, y) => ([ x ], y)) args
-      fun strarg (is, typ) = "x_" ^ String.concatWith "_" (map Int.toString is)
+      val pathargs = makePaths world args
 
       (* Outputs code for saying "I am here" *)
       fun reportworld () = 
@@ -65,13 +143,13 @@ fun emitWorld world =
          ; decr ())
    in
       emit ("fun seek" ^ Name ^ " (" 
-            ^ String.concatWith ", " (map strarg pathargs) ^ ")")
+            ^ String.concatWith ", " (map strarg pathargs) ^ ") =")
       ; incr ()
       ; emit ("let")
       ; reportworld ()
       ; emit ("in")
       ; incr ()
-      ; emit "()"
+      ; emitCase (filterUnsplit pathargs)
       ; decr ()
       ; emit ("end\n")
       ; decr ()
@@ -93,7 +171,7 @@ fun worlds () =
    let
       val worlds = WorldTab.list ()
    in
-      emit ("struct " ^ getPrefix true "" ^ "Search:> "
+      emit ("structure " ^ getPrefix true "" ^ "Search:> "
             ^ getPrefix true "_" ^ "SEARCH =")
       ; emit "struct"
       ; incr ()
