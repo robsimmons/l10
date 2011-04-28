@@ -14,6 +14,11 @@ structure SMLCompileTerms:> sig
    (* Give a constructing-ready SML term corresponding to an AST term *)
    val buildTerm: Ast.term -> string
 
+   (* Given a term, returns a pathvar-based substitution along with 
+    * equality constraints *)
+   (* val pathTerm: Ast.term
+      -> Ast.term * Ast.subst * (Symbol.symbol * Symbol.symbol) list  *)
+
    (* A pathvar is an annotated list of how-you-got-to-this-term *)
    type 'a pathvar = int list * 'a 
    val nameOfVar: 'a pathvar -> string
@@ -50,7 +55,6 @@ fun constructorPattern f (pathvar: 'a pathvar) constructor =
       in 
          (strpat, pathvars)
       end
-
 
 fun termprefix () = getPrefix true "" ^ "Terms."
 
@@ -175,12 +179,12 @@ fun emitStr x =
                constructorPattern (fn (_, _, typ) => typ)
                   ([], ()) constructor
             fun emitSingle (pathvar as (_, typ)) = 
-               emit (" ^ " ^ nameOfStr typ ^ " " ^ nameOfVar pathvar)
+               emit (" ^ \" \" ^ " ^ nameOfStr typ ^ " " ^ nameOfVar pathvar)
          in
             emit (prefix ^ match)
             ; if null pathvars
               then (emit ("   \"" ^ Symbol.name constructor ^ "\""); raise Brk)
-              else (emit ("   (\"(" ^ Symbol.name constructor ^ " \""))
+              else (emit ("   (\"(" ^ Symbol.name constructor ^ "\""))
             ; incr ()
             ; app emitSingle pathvars
             ; emit " ^ \")\")"
@@ -248,6 +252,20 @@ fun emitMapHelper kind x =
       ; emit ""
    end
 
+(* Use the unzip/sub functions to implement maps *)
+fun emitMap x = 
+   let
+      val name = nameOfType x
+      val Name = NameOfType x
+   in
+      emit ("structure Map" ^ Name ^ " = DiscMapFn")
+      ; emit ("(struct")
+      ; emit ("   type key = " ^ name)
+      ; emit ("   val unzip = unzip" ^ Name)
+      ; emit ("   val sub = sub" ^ Name)
+      ; emit ("end)\n")
+   end
+
 (* Emit the equality function (relies on the fact that we've got data) *)
 fun emitEq x = 
    let 
@@ -264,8 +282,8 @@ fun emitSig x =
       val view = nameOfView x
       val Name = NameOfType x
    in
-      (* emit ("structure Map" ^ Name ^ ": DISC_MAP where type key = " ^ name)
-      ; *) emit ("val str" ^ Name ^ ": " ^ name ^ " -> String.string")
+      emit ("structure Map" ^ Name ^ ": DISC_MAP where type key = " ^ name)
+      ; emit ("val str" ^ Name ^ ": " ^ name ^ " -> String.string")
       (* ; emit ("val layout" ^ Name ^ ": " ^ name ^ " -> Layout.t") *)
       ; emit ("val inj" ^ Name ^ ": " ^ view ^ " -> " ^ name)
       ; emit ("val prj" ^ Name ^ ": " ^ name ^ " -> " ^ view)
@@ -316,18 +334,25 @@ fun terms () =
       ; app emitPrj encodedTypes
       ; app emitInj encodedTypes
       ; app emitAbort encodedTypes
+
       ; emit "\n"
       ; emit "(* String encoding functions *)\n"
       ; emit "fun strFake_ (Fake_ x) = strFake_ x"
       ; app emitStr encodedTypes
+
       ; emit "\n"
       ; emit "(* Equality *)\n"
       ; app emitEq encodedTypes
       ; emit ""
       ; emitMapHeader "sub"
+
       ; app (emitMapHelper "sub") encodedTypes
       ; emitMapHeader "unzip"
       ; app (emitMapHelper "unzip") encodedTypes
+
+      ; emit ""
+      ; emit ("(* Maps *)\n")
+      ; app emitMap encodedTypes
       ; decr ()
       ; emit "end\n"
       ; emit ("structure " ^ getPrefix true "" ^ "Terms:> " 

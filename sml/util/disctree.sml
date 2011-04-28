@@ -7,12 +7,12 @@
 
 structure DiscMap:> sig
    type 'a map 
+   exception NotThere
+
    val empty: 'a map
    val isEmpty: 'a map -> bool
    val inj: 'a -> 'a map (* Insert data *)
-   val prj: 'a map -> 'a (* Expect data *)
-
-   exception NotThere
+   val prj: 'a map -> 'a (* Expect data, may raise NotThere *)
    val sub: int -> 'a map -> 'a map 
    val subX: Symbol.symbol -> 'a map -> 'a map
    val subII: IntInf.int -> 'a map -> 'a map
@@ -57,10 +57,11 @@ struct
 
    fun inj x = SOME (D x)
 
-   fun prj (SOME (D x)) = x
-     | prj _ = raise Fail "Invariant"
-
    exception NotThere
+
+   fun prj NONE = raise NotThere
+     | prj (SOME (D x)) = x
+     | prj _ = raise Fail "Invariant"
 
    (* XXX Uses Unsafe.Vector.sub *)
    fun sub n map =

@@ -6,13 +6,11 @@ fun test (prefix, files) =
   (Reset.reset ()
    ; SMLCompileUtil.setPrefix prefix
    ; Go.readfiles files
-   ; SMLCompileTerms.termsSig ()
+   (* ; SMLCompileTerms.termsSig () *)
    ; SMLCompileUtil.write (smlfile "terms-sig") SMLCompileTerms.termsSig
    ; SMLCompileUtil.write (smlfile "terms") SMLCompileTerms.terms
    ; SMLCompileUtil.write (smlfile "worlds-sig") SMLCompileWorlds.worldsSig
    ; SMLCompileUtil.write (smlfile "worlds") SMLCompileWorlds.worlds);
-
-test ("t", [ "regression/tree.l10" ]);
 
 test ("b3", [ "examples/Back3.l10" ]);
 use (smlfile "terms-sig");
@@ -44,6 +42,30 @@ use (smlfile "terms-sig");
 use (smlfile "terms");
 use (smlfile "worlds-sig");
 use (smlfile "worlds");
+
+test ("t", [ "regression/tree.l10" ]);
+use (smlfile "terms-sig");
+use (smlfile "terms");
+use (smlfile "worlds-sig");
+use (smlfile "worlds");
+open TTerms;
+val map1 = MapTree.singleton (Leaf', 1);
+val map2 = MapTree.insert (map1, Node' (Node' (Leaf', Leaf'), Leaf'), 2);
+val x1 = MapTree.find (map2, Node' (Leaf', Leaf')); 
+val x2 = MapTree.find (map2, Node' (Leaf', Node' (Leaf', Leaf'))); 
+val x3 = MapTree.find (map2, Leaf'); 
+val x4 = MapTree.find (map2, Node' (Node' (Leaf', Leaf'), Leaf')); 
+
+val map3 = List.foldr MapList.insert' MapList.empty 
+   [ (Cons' (4, Cons' (12, Cons' (6, End'))), "4-12-6"),
+     (Cons' (9, End'), "9"),
+     (End', ""),
+     (Cons' (12, End'), "12") ]
+val x5 = MapList.find (map3, Cons' (9, End'))
+val x6 = MapList.find (map3, Cons' (4, Cons' (12, Cons' (6, End'))))
+val x7 = MapList.find (map3, Cons' (11, End'))
+val x8 = MapList.find (map3, Cons' (4, (Cons' (12, End'))))
+
 
 (*
 open L10Terms;

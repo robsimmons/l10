@@ -120,11 +120,11 @@ fun emitWorld world =
         (incr ()
          ; if null args 
            then emit ("val () = print (\"Visiting " ^ name ^ "\\n\")")
-           else emit ("val () = print (\"Visiting " ^ name ^ " (\"")
+           else emit ("val () = print (\"Visiting " ^ name ^ " \"")
          ; incr ()
          ; app (fn (i, typ) => 
                 emit ("^ " ^ nameOfStr typ ^ " x_" ^ Int.toString i)) args
-         ; if null args then () else emit "^ \")\\n\")"
+         ; if null args then () else emit "^ \"\\n\")"
          ; decr ()
          ; decr ())
    in
