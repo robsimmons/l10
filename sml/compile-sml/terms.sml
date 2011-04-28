@@ -2,16 +2,53 @@
 
 structure SMLCompileTerms:> sig
 
-val matchTerm: Ast.term -> string
-val buildTerm: Ast.term -> string
-val termsSig: unit -> unit
-val terms: unit -> unit
+   (* Effects *)
+   val termsSig: unit -> unit
+   val terms: unit -> unit
+
+   (* Give a pattern-matching-ready SML term corresponding to an AST term *)
+   (* XXX note: is this used? 
+    * doesn't make sense with depth-1 patternmatching - RJS 4/28/11 *)
+   val matchTerm: Ast.term -> string
+ 
+   (* Give a constructing-ready SML term corresponding to an AST term *)
+   val buildTerm: Ast.term -> string
+
+   (* A pathvar is an annotated list of how-you-got-to-this-term *)
+   type 'a pathvar = int list * 'a 
+   val nameOfVar: 'a pathvar -> string
+
+   (* Builds a depth-1 pattern match, extending paths and data *)
+   val constructorPattern: 
+      ('a pathvar * int * Ast.typ -> 'b)    (* Extension function *)
+      -> 'a pathvar                         (* Current path *)
+      -> Symbol.symbol                      (* Constructor *)
+      -> (String.string * 'b pathvar list) 
 
 end = 
 struct
 
 open SMLCompileUtil
 open SMLCompileTypes
+
+type 'a pathvar = int list * 'a 
+
+fun nameOfVar (is, _) = "x_" ^ String.concatWith "_" (map Int.toString is)
+
+fun constructorPattern f (pathvar: 'a pathvar) constructor = 
+   case valOf (ConTab.lookup constructor) of
+      ([], _) => (embiggen (Symbol.name constructor), [])
+    | (typs, _) => 
+      let
+         fun extend (n, typ) = (#1 pathvar @ [ n ], f (pathvar, n, typ))
+         val pathvars = map extend (mapi typs)
+         val strpat = 
+            embiggen (Symbol.name constructor) ^ " (" ^
+            String.concatWith ", " (map nameOfVar pathvars) ^ ") => "
+      in 
+         (strpat, pathvars)
+      end
+
 
 fun termprefix () = getPrefix true "" ^ "Terms."
 
@@ -129,26 +166,24 @@ fun emitStr x =
       val name = nameOfType x
       val Name = embiggen name
                          
+      exception Brk
       fun emitCase prefix constructor =
-         case valOf (ConTab.lookup constructor) of
-            ([], _) => 
-            emit (prefix ^ (embiggen (Symbol.name constructor)) 
-                  ^ " => \"" ^ Symbol.name constructor ^ "\"")
-          | (types, _) => 
-            let 
-               val pat = pattern types
-               fun emitSingle (typ, var) = 
-                  emit (" ^ " ^ nameOfStr typ ^ " " ^ var)
-            in 
-               emit (prefix ^ (embiggen (Symbol.name constructor)) 
-                     ^ " (" ^ String.concatWith ", " (map #2 pat) ^ ") => ")
-               ; incr ()
-               ; emit "(\"(\""
-               ; emit (" ^ \"" ^ Symbol.name constructor ^ " \"")
-               ; app emitSingle pat
-               ; emit " ^ \")\")"
-               ; decr ()
-            end
+         let 
+            val (match, pathvars) = constructorPattern 
+                                   (fn (_, _, typ) => typ)
+                                   ([], ()) constructor
+            fun emitSingle (pathvar as (_, typ)) = 
+               emit (" ^ " ^ nameOfStr typ ^ " " ^ nameOfVar pathvar)
+         in
+            emit (prefix ^ match)
+            ; if null pathvars
+              then (emit ("   \"" ^ Symbol.name constructor ^ "\""); raise Brk)
+              else (emit ("   (\"(" ^ Symbol.name constructor ^ "\""))
+            ; incr ()
+            ; app emitSingle pathvars
+            ; emit " ^ \")\")"
+            ; decr ()
+         end handle Brk => ()
 
       fun emitCases [] = (emit ("   x => abort" ^ Name ^ " x"))
         | emitCases [ constructor ] = emitCase "   " constructor
@@ -157,11 +192,42 @@ fun emitStr x =
            
    in
       emit ""
-      ; emit ("and str" ^ Name ^ " x = ")
+      ; emit ("and str" ^ Name ^ " x_ = ")
       ; incr ()
-      ; emit ("case prj" ^ Name ^ " x of")
+      ; emit ("case prj" ^ Name ^ " x_ of")
       ; emitCases (rev (TypeConTab.lookup x))
       ; decr ()
+   end
+
+(* Emit the unzip/sub functions *)
+fun emitMapHeader kind = 
+   let in
+      emit ""
+      ; emit ("(* Map helpers: " ^ kind ^ " *)\n")
+      ; emit ("fun " ^ kind ^ "T x = DiscMap." ^ kind ^ "X x\n")
+      ; emit ("fun " ^ kind ^ "Nat x = DiscMap." ^ kind ^ "II x\n")
+      ; emit ("fun " ^ kind ^ "String x = DiscMap." ^ kind ^ "S x\n")
+   end
+
+fun emitMapHelper kind x = 
+   let
+      val Name = NameOfType x
+
+      fun emitCase prefix (consnum, constructor) =
+         let in
+            emit (prefix ^ embiggen (Symbol.name constructor) ^ " => ")
+         end
+
+      fun emitCases [] = emit ("   x => abort" ^ Name ^ " x")
+        | emitCases [ cons ] = emitCase "   " cons
+        | emitCases (cons :: conses) = (emitCases conses; emitCase " | " cons)
+   in 
+      emit ("and " ^ kind ^ Name ^ " x = ")
+      ; incr ()
+      ; emit ("case " ^ nameOfPrj x ^ "x of")
+      ; emitCases (rev (mapi (TypeConTab.lookup x)))
+      ; decr ()
+      ; emit ""
    end
 
 (* Emit the equality function (relies on the fact that we've got data) *)
@@ -170,7 +236,7 @@ fun emitEq x =
       val name = nameOfType x
       val Name = NameOfType x
    in
-      emit ("fun eq" ^ Name ^ "(x: " ^ name ^ ") (y: " ^ name ^ ") = x = y")
+      emit ("fun eq" ^ Name ^ " (x: " ^ name ^ ") (y: " ^ name ^ ") = x = y")
    end
 
 (* Emit the signature parts associated with a type *)
@@ -180,14 +246,14 @@ fun emitSig x =
       val view = nameOfView x
       val Name = NameOfType x
    in
-      emit ("val str" ^ Name ^ ": " ^ name ^ " -> String.string")
+      emit ("structure Map" ^ Name ^ ": DISC_MAP where type key = " ^ name)
+      ; emit ("val str" ^ Name ^ ": " ^ name ^ " -> String.string")
       (* ; emit ("val layout" ^ Name ^ ": " ^ name ^ " -> Layout.t") *)
       ; emit ("val inj" ^ Name ^ ": " ^ view ^ " -> " ^ name)
       ; emit ("val prj" ^ Name ^ ": " ^ name ^ " -> " ^ view)
       ; emit ("val eq" ^ Name ^ ": " ^ name ^ " -> " ^ name ^ " -> bool") 
       ; emitAbortSig x 
-     (* ; emit ("structure Map" ^ Name ^ ": DISC_PATHS where type key = " ^ name) *)
-(*      ; emit ("structure Set" ^ Name 
+      (* ; emit ("structure Set" ^ Name 
               ^ ": ORD_SET where type Key.ord_key = " ^ name)
       ; emit ("structure Map" ^ Name 
               ^ ": ORD_MAP where type Key.ord_key = " ^ name) *)
@@ -216,8 +282,7 @@ fun terms () =
       val types = TypeTab.list ()
       val encodedTypes = List.filter encoded types
    in
-      emit ("structure " ^ getPrefix true "" ^ "Terms:> " 
-            ^ getPrefix true "_" ^ "TERMS = ")
+      emit ("structure " ^ getPrefix true "" ^ "TermsImpl = ")
       ; emit "struct"
       ; incr ()
       ; emit "(* Datatype views *)\n"
@@ -240,8 +305,16 @@ fun terms () =
       ; emit "\n"
       ; emit "(* Equality *)\n"
       ; app emitEq encodedTypes
+      ; emit ""
+      ; emitMapHeader "sub"
+      ; app (emitMapHelper "sub") encodedTypes
+      ; emitMapHeader "unzip"
+      ; app (emitMapHelper "unzip") encodedTypes
       ; decr ()
-      ; emit "end"
+      ; emit "end\n"
+      ; emit ("structure " ^ getPrefix true "" ^ "Terms:> " 
+              ^ getPrefix true "_" ^ "TERMS = " 
+              ^ getPrefix true "" ^ "TermsImpl")
    end
 
 end

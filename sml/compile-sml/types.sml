@@ -17,9 +17,7 @@ structure SMLCompileTypes:> sig
       
    (* The name of the to-string version of this type *)
    val nameOfStr: Symbol.symbol -> string
-
-   (* Takes a list of types and annotates it with proper variable names *)
-   val pattern: Symbol.symbol list -> (Symbol.symbol * string) list
+   val nameOfPrj: Symbol.symbol -> string
 
 end = 
 struct
@@ -47,6 +45,14 @@ fun NameOfType x =
    if encoded x then embiggen (Symbol.name x) else raise Fail "Invariant"
 fun nameOfView x = 
    if encoded x then Symbol.name x ^ "_view" else raise Fail "Invariant"
+
+
+fun nameOfPrj x = 
+   case valOf (TypeTab.lookup x) of
+      TypeTab.YES => "prj" ^ NameOfType x ^ " "
+    | TypeTab.NO => "prj" ^ NameOfType x ^ " "
+    | _ => ""
+
 
 fun nameOfStr x = 
    case valOf (TypeTab.lookup x) of

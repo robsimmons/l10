@@ -12,11 +12,6 @@ open SMLCompileUtil
 open SMLCompileTypes
 open SMLCompileTerms
 
-fun mapi' n [] = []
-  | mapi' n (x :: xs) = (n, x) :: mapi' (n+1) xs
-
-fun mapi xs = mapi' 1 xs
-
 fun emitWorldSig world = 
    let
       val Name = embiggen (Symbol.name world)
@@ -56,16 +51,7 @@ fun makePaths world args =
       List.foldr folder seed (map #1 (SearchTab.lookup world))
    end
 
-fun strarg (is, _) = "x_" ^ String.concatWith "_" (map Int.toString is)
-
-fun nameOfPrj x = 
-   case valOf (TypeTab.lookup x) of
-      TypeTab.YES => "prj" ^ NameOfType x ^ " "
-    | TypeTab.NO => "prj" ^ NameOfType x ^ " "
-    | _ => ""
-
-fun strprj (is, (typ, pathtree)) =
-   nameOfPrj typ ^ "x_" ^ String.concatWith "_" (map Int.toString is)
+fun strprj (pathvar as (_, (typ, _))) = nameOfPrj typ ^ nameOfVar pathvar
 
 fun filterUnsplit (pathargs: patharg list) = 
    List.filter (not o Coverage.isUnsplit o #2 o #2) pathargs
@@ -89,7 +75,7 @@ and emitMatch prefix matches =
              (filterUnsplit pathargs,
               (embiggen (Symbol.name constructor) 
                ^ (if null pathargs then ""
-                  else (" (" ^ String.concatWith ", " (map strarg pathargs) 
+                  else (" (" ^ String.concatWith ", " (map nameOfVar pathargs) 
                         ^ ")"))))
           end
            
@@ -143,7 +129,7 @@ fun emitWorld world =
          ; decr ())
    in
       emit ("fun seek" ^ Name ^ " (" 
-            ^ String.concatWith ", " (map strarg pathargs) ^ ") =")
+            ^ String.concatWith ", " (map nameOfVar pathargs) ^ ") =")
       ; incr ()
       ; emit ("let")
       ; reportworld ()

@@ -31,9 +31,17 @@ structure SMLCompileUtil:> sig
 
    (* Capitalizes the first character in a string; must be lower case *)
    val embiggen: string -> string
+
+   (* Fiddly utility functions *)
+   val mapi: 'a list -> (int * 'a) list 
       
 end = 
 struct
+
+fun mapi' n [] = []
+  | mapi' n (x :: xs) = (n, x) :: mapi' (n+1) xs
+
+fun mapi xs = mapi' 1 xs
 
 val prefix = ref "l10"
 
