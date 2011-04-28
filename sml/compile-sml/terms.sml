@@ -37,14 +37,16 @@ fun nameOfVar (is, _) = "x_" ^ String.concatWith "_" (map Int.toString is)
 
 fun constructorPattern f (pathvar: 'a pathvar) constructor = 
    case valOf (ConTab.lookup constructor) of
-      ([], _) => (embiggen (Symbol.name constructor), [])
+      ([], _) => (embiggen (Symbol.name constructor) ^ " => ", [])
     | (typs, _) => 
       let
          fun extend (n, typ) = (#1 pathvar @ [ n ], f (pathvar, n, typ))
          val pathvars = map extend (mapi typs)
          val strpat = 
-            embiggen (Symbol.name constructor) ^ " (" ^
-            String.concatWith ", " (map nameOfVar pathvars) ^ ") => "
+            embiggen (Symbol.name constructor) 
+            ^ (if null (tl typs) then " " else " (")
+            ^ String.concatWith ", " (map nameOfVar pathvars) 
+            ^ (if null (tl typs) then " => " else ") => ")
       in 
          (strpat, pathvars)
       end
@@ -169,9 +171,9 @@ fun emitStr x =
       exception Brk
       fun emitCase prefix constructor =
          let 
-            val (match, pathvars) = constructorPattern 
-                                   (fn (_, _, typ) => typ)
-                                   ([], ()) constructor
+            val (match, pathvars) = 
+               constructorPattern (fn (_, _, typ) => typ)
+                  ([], ()) constructor
             fun emitSingle (pathvar as (_, typ)) = 
                emit (" ^ " ^ nameOfStr typ ^ " " ^ nameOfVar pathvar)
          in
@@ -204,28 +206,42 @@ fun emitMapHeader kind =
    let in
       emit ""
       ; emit ("(* Map helpers: " ^ kind ^ " *)\n")
-      ; emit ("fun " ^ kind ^ "T x = DiscMap." ^ kind ^ "X x\n")
-      ; emit ("fun " ^ kind ^ "Nat x = DiscMap." ^ kind ^ "II x\n")
-      ; emit ("fun " ^ kind ^ "String x = DiscMap." ^ kind ^ "S x\n")
+      ; emit ("fun " ^ kind ^ "T x_ = DiscMap." ^ kind ^ "X x_\n")
+      ; emit ("fun " ^ kind ^ "Nat x_ = DiscMap." ^ kind ^ "II x_\n")
+      ; emit ("fun " ^ kind ^ "String x_ = DiscMap." ^ kind ^ "S x_\n")
    end
 
 fun emitMapHelper kind x = 
    let
       val Name = NameOfType x
+      val constructors = mapi (TypeConTab.lookup x)
+      val width = length constructors
 
       fun emitCase prefix (consnum, constructor) =
-         let in
-            emit (prefix ^ embiggen (Symbol.name constructor) ^ " => ")
+         let
+            val (match, pathvars) = 
+               constructorPattern (fn (_, _, typ) => typ) ([], ()) constructor
+            fun emitSingle (pathvar as (_, typ)) =
+               emit (nameOfTree kind typ ^ nameOfVar pathvar ^ " o")
+         in
+            emit (prefix ^ match)
+            ; incr ()
+            ; app emitSingle (rev pathvars)
+            ; if kind = "unzip" 
+              then emit ("DiscMap.unzip (" ^ Int.toString (consnum-1) ^ ", " 
+                         ^ Int.toString width ^ ")")
+              else emit ("DiscMap.sub " ^ Int.toString (consnum-1))
+            ; decr ()
          end
 
       fun emitCases [] = emit ("   x => abort" ^ Name ^ " x")
         | emitCases [ cons ] = emitCase "   " cons
         | emitCases (cons :: conses) = (emitCases conses; emitCase " | " cons)
    in 
-      emit ("and " ^ kind ^ Name ^ " x = ")
+      emit ("and " ^ kind ^ Name ^ " x_ = ")
       ; incr ()
-      ; emit ("case " ^ nameOfPrj x ^ "x of")
-      ; emitCases (rev (mapi (TypeConTab.lookup x)))
+      ; emit ("case " ^ nameOfPrj x ^ "x_ of")
+      ; emitCases (rev constructors)
       ; decr ()
       ; emit ""
    end
@@ -246,8 +262,8 @@ fun emitSig x =
       val view = nameOfView x
       val Name = NameOfType x
    in
-      emit ("structure Map" ^ Name ^ ": DISC_MAP where type key = " ^ name)
-      ; emit ("val str" ^ Name ^ ": " ^ name ^ " -> String.string")
+      (* emit ("structure Map" ^ Name ^ ": DISC_MAP where type key = " ^ name)
+      ; *) emit ("val str" ^ Name ^ ": " ^ name ^ " -> String.string")
       (* ; emit ("val layout" ^ Name ^ ": " ^ name ^ " -> Layout.t") *)
       ; emit ("val inj" ^ Name ^ ": " ^ view ^ " -> " ^ name)
       ; emit ("val prj" ^ Name ^ ": " ^ name ^ " -> " ^ view)

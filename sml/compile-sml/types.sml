@@ -15,9 +15,10 @@ structure SMLCompileTypes:> sig
    val nameOfView: Symbol.symbol -> string (* requires encoded x = true *)
    val NameOfType: Symbol.symbol -> string (* requires encoded x = true *)
       
-   (* The name of the to-string version of this type *)
+   (* The name of the <whatever> function associated with this type *)
    val nameOfStr: Symbol.symbol -> string
    val nameOfPrj: Symbol.symbol -> string
+   val nameOfTree: string -> Symbol.symbol -> string
 
 end = 
 struct
@@ -53,6 +54,10 @@ fun nameOfPrj x =
     | TypeTab.NO => "prj" ^ NameOfType x ^ " "
     | _ => ""
 
+(* We don't have to special case this, the emitted code emits for built-ins *)
+fun nameOfTree prefix x = 
+   prefix ^ embiggen (Symbol.name x) ^ " " 
+
 
 fun nameOfStr x = 
    case valOf (TypeTab.lookup x) of
@@ -63,13 +68,5 @@ fun nameOfStr x =
         "(fn x => \"\\\"\" ^ String.toCString x ^ \"\\\"\")"
       else raise Domain
     | _ => "str" ^ (embiggen (Symbol.name x))
-
-fun pattern types = 
-   rev (#2 (List.foldl 
-              (fn (typ, (n, pat)) => 
-                 (n+1, (typ, Symbol.name typ ^ "_" ^ Int.toString n) :: pat))
-              (1, []) 
-              types))
-
 
 end

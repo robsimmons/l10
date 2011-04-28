@@ -15,29 +15,29 @@ fun test (prefix, files) =
 test ("t", [ "regression/tree.l10" ]);
 
 test ("b3", [ "examples/Back3.l10" ]);
-(* use (smlfile "terms-sig");
+use (smlfile "terms-sig");
 use (smlfile "terms");
 use (smlfile "worlds-sig");
-use (smlfile "worlds"); *)
+use (smlfile "worlds");
 
 test ("re", [ "examples/Regexp.l10", 
               "examples/RegexpQuery.l10", 
               "examples/RegexpNot.l10", 
               "examples/RegexpNot2.l10" ]);
-(* use (smlfile "terms-sig");
+use (smlfile "terms-sig");
 use (smlfile "terms");
 use (smlfile "worlds-sig");
-use (smlfile "worlds"); *)
+use (smlfile "worlds");
 
 test ("pa", [ "examples/ProgAnalysisA.l10", 
               "examples/ProgAnalysisB.l10", 
               "examples/ProgAnalysisC.l10", 
               "examples/ProgAnalysisD.l10", 
               "examples/ProgAnalysisE.l10" ]);
-(* use (smlfile "terms-sig");
+use (smlfile "terms-sig");
 use (smlfile "terms");
 use (smlfile "worlds-sig");
-use (smlfile "worlds"); *)
+use (smlfile "worlds");
 
 (*
 open L10Terms;
