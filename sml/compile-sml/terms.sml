@@ -16,8 +16,8 @@ structure SMLCompileTerms:> sig
 
    (* Given a term, returns a pathvar-based substitution along with 
     * equality constraints *)
-   (* val pathTerm: Ast.term
-      -> Ast.term * Ast.subst * (Symbol.symbol * Symbol.symbol) list  *)
+   val pathTerm: Ast.term
+      -> Ast.term * Ast.subst * (Symbol.symbol * Symbol.symbol) list  
 
    (* A pathvar is an annotated list of how-you-got-to-this-term *)
    type 'a pathvar = int list * 'a 
@@ -79,6 +79,42 @@ fun buildTerm term =
       ^ "(" ^ String.concatWith ", " (map buildTerm terms) ^ ")"
     | Ast.Var NONE => raise Fail "Building term with unknown part"
     | Ast.Var (SOME x) => "x_" ^ Symbol.name x
+
+fun pathTerm (term, path, subst, eqs) = 
+   case term of
+      Ast.Var NONE => (Ast.Var NONE, (subst, eqs))
+    | Ast.Var (SOME x) => 
+      let 
+         val pathvar = Symbol.symbol (nameOfVar (path, ()))
+      in
+         (Ast.Var (SOME pathvar),
+          case MapX.find (subst, x) of
+             NONE => (MapX.insert (subst, x, pathvar), eqs)
+           | SOME pathvar' => (subst, (pathvar, pathvar') :: eqs))
+      end
+    | Ast.Structured (f, terms) => 
+      let 
+         val (terms', subst', eqs') = pathTerms (terms, path, 1, subst, eqs)
+      in
+         (Ast.Structured (f, terms'), (subst', eqs'))
+      end
+    | _ => (term, (subst, eqs))
+
+and pathTerms ([], path, n, subst, eqs) = ([], subst, eqs)
+  | pathTerms (term :: terms, path, n, subst, eqs) = 
+    let 
+       val (term', (subst', eqs')) = pathTerm (term, path @ [ n ], subst, eqs)
+       val (terms', subst'', eqs'') = pathTerms (terms, path, n+1, subst', eqs')
+    in
+       (term' :: terms', subst'', eqs'')
+    end     
+
+val pathTerm = fn term =>
+   let 
+      val (term, (subst, eqs)) = pathTerm (term, [], MapX.empty, [])
+   in
+      (term, MapX.map (Ast.Var o SOME) subst, eqs)
+   end
 
 (* The fundamental view datatype *)
 fun emitView isRec x = 

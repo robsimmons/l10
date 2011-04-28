@@ -11,6 +11,19 @@ datatype term =
  | Structured of Symbol.symbol * term list
  | Var of Symbol.symbol option
 
+(* Partial substitution *)
+fun subTerm' subst term = 
+   case term of
+      Const c => Const c
+    | NatConst n => NatConst n
+    | StrConst s => StrConst s
+    | Structured (f, terms) => Structured (f, map (subTerm' subst) terms)
+    | Var NONE => Var NONE
+    | Var (SOME x) => 
+      (case MapX.find (subst, x) of 
+          NONE => Var (SOME x)
+        | SOME y => y)
+
 (* Total substitution *)
 fun subTerm (map, term) =
    case term of 

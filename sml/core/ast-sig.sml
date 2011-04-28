@@ -17,8 +17,9 @@ val fvTerm:   term -> SetX.set
 val fvTerms:  term list -> SetX.set
 val strTerm': bool -> term -> string
 val strTerm:  term -> string
-val subTerm:  subst * term -> term option
-val subTerms: subst * term list -> (term list) option
+val subTerm:  subst * term -> term option (* total substitution *)
+val subTerms: subst * term list -> (term list) option (* total substitution *)
+val subTerm': subst -> term -> term (* partial substitution *)
 val uscoresInTerm: term -> bool
 val uscoresInTerms: term list -> bool
 
