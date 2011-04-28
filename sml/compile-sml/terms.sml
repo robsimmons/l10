@@ -217,6 +217,7 @@ fun emitMapHelper kind x =
       val constructors = mapi (TypeConTab.lookup x)
       val width = length constructors
 
+      exception Brk
       fun emitCase prefix (consnum, constructor) =
          let
             val (match, pathvars) = 
@@ -227,12 +228,13 @@ fun emitMapHelper kind x =
             emit (prefix ^ match)
             ; incr ()
             ; app emitSingle (rev pathvars)
+            ; if width = 1 then (emit "(fn x => x)"; raise Brk) else ()
             ; if kind = "unzip" 
               then emit ("DiscMap.unzip (" ^ Int.toString (consnum-1) ^ ", " 
                          ^ Int.toString width ^ ")")
               else emit ("DiscMap.sub " ^ Int.toString (consnum-1))
             ; decr ()
-         end
+         end handle Brk => decr ()
 
       fun emitCases [] = emit ("   x => abort" ^ Name ^ " x")
         | emitCases [ cons ] = emitCase "   " cons
