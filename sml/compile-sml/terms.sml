@@ -26,8 +26,8 @@ structure SMLCompileTerms:> sig
    (* Builds a depth-1 pattern match, extending paths and data *)
    val constructorPattern: 
       ('a pathvar * int * Ast.typ -> 'b)    (* Extension function *)
-      -> 'a pathvar                         (* Current path *)
-      -> Symbol.symbol                      (* Constructor *)
+      -> ('a pathvar * Symbol.symbol)       (* Current path, constructor *)
+      (* -> Symbol.symbol                   (* Constructor *) *)
       -> (String.string * 'b pathvar list) 
 
 end = 
@@ -40,7 +40,7 @@ type 'a pathvar = int list * 'a
 
 fun nameOfVar (is, _) = "x_" ^ String.concatWith "_" (map Int.toString is)
 
-fun constructorPattern f (pathvar: 'a pathvar) constructor = 
+fun constructorPattern f (pathvar: 'a pathvar, constructor) = 
    case valOf (ConTab.lookup constructor) of
       ([], _) => (embiggen (Symbol.name constructor) ^ " => ", [])
     | (typs, _) => 
@@ -213,7 +213,7 @@ fun emitStr x =
          let 
             val (match, pathvars) = 
                constructorPattern (fn (_, _, typ) => typ)
-                  ([], ()) constructor
+                  (([], ()), constructor)
             fun emitSingle (pathvar as (_, typ)) = 
                emit (" ^ \" \" ^ " ^ nameOfStr typ ^ " " ^ nameOfVar pathvar)
          in
@@ -261,7 +261,8 @@ fun emitMapHelper kind x =
       fun emitCase prefix (consnum, constructor) =
          let
             val (match, pathvars) = 
-               constructorPattern (fn (_, _, typ) => typ) ([], ()) constructor
+               constructorPattern (fn (_, _, typ) => typ) 
+                  (([], ()), constructor)
             fun emitSingle (pathvar as (_, typ)) =
                emit (nameOfTree kind typ ^ nameOfVar pathvar ^ " o")
          in

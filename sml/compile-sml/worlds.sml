@@ -35,41 +35,44 @@ fun seekWorld (world, args) =
           else " (" ^ String.concatWith ", " (map buildTerm args) ^ ")"
    in Name ^ strargs end
 
-type pathvar = Coverage.pathtree pathvar
+type pathConstructorVar = (Symbol.symbol * Coverage.pathtree list) pathvar
+type pathTreeVar = Coverage.pathtree pathvar
+(* type pathvar = Coverage.pathtree pathvar *)
 
 (* Using SearchTab, come up with a sufficiently expanded set of pathtrees *)
 fun makePaths world args =
    let 
-      val seed: pathvar list = 
+      val seed: pathTreeVar list = 
          map (fn (n, typ) => ([ n ], (typ, Coverage.Unsplit))) args
 
       fun mapper (term, (is, pathtree)) =
          (is, Coverage.extendpaths (term, pathtree))
-      fun folder (terms, pathvars) = 
-         map mapper (ListPair.zipEq (terms, pathvars))
+      fun folder (terms, pathTreeVars) = 
+         map mapper (ListPair.zipEq (terms, pathTreeVars))
    in
       List.foldr folder seed (map #1 (SearchTab.lookup world))
    end
 
 fun strprj (pathvar as (_, (typ, _))) = nameOfPrj typ ^ nameOfVar pathvar
 
-fun filterUnsplit (pathvars: pathvar list) = 
-   List.filter (not o Coverage.isUnsplit o #2 o #2) pathvars
+fun filterUnsplit (pathTreeVars: pathTreeVar list) = 
+   List.filter (not o Coverage.isUnsplit o #2 o #2) pathTreeVars
 
 fun emitCase [] = emit "()"
-  | emitCase (pathvars: pathvar list) = 
+  | emitCase (pathTreeVars: pathTreeVar list) = 
     let
     in
-       emit ("case (" ^ String.concatWith ", " (map strprj pathvars) ^ ") of")
-       ; emitMatches "  " pathvars [] 
+       emit ("case ("
+             ^ String.concatWith ", " (map strprj pathTreeVars) ^ ") of")
+       ; emitMatches "  " pathTreeVars [] 
        ; emit ")"
     end
     
-and emitMatch prefix matches = 
+and emitMatch prefix (matches: pathConstructorVar list) = 
     let 
        fun singlePathvar (is, (constructor, subpaths)) = 
           let 
-             val pathvars: pathvar list = 
+             val pathvars: pathTreeVar list = 
                 map (fn (i, subpath) => (is @ [ i ], subpath)) (mapi subpaths)
           in 
              (filterUnsplit pathvars,
@@ -80,6 +83,11 @@ and emitMatch prefix matches =
           end
            
        val (pathvars, patterns) = ListPair.unzip (map singlePathvar matches)
+(* 
+       fun patternfold ((is, pathtree), _, typ) = 
+
+       val (matches, pathvarses) = 
+          ListPair.unzip (map *)
     in
        emit (prefix ^ "(" ^ String.concatWith ", " patterns ^ ") => (")
        ; incr ()
