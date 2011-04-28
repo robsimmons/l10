@@ -180,7 +180,7 @@ fun emitStr x =
             emit (prefix ^ match)
             ; if null pathvars
               then (emit ("   \"" ^ Symbol.name constructor ^ "\""); raise Brk)
-              else (emit ("   (\"(" ^ Symbol.name constructor ^ "\""))
+              else (emit ("   (\"(" ^ Symbol.name constructor ^ " \""))
             ; incr ()
             ; app emitSingle pathvars
             ; emit " ^ \")\")"
@@ -304,7 +304,7 @@ fun terms () =
       ; emit "struct"
       ; incr ()
       ; emit "(* Datatype views *)\n"
-      ; emit "datatype Fake = fake"
+      ; emit "datatype fake_ = Fake_ of fake_"
       ; app (fn x => 
                (emitView true x
                 ; emit ("and " ^ nameOfType x 
@@ -318,7 +318,7 @@ fun terms () =
       ; app emitAbort encodedTypes
       ; emit "\n"
       ; emit "(* String encoding functions *)\n"
-      ; emit "fun strfake () = raise Match"
+      ; emit "fun strFake_ (Fake_ x) = strFake_ x"
       ; app emitStr encodedTypes
       ; emit "\n"
       ; emit "(* Equality *)\n"

@@ -11,18 +11,22 @@
  * TypeTab.lookup tp = SOME false for other valid types. *)
 structure TypeTab = 
 struct
-   datatype extensible = YES | NO | CONSTANTS | SPECIAL
+   datatype extensible = YES | NO | CONSTANTS | SPECIAL 
    structure S = Symtab(type entrytp = extensible)
    open S
    val t = Symbol.symbol "t"
    val nat = Symbol.symbol "nat"
    val string = Symbol.symbol "string"
+   val world = Symbol.symbol "world"
+   val rel = Symbol.symbol "rel"
    fun reset () = 
       let in
          S.reset ()
          ; bind (t, CONSTANTS)
          ; bind (nat, SPECIAL)
          ; bind (string, SPECIAL)
+         ; bind (world, NO)
+         ; bind (rel, NO)
       end
    val () = reset ()
 end 
@@ -32,6 +36,11 @@ end
  * For a world constant w : tp1 -> ... -> tpn -> world.
  * WorldTab.lookup w = SOME ([ tp1, ..., tpn ]) *)
 structure WorldTab = Symtab(type entrytp = Ast.typ list)
+
+(* TypeCon table
+ * Reverse lookup - lists all the constructors that can be used to make 
+ * a term of a particular type *)
+structure TypeConTab = Multitab(type entrytp = Symbol.symbol)
 
 (* Term constant table
  *
@@ -51,13 +60,14 @@ struct
          ; bind (plus, ([ TypeTab.nat, TypeTab.nat ], TypeTab.nat))
       end
 
+   fun bind (x, (typs, typ)) = 
+      let in 
+         S.bind (x, (typs, typ))
+         ; TypeConTab.bind (typ, x)
+      end
+
    val () = reset ()
 end
-
-(* TypeCon table
- * Reverse lookup - lists all the constructors that can be used to make 
- * a term of a particular type *)
-structure TypeConTab = Multitab(type entrytp = Symbol.symbol)
 
 (* Database table *)
 structure DbTab = Symtab(type entrytp = Term.atomic list * Term.world)

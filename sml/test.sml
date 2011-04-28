@@ -20,6 +20,12 @@ use (smlfile "terms");
 use (smlfile "worlds-sig");
 use (smlfile "worlds");
 
+test ("l10", [ "examples/self/ast.l10" ]);
+use (smlfile "terms-sig");
+use (smlfile "terms");
+use (smlfile "worlds-sig");
+use (smlfile "worlds");
+
 test ("re", [ "examples/Regexp.l10", 
               "examples/RegexpQuery.l10", 
               "examples/RegexpNot.l10", 
