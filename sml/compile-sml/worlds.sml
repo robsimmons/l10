@@ -35,69 +35,69 @@ fun seekWorld (world, args) =
           else " (" ^ String.concatWith ", " (map buildTerm args) ^ ")"
    in Name ^ strargs end
 
-type patharg = int list * Coverage.pathtree
+type pathvar = Coverage.pathtree pathvar
 
 (* Using SearchTab, come up with a sufficiently expanded set of pathtrees *)
 fun makePaths world args =
    let 
-      val seed: patharg list = 
+      val seed: pathvar list = 
          map (fn (n, typ) => ([ n ], (typ, Coverage.Unsplit))) args
 
       fun mapper (term, (is, pathtree)) =
          (is, Coverage.extendpaths (term, pathtree))
-      fun folder (terms, pathargs) = 
-         map mapper (ListPair.zipEq (terms, pathargs))
+      fun folder (terms, pathvars) = 
+         map mapper (ListPair.zipEq (terms, pathvars))
    in
       List.foldr folder seed (map #1 (SearchTab.lookup world))
    end
 
 fun strprj (pathvar as (_, (typ, _))) = nameOfPrj typ ^ nameOfVar pathvar
 
-fun filterUnsplit (pathargs: patharg list) = 
-   List.filter (not o Coverage.isUnsplit o #2 o #2) pathargs
+fun filterUnsplit (pathvars: pathvar list) = 
+   List.filter (not o Coverage.isUnsplit o #2 o #2) pathvars
 
 fun emitCase [] = emit "()"
-  | emitCase (pathargs: patharg list) = 
+  | emitCase (pathvars: pathvar list) = 
     let
     in
-       emit ("case (" ^ String.concatWith ", " (map strprj pathargs) ^ ") of")
-       ; emitMatches "  " pathargs [] 
+       emit ("case (" ^ String.concatWith ", " (map strprj pathvars) ^ ") of")
+       ; emitMatches "  " pathvars [] 
        ; emit ")"
     end
     
 and emitMatch prefix matches = 
     let 
-       fun singlePatharg (is, (constructor, subpaths)) = 
+       fun singlePathvar (is, (constructor, subpaths)) = 
           let 
-             val pathargs: patharg list = 
+             val pathvars: pathvar list = 
                 map (fn (i, subpath) => (is @ [ i ], subpath)) (mapi subpaths)
           in 
-             (filterUnsplit pathargs,
+             (filterUnsplit pathvars,
               (embiggen (Symbol.name constructor) 
-               ^ (if null pathargs then ""
-                  else (" (" ^ String.concatWith ", " (map nameOfVar pathargs) 
+               ^ (if null pathvars then ""
+                  else (" (" ^ String.concatWith ", " (map nameOfVar pathvars) 
                         ^ ")"))))
           end
            
-       val (pathargs, patterns) = ListPair.unzip (map singlePatharg matches)
+       val (pathvars, patterns) = ListPair.unzip (map singlePathvar matches)
     in
        emit (prefix ^ "(" ^ String.concatWith ", " patterns ^ ") => (")
        ; incr ()
-       ; emitCase (List.concat pathargs)
+       ; emitCase (List.concat pathvars)
        ; decr ()
     end
 
 and emitMatches prefix [] matches = emitMatch prefix (rev matches)
-  | emitMatches prefix ((is, (typ, pathtree)) :: pathargs) matches =
+  | emitMatches prefix ((is, (typ, pathtree)) :: pathvars) matches =
     (case pathtree of 
         Coverage.Unsplit => raise Fail "Invariant"
       | Coverage.Split subtrees => 
         let
            val newmatches = MapX.listItemsi subtrees
         in
-           emitMatches prefix pathargs ((is, hd newmatches) :: matches)
+           emitMatches prefix pathvars ((is, hd newmatches) :: matches)
            ; app (fn match =>
-                     emitMatches ")|" pathargs ((is, match) :: matches))
+                     emitMatches ")|" pathvars ((is, match) :: matches))
                 (tl newmatches)
         end
       | Coverage.StringSplit _ => 
@@ -113,7 +113,7 @@ fun emitWorld world =
       val Name = embiggen (Symbol.name world)
       val typs = valOf (WorldTab.lookup world)
       val args = mapi typs
-      val pathargs = makePaths world args
+      val pathvars = makePaths world args
 
       (* Outputs code for saying "I am here" *)
       fun reportworld () = 
@@ -129,13 +129,13 @@ fun emitWorld world =
          ; decr ())
    in
       emit ("fun seek" ^ Name ^ " (" 
-            ^ String.concatWith ", " (map nameOfVar pathargs) ^ ") =")
+            ^ String.concatWith ", " (map nameOfVar pathvars) ^ ") =")
       ; incr ()
       ; emit ("let")
       ; reportworld ()
       ; emit ("in")
       ; incr ()
-      ; emitCase (filterUnsplit pathargs)
+      ; emitCase (filterUnsplit pathvars)
       ; decr ()
       ; emit ("end\n")
       ; decr ()
