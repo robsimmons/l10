@@ -6,13 +6,13 @@ w: n -> n -> n -> world.
 
 w (suc N) M P <- w N M P.
 w N (suc M) P <- w N M P.
-w N M (suc P) <- w N M P.
+w N M (suc P) <- w N M P, w M N P, w P N M.
 w (suc (suc (suc N))) (suc (suc M)) (suc P) <- w N M P.
 w (suc N) M P <- w N M P.
 
 w2: n -> n -> world.
 w2 N zero <- w N N N.
-w2 N (suc N) <- w (suc N) (suc N) (suc N).
+w2 N (suc N) <- w (suc N) (suc N) (suc N), w2 N zero.
 w2 N (suc (suc M)) <- w2 M N.
 
 true : rel @ w zero zero zero.

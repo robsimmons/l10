@@ -19,6 +19,7 @@ structure SMLCompileTypes:> sig
    val nameOfStr: Symbol.symbol -> string
    val nameOfPrj: Symbol.symbol -> string
    val nameOfTree: string -> Symbol.symbol -> string
+   val nameOfEq: Symbol.symbol -> string -> string -> string
 
 end = 
 struct
@@ -68,5 +69,11 @@ fun nameOfStr x =
         "(fn x => \"\\\"\" ^ String.toCString x ^ \"\\\"\")"
       else raise Domain
     | _ => "str" ^ (embiggen (Symbol.name x))
+
+fun nameOfEq x arg1 arg2 =
+   case valOf (TypeTab.lookup x) of
+      TypeTab.YES => "eq" ^ (embiggen (Symbol.name x)) ^ " " ^ arg1 ^ " " ^ arg2
+    | TypeTab.NO => "eq" ^ (embiggen (Symbol.name x)) ^ " " ^ arg1 ^ " " ^ arg2
+    | _ => arg1 ^ " = " ^ arg2
 
 end

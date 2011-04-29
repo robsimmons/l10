@@ -21,17 +21,19 @@ fun emitWorldSig world =
          then getPrefix true "" ^ "Terms." ^ Symbol.name x
          else nameOfType x
       val strargs = String.concatWith " * " (map gettyp args)
+      val maptyp = "unit " ^ getPrefix true "" ^ "Terms.MapWorld.map"
    in    
       if null args
-      then emit ("val seek" ^ Name ^ ": unit -> unit") 
-      else emit ("val seek" ^ Name ^ ": " ^ strargs ^ " -> unit")
+      then emit ("val seek" ^ Name ^ ": " ^ maptyp ^ " -> " ^ maptyp) 
+      else emit ("val seek" ^ Name ^ ": " ^ strargs ^ " -> "
+                 ^ maptyp ^ " -> " ^ maptyp) 
    end
 
 fun seekWorld (world, args) =
    let 
       val Name = embiggen (Symbol.name world)
       val strargs = 
-          if null args then " ()"
+          if null args then ""
           else " (" ^ String.concatWith ", " (map buildTerm args) ^ ")"
    in "seek" ^ Name ^ strargs end
 
@@ -77,26 +79,46 @@ fun filterUnsplit (pathTreeVars: pathTreeVar list) =
 
 fun emitCase (w, terms) [] = 
     let 
+       val typs = valOf (WorldTab.lookup w)
        val pats = List.filter (genTerms terms o #1) (SearchTab.lookup w)
-       fun strEq (x, y) = Symbol.name x ^ " = " ^ Symbol.name y
-       fun handleArg subst (w, terms) = 
+       fun strEq (typ, x, y) = nameOfEq typ (Symbol.name x) (Symbol.name y)
+       fun handleArg prefix subst (w, terms) = 
           let val terms' = valOf (Ast.subTerms (subst, terms)) in  
-             emit ("; " ^ seekWorld (w, terms'))
+             emit (prefix ^ seekWorld (w, terms'))
           end
 
-       fun handlePat (pat, args) = 
-          let val (term, subst, eqs) = pathTerms pat in
-             emit ("; if true (* andalso " 
-                   ^ String.concatWith " andalso " (map strEq eqs) 
-                   ^ " *) then (()")
-             ; incr ()
-             ; app (handleArg subst) args
-             ; emit ") else ()"
-             ; decr ()
+       fun handleArgs prefix subst [] = emit (prefix ^ "(fn x => x)")
+         | handleArgs prefix subst [ arg ] = handleArg prefix subst arg
+         | handleArgs prefix subst (arg :: args) = 
+           (handleArgs prefix subst args; handleArg " o " subst arg)
+
+       fun handleArgsIf subst [] = emit "then (fn x => x"
+         | handleArgsIf subst [ arg ] = handleArg "then (" subst arg
+         | handleArgsIf subst (arg :: args) = 
+           (handleArgsIf subst args; handleArg "      o " subst arg)
+
+       fun handlePat prefix (pat, args) = 
+          let 
+             val pattyp = ListPair.zip (pat, typs)
+             val (terms, subst, eqs) = pathTerms pattyp
+          in
+             if null eqs 
+             then (handleArgs prefix subst args)
+             else (emit (prefix ^ "(if " 
+                         ^ String.concatWith " andalso " (map strEq eqs))
+                   ; incr ()
+                   ; handleArgsIf subst args
+                   ; emit ") else (fn x => x))"
+                   ; decr ())
           end
+       
+       fun handlePats [] = emit "((fn x => x)"
+         | handlePats [ (pat, args) ] = handlePat "(" (pat, args)
+         | handlePats ((pat, args) :: pats) = 
+           (handlePats pats; handlePat " o " (pat, args))
     in 
-       emit ("print \"" ^ Int.toString (length pats) ^ " matching\\n\"")
-       ; app handlePat pats
+       handlePats pats
+       ; emit ") x"
     end 
     (* emit ("(" ^ String.concatWith ", " (map buildTerm terms) ^ ")") *)
   | emitCase world (pathTreeVars: pathTreeVar list) = 
@@ -186,6 +208,9 @@ fun emitWorld world =
       fun makeStartingTerm pathTreeVar = 
          Ast.Var (SOME (Symbol.symbol (nameOfVar pathTreeVar)))
       val startingTerms = map makeStartingTerm pathTreeVars
+      val startingWorld = if null pathTreeVars 
+                          then Ast.Const world
+                          else Ast.Structured (world, startingTerms)
 
       (* Outputs code for saying "I am here" *)
       fun reportworld () = 
@@ -195,21 +220,32 @@ fun emitWorld world =
            else emit ("val () = print (\"Visiting (" ^ name ^ "\"")
          ; incr ()
          ; app (fn (i, typ) => 
-                emit ("^ \" \" ^ " ^ nameOfStr typ ^ " x_" ^ Int.toString i)) args
+                emit ("^ \" \" ^ " ^ nameOfStr typ ^ " x_" ^ Int.toString i)) 
+              args
          ; if null args then () else emit "^ \")\\n\")"
          ; decr ()
          ; decr ())
    in
-      emit ("and seek" ^ Name ^ " (" 
-            ^ String.concatWith ", " (map nameOfVar pathTreeVars) ^ ") =")
+      emit ("and seek" ^ Name ^ 
+            (if null pathTreeVars then "" 
+             else (" (" 
+                   ^ String.concatWith ", " (map nameOfVar pathTreeVars))
+                  ^ ")")
+            ^ " x =")
       ; incr ()
       ; emit ("let")
+      ; incr ()
+      ; emit ("val w = " ^ buildTerm startingWorld)
+      (* ; emit ("val () = if isSome (MapWorld.find (x, w))")
+      ; emit ("         then raise Revisit else ()") *)
+      ; emit ("val x = MapWorld.insert (x, w, ())" )
       ; reportworld ()
+      ; decr ()
       ; emit ("in")
       ; incr ()
       ; emitCase (world, startingTerms) (filterUnsplit pathTreeVars)
       ; decr ()
-      ; emit ("end\n")
+      ; emit ("end handle Revisit => x\n")
       ; decr ()
    end
 
@@ -234,6 +270,7 @@ fun worlds () =
       ; emit "struct"
       ; incr ()
       ; emit ("open " ^ getPrefix true "" ^ "Terms\n")
+      ; emit ("exception Revisit\n")
       ; emit "fun fake () = ()\n"
       ; app emitWorld worlds
       ; decr ()

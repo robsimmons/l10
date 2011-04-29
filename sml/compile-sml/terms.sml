@@ -16,10 +16,10 @@ structure SMLCompileTerms:> sig
 
    (* Given a term, returns a pathvar-based substitution along with 
     * equality constraints *)
-   type constraint = (* Ast.typ * *) Symbol.symbol * Symbol.symbol
-   val pathTerm: Ast.term
+   type constraint = Ast.typ * Symbol.symbol * Symbol.symbol
+   val pathTerm: Ast.term * Ast.typ
       -> Ast.term * Ast.subst * constraint list  
-   val pathTerms: Ast.term list 
+   val pathTerms: (Ast.term * Ast.typ) list 
       -> Ast.term list * Ast.subst * constraint list  
 
 
@@ -79,13 +79,13 @@ fun buildTerm term =
     | Ast.NatConst i => IntInf.toString i
     | Ast.StrConst s => "\"" ^ String.toCString s ^ "\""
     | Ast.Structured (f, terms) => 
-      (* termprefix () ^ *) embiggen (Symbol.name f)  ^ "'"
+      (* termprefix () ^ *) embiggen (Symbol.name f)  ^ "' "
       ^ "(" ^ String.concatWith ", " (map buildTerm terms) ^ ")"
     | Ast.Var NONE => raise Fail "Building term with unknown part"
     | Ast.Var (SOME x) => Symbol.name x
 
-fun pathTerm (term, path, subst, eqs) = 
-   case term of
+fun pathTerm (term: Ast.term * Ast.typ, path, subst, eqs) = 
+   case #1 term of
       Ast.Var NONE => (Ast.Var NONE, (subst, eqs))
     | Ast.Var (SOME x) => 
       let 
@@ -94,15 +94,17 @@ fun pathTerm (term, path, subst, eqs) =
          (Ast.Var (SOME pathvar),
           case MapX.find (subst, x) of
              NONE => (MapX.insert (subst, x, pathvar), eqs)
-           | SOME pathvar' => (subst, (pathvar, pathvar') :: eqs))
+           | SOME pathvar' => (subst, (#2 term, pathvar, pathvar') :: eqs))
       end
     | Ast.Structured (f, terms) => 
       let 
-         val (terms', subst', eqs') = pathTerms (terms, path, 1, subst, eqs)
+         val (typs, _) = valOf (ConTab.lookup f)
+         val (terms', subst', eqs') = 
+            pathTerms (ListPair.zipEq (terms, typs), path, 1, subst, eqs)
       in
          (Ast.Structured (f, terms'), (subst', eqs'))
       end
-    | _ => (term, (subst, eqs))
+    | term => (term, (subst, eqs))
 
 and pathTerms ([], path, n, subst, eqs) = ([], subst, eqs)
   | pathTerms (term :: terms, path, n, subst, eqs) = 
@@ -113,7 +115,7 @@ and pathTerms ([], path, n, subst, eqs) = ([], subst, eqs)
        (term' :: terms', subst'', eqs'')
     end     
 
-type constraint = (* Ast.typ * *) Symbol.symbol * Symbol.symbol
+type constraint = Ast.typ * Symbol.symbol * Symbol.symbol
 
 val pathTerm = fn term =>
    let 
