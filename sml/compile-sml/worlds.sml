@@ -58,41 +58,43 @@ fun strprj (pathvar as (_, (typ, _))) = nameOfPrj typ ^ nameOfVar pathvar
 fun filterUnsplit (pathTreeVars: pathTreeVar list) = 
    List.filter (not o Coverage.isUnsplit o #2 o #2) pathTreeVars
 
-fun emitCase term [] = 
-    emit ("(" ^ String.concatWith ", " (map buildTerm term) ^ ")")
-  | emitCase term (pathTreeVars: pathTreeVar list) = 
+fun emitCase terms [] = 
+    emit ("(" ^ String.concatWith ", " (map buildTerm terms) ^ ")")
+  | emitCase terms (pathTreeVars: pathTreeVar list) = 
     let
     in
        emit ("case ("
              ^ String.concatWith ", " (map strprj pathTreeVars) ^ ") of")
-       ; emitMatches "  " term pathTreeVars [] 
+       ; emitMatches "  " terms pathTreeVars [] 
        ; emit ")"
     end
     
-and emitMatch prefix term (matches: pathConstructorVar list) = 
+and emitMatch prefix terms (matches: pathConstructorVar list) = 
     let 
-       fun singlePathvar (is, (constructor, subpaths)) = 
-          let 
-             val pathvars: pathTreeVar list = 
-                map (fn (i, subpath) => (is @ [ i ], subpath)) (mapi subpaths)
-          in 
-             (filterUnsplit pathvars,
-              (embiggen (Symbol.name constructor) 
-               ^ (if null pathvars then ""
-                  else (" (" ^ String.concatWith ", " (map nameOfVar pathvars) 
-                        ^ ")"))))
-          end
+       fun constructorMap (is, (constructor, subpaths)) = 
+          constructorPattern 
+             (fn (n, _) => List.nth (subpaths, n-1)) 
+             (is, ()) constructor
            
-       val (pathvars, patterns) = ListPair.unzip (map singlePathvar matches)
-(* 
-       fun patternfold ((is, pathtree), _, typ) = 
+       val (patterns, pathvars) = ListPair.unzip (map constructorMap matches)
 
-       val (matches, pathvarses) = 
-          ListPair.unzip (map *)
+       fun constructorFold ((is, (constructor, subpaths)), terms) = 
+          let 
+             val symbOfVar = Symbol.symbol o nameOfVar
+
+             fun makeVar (i, _) = 
+                Ast.Var (SOME (symbOfVar (is @ [ i ], ())))
+
+             val term = 
+                if null subpaths then Ast.Const constructor
+                else Ast.Structured (constructor, map makeVar (mapi subpaths))
+          in map (Ast.subTerm' (term, symbOfVar (is, ()))) terms end
+
+       val terms = List.foldl constructorFold terms matches
     in
        emit (prefix ^ "(" ^ String.concatWith ", " patterns ^ ") => (")
        ; incr ()
-       ; emitCase term (List.concat pathvars)
+       ; emitCase terms (filterUnsplit (List.concat pathvars))
        ; decr ()
     end
 
@@ -104,8 +106,8 @@ and emitMatch prefix term (matches: pathConstructorVar list) =
        -> pathTreeVar list <--- input
        -> pathConstructorVar list <--- kind of output
        -> unit *)
-and emitMatches prefix term [] matches = emitMatch prefix term (rev matches)
-  | emitMatches prefix term (pathvar :: pathvars) matches =
+and emitMatches prefix terms [] matches = emitMatch prefix terms (rev matches)
+  | emitMatches prefix terms (pathvar :: pathvars) matches =
     let val (is, (typ, pathtree)) = pathvar in 
        case pathtree of 
           Coverage.Unsplit => raise Fail "Invariant"
@@ -121,9 +123,9 @@ and emitMatches prefix term [] matches = emitMatch prefix term (rev matches)
 *)
              val newmatches = MapX.listItemsi subtrees
           in
-             emitMatches prefix term pathvars ((is, hd newmatches) :: matches)
+             emitMatches prefix terms pathvars ((is, hd newmatches) :: matches)
              ; app (fn match =>
-                       emitMatches ")|" term pathvars ((is, match) :: matches))
+                       emitMatches ")|" terms pathvars ((is, match) :: matches))
                    (tl newmatches)
           end
         | Coverage.StringSplit _ => 

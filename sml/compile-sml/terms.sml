@@ -25,9 +25,9 @@ structure SMLCompileTerms:> sig
 
    (* Builds a depth-1 pattern match, extending paths and data *)
    val constructorPattern: 
-      ('a pathvar * int * Ast.typ -> 'b)    (* Extension function *)
-      -> ('a pathvar * Symbol.symbol)       (* Current path, constructor *)
-      (* -> Symbol.symbol                   (* Constructor *) *)
+      (int * Ast.typ -> 'b)                 (* Extension function *)
+      -> 'a pathvar                         (* Current path *)
+      -> Symbol.symbol                      (* New constructor *)
       -> (String.string * 'b pathvar list) 
 
 end = 
@@ -40,18 +40,18 @@ type 'a pathvar = int list * 'a
 
 fun nameOfVar (is, _) = "x_" ^ String.concatWith "_" (map Int.toString is)
 
-fun constructorPattern f (pathvar: 'a pathvar, constructor) = 
+fun constructorPattern f (pathvar: 'a pathvar) constructor = 
    case valOf (ConTab.lookup constructor) of
-      ([], _) => (embiggen (Symbol.name constructor) ^ " => ", [])
+      ([], _) => (embiggen (Symbol.name constructor), [])
     | (typs, _) => 
       let
-         fun extend (n, typ) = (#1 pathvar @ [ n ], f (pathvar, n, typ))
+         fun extend (n, typ) = (#1 pathvar @ [ n ], f (n, typ))
          val pathvars = map extend (mapi typs)
          val strpat = 
             embiggen (Symbol.name constructor) 
             ^ (if null (tl typs) then " " else " (")
             ^ String.concatWith ", " (map nameOfVar pathvars) 
-            ^ (if null (tl typs) then " => " else ") => ")
+            ^ (if null (tl typs) then "" else ")")
       in 
          (strpat, pathvars)
       end
@@ -71,11 +71,11 @@ fun matchTerm term =
 
 fun buildTerm term = 
    case term of
-      Ast.Const x => termprefix () ^ embiggen (Symbol.name x) ^ "'"
+      Ast.Const x => (* termprefix () ^ *) embiggen (Symbol.name x) ^ "'"
     | Ast.NatConst i => IntInf.toString i
     | Ast.StrConst s => "\"" ^ String.toCString s ^ "\""
     | Ast.Structured (f, terms) => 
-      termprefix () ^ embiggen (Symbol.name f)  ^ "'"
+      (* termprefix () ^ *) embiggen (Symbol.name f)  ^ "'"
       ^ "(" ^ String.concatWith ", " (map buildTerm terms) ^ ")"
     | Ast.Var NONE => raise Fail "Building term with unknown part"
     | Ast.Var (SOME x) => Symbol.name x
@@ -212,12 +212,12 @@ fun emitStr x =
       fun emitCase prefix constructor =
          let 
             val (match, pathvars) = 
-               constructorPattern (fn (_, _, typ) => typ)
-                  (([], ()), constructor)
+               constructorPattern (fn (_, typ) => typ)
+                  ([], ()) constructor
             fun emitSingle (pathvar as (_, typ)) = 
                emit (" ^ \" \" ^ " ^ nameOfStr typ ^ " " ^ nameOfVar pathvar)
          in
-            emit (prefix ^ match)
+            emit (prefix ^ match ^ " =>")
             ; if null pathvars
               then (emit ("   \"" ^ Symbol.name constructor ^ "\""); raise Brk)
               else (emit ("   (\"(" ^ Symbol.name constructor ^ "\""))
@@ -261,12 +261,12 @@ fun emitMapHelper kind x =
       fun emitCase prefix (consnum, constructor) =
          let
             val (match, pathvars) = 
-               constructorPattern (fn (_, _, typ) => typ) 
-                  (([], ()), constructor)
+               constructorPattern (fn (_, typ) => typ) 
+                  ([], ()) constructor
             fun emitSingle (pathvar as (_, typ)) =
                emit (nameOfTree kind typ ^ nameOfVar pathvar ^ " o")
          in
-            emit (prefix ^ match)
+            emit (prefix ^ match ^ " =>")
             ; incr ()
             ; app emitSingle (rev pathvars)
             ; if width = 1 then (emit "(fn x => x)"; raise Brk) else ()
