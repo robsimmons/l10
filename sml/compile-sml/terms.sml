@@ -78,7 +78,7 @@ fun buildTerm term =
       termprefix () ^ embiggen (Symbol.name f)  ^ "'"
       ^ "(" ^ String.concatWith ", " (map buildTerm terms) ^ ")"
     | Ast.Var NONE => raise Fail "Building term with unknown part"
-    | Ast.Var (SOME x) => "x_" ^ Symbol.name x
+    | Ast.Var (SOME x) => Symbol.name x
 
 fun pathTerm (term, path, subst, eqs) = 
    case term of

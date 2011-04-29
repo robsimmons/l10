@@ -58,17 +58,18 @@ fun strprj (pathvar as (_, (typ, _))) = nameOfPrj typ ^ nameOfVar pathvar
 fun filterUnsplit (pathTreeVars: pathTreeVar list) = 
    List.filter (not o Coverage.isUnsplit o #2 o #2) pathTreeVars
 
-fun emitCase [] = emit "()"
-  | emitCase (pathTreeVars: pathTreeVar list) = 
+fun emitCase term [] = 
+    emit ("(" ^ String.concatWith ", " (map buildTerm term) ^ ")")
+  | emitCase term (pathTreeVars: pathTreeVar list) = 
     let
     in
        emit ("case ("
              ^ String.concatWith ", " (map strprj pathTreeVars) ^ ") of")
-       ; emitMatches "  " pathTreeVars [] 
+       ; emitMatches "  " term pathTreeVars [] 
        ; emit ")"
     end
     
-and emitMatch prefix (matches: pathConstructorVar list) = 
+and emitMatch prefix term (matches: pathConstructorVar list) = 
     let 
        fun singlePathvar (is, (constructor, subpaths)) = 
           let 
@@ -91,29 +92,62 @@ and emitMatch prefix (matches: pathConstructorVar list) =
     in
        emit (prefix ^ "(" ^ String.concatWith ", " patterns ^ ") => (")
        ; incr ()
-       ; emitCase (List.concat pathvars)
+       ; emitCase term (List.concat pathvars)
        ; decr ()
     end
 
-and emitMatches prefix [] matches = emitMatch prefix (rev matches)
-  | emitMatches prefix ((is, (typ, pathtree)) :: pathvars) matches =
-    (case pathtree of 
-        Coverage.Unsplit => raise Fail "Invariant"
-      | Coverage.Split subtrees => 
-        let
-           val newmatches = MapX.listItemsi subtrees
-        in
-           emitMatches prefix pathvars ((is, hd newmatches) :: matches)
-           ; app (fn match =>
-                     emitMatches ")|" pathvars ((is, match) :: matches))
-                (tl newmatches)
-        end
-      | Coverage.StringSplit _ => 
-        raise Fail "Splitting on strings unimplemented"
-      | Coverage.NatSplit _ => 
-        raise Fail "Splitting on naturals unimplemented"
-      | Coverage.SymbolSplit _ => 
-        raise Fail "Splitting on symbols unimplemented")
+(* Somewhat complex to avoid making an intermediate data structure. 
+ * Given n treevars with O(m) constructors, calls emitMatch on the O(m*n) 
+ * possible patterns. *)
+(*[ emitMatches: string 
+       -> Ast.term
+       -> pathTreeVar list <--- input
+       -> pathConstructorVar list <--- kind of output
+       -> unit *)
+and emitMatches prefix term [] matches = emitMatch prefix term (rev matches)
+  | emitMatches prefix term (pathvar :: pathvars) matches =
+    let val (is, (typ, pathtree)) = pathvar in 
+       case pathtree of 
+          Coverage.Unsplit => raise Fail "Invariant"
+        | Coverage.Split subtrees => 
+          let
+(*
+             fun replacement (c, []) = 
+                 Ast.Const c
+               | replacement (f, pathtrees) = 
+                 Ast.Structured 
+                 (f, map (fn i => nameOfVar (is @ [ i ], ()))
+                         (mapi pathtrees))
+*)
+             val newmatches = MapX.listItemsi subtrees
+          in
+             emitMatches prefix term pathvars ((is, hd newmatches) :: matches)
+             ; app (fn match =>
+                       emitMatches ")|" term pathvars ((is, match) :: matches))
+                   (tl newmatches)
+          end
+        | Coverage.StringSplit _ => 
+          raise Fail "Splitting on strings unimplemented"
+        | Coverage.NatSplit _ => 
+          raise Fail "Splitting on naturals unimplemented"
+        | Coverage.SymbolSplit _ => 
+          raise Fail "Splitting on symbols unimplemented"
+    end
+val emitCase: 
+      Ast.term list
+      -> pathTreeVar list 
+      -> unit = emitCase
+val emitMatch:
+      string 
+      -> Ast.term list
+      -> pathConstructorVar list 
+      -> unit = emitMatch
+val emitMatches: 
+      string 
+      -> Ast.term list
+      -> pathTreeVar list 
+      -> pathConstructorVar list 
+      -> unit = emitMatches
 
 fun emitWorld world =
    let 
@@ -121,7 +155,10 @@ fun emitWorld world =
       val Name = embiggen (Symbol.name world)
       val typs = valOf (WorldTab.lookup world)
       val args = mapi typs
-      val pathvars = makePaths world args
+      val pathTreeVars = makePaths world args
+      fun makeStartingTerm pathTreeVar = 
+         Ast.Var (SOME (Symbol.symbol (nameOfVar pathTreeVar)))
+      val startingTerms = map makeStartingTerm pathTreeVars
 
       (* Outputs code for saying "I am here" *)
       fun reportworld () = 
@@ -137,13 +174,13 @@ fun emitWorld world =
          ; decr ())
    in
       emit ("fun seek" ^ Name ^ " (" 
-            ^ String.concatWith ", " (map nameOfVar pathvars) ^ ") =")
+            ^ String.concatWith ", " (map nameOfVar pathTreeVars) ^ ") =")
       ; incr ()
       ; emit ("let")
       ; reportworld ()
       ; emit ("in")
       ; incr ()
-      ; emitCase (filterUnsplit pathvars)
+      ; emitCase startingTerms (filterUnsplit pathTreeVars)
       ; decr ()
       ; emit ("end\n")
       ; decr ()
@@ -165,8 +202,8 @@ fun worlds () =
    let
       val worlds = WorldTab.list ()
    in
-      emit ("structure " ^ getPrefix true "" ^ "Search:> "
-            ^ getPrefix true "_" ^ "SEARCH =")
+      emit ("structure " ^ getPrefix true "" ^ "Search" 
+            ^(* ":> " ^ getPrefix true "_" ^ "SEARCH" ^ *)" =")
       ; emit "struct"
       ; incr ()
       ; emit ("open " ^ getPrefix true "" ^ "Terms\n")
