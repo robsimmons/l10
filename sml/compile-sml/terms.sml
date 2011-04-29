@@ -16,8 +16,12 @@ structure SMLCompileTerms:> sig
 
    (* Given a term, returns a pathvar-based substitution along with 
     * equality constraints *)
+   type constraint = (* Ast.typ * *) Symbol.symbol * Symbol.symbol
    val pathTerm: Ast.term
-      -> Ast.term * Ast.subst * (Symbol.symbol * Symbol.symbol) list  
+      -> Ast.term * Ast.subst * constraint list  
+   val pathTerms: Ast.term list 
+      -> Ast.term list * Ast.subst * constraint list  
+
 
    (* A pathvar is an annotated list of how-you-got-to-this-term *)
    type 'a pathvar = int list * 'a 
@@ -109,11 +113,20 @@ and pathTerms ([], path, n, subst, eqs) = ([], subst, eqs)
        (term' :: terms', subst'', eqs'')
     end     
 
+type constraint = (* Ast.typ * *) Symbol.symbol * Symbol.symbol
+
 val pathTerm = fn term =>
    let 
       val (term, (subst, eqs)) = pathTerm (term, [], MapX.empty, [])
    in
       (term, MapX.map (Ast.Var o SOME) subst, eqs)
+   end
+
+val pathTerms = fn terms =>
+   let
+      val (terms, subst, eqs) = pathTerms (terms, [], 1, MapX.empty, [])
+   in
+      (terms, MapX.map (Ast.Var o SOME) subst, eqs) 
    end
 
 (* The fundamental view datatype *)
