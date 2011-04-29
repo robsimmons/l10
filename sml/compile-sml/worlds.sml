@@ -90,7 +90,7 @@ fun emitCase (w, terms) [] =
        fun handleArgs prefix subst [] = emit (prefix ^ "(fn x => x)")
          | handleArgs prefix subst [ arg ] = handleArg prefix subst arg
          | handleArgs prefix subst (arg :: args) = 
-           (handleArgs prefix subst args; handleArg " o " subst arg)
+           (handleArgs prefix subst args; handleArg "o " subst arg)
 
        fun handleArgsIf subst [] = emit "then (fn x => x"
          | handleArgsIf subst [ arg ] = handleArg "then (" subst arg
@@ -112,21 +112,20 @@ fun emitCase (w, terms) [] =
                    ; decr ())
           end
        
-       fun handlePats [] = emit "((fn x => x)"
-         | handlePats [ (pat, args) ] = handlePat "(" (pat, args)
+       fun handlePats [] = emit "(fn x => x)"
+         | handlePats [ (pat, args) ] = handlePat "" (pat, args)
          | handlePats ((pat, args) :: pats) = 
-           (handlePats pats; handlePat " o " (pat, args))
+           (handlePats pats; handlePat "o " (pat, args))
     in 
        handlePats pats
-       ; emit ") x"
     end 
     (* emit ("(" ^ String.concatWith ", " (map buildTerm terms) ^ ")") *)
   | emitCase world (pathTreeVars: pathTreeVar list) = 
     let
     in
-       emit ("case ("
+       emit ("(case ("
              ^ String.concatWith ", " (map strprj pathTreeVars) ^ ") of")
-       ; emitMatches "  " world pathTreeVars [] 
+       ; emitMatches "   " world pathTreeVars [] 
        ; emit ")"
     end
     
@@ -154,7 +153,7 @@ and emitMatch prefix (w, terms) (matches: pathConstructorVar list) =
 
        val terms = List.foldl constructorFold terms matches
     in
-       emit (prefix ^ "(" ^ String.concatWith ", " patterns ^ ") => (")
+       emit (prefix ^ "(" ^ String.concatWith ", " patterns ^ ") => ")
        ; incr ()
        ; emitCase (w, terms) (filterUnsplit (List.concat pathvars))
        ; decr ()
@@ -172,7 +171,7 @@ and emitMatches prefix world [] matches = emitMatch prefix world (rev matches)
           let val newmatches = MapX.listItemsi subtrees in
              emitMatches prefix world pathvars ((is, hd newmatches) :: matches)
              ; app (fn match =>
-                       emitMatches ")|" world pathvars ((is, match) :: matches))
+                    emitMatches " | " world pathvars ((is, match) :: matches))
                    (tl newmatches)
           end
         | Coverage.StringSplit _ => 
@@ -214,16 +213,14 @@ fun emitWorld world =
 
       (* Outputs code for saying "I am here" *)
       fun reportworld () = 
-        (incr ()
-         ; if null args 
-           then emit ("val () = print (\"Visiting " ^ name ^ "\\n\")")
-           else emit ("val () = print (\"Visiting (" ^ name ^ "\"")
+        (if null args 
+         then emit ("val () = print (\"Visiting " ^ name ^ "\\n\")")
+         else emit ("val () = print (\"Visiting (" ^ name ^ "\"")
          ; incr ()
          ; app (fn (i, typ) => 
                 emit ("^ \" \" ^ " ^ nameOfStr typ ^ " x_" ^ Int.toString i)) 
               args
          ; if null args then () else emit "^ \")\\n\")"
-         ; decr ()
          ; decr ())
    in
       emit ("and seek" ^ Name ^ 
@@ -236,14 +233,18 @@ fun emitWorld world =
       ; emit ("let")
       ; incr ()
       ; emit ("val w = " ^ buildTerm startingWorld)
-      (* ; emit ("val () = if isSome (MapWorld.find (x, w))")
-      ; emit ("         then raise Revisit else ()") *)
+      ; emit ("val () = if isSome (MapWorld.find (x, w))")
+      ; emit ("         then raise Revisit else ()")
       ; emit ("val x = MapWorld.insert (x, w, ())" )
+      ; emit ("val child_searches = ")
+      ; incr ()
+      ; emitCase (world, startingTerms) (filterUnsplit pathTreeVars)
+      ; decr ()
       ; reportworld ()
       ; decr ()
       ; emit ("in")
       ; incr ()
-      ; emitCase (world, startingTerms) (filterUnsplit pathTreeVars)
+      ; emit "child_searches x"
       ; decr ()
       ; emit ("end handle Revisit => x\n")
       ; decr ()
