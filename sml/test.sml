@@ -18,6 +18,12 @@ use (smlfile "terms");
 use (smlfile "worlds-sig");
 use (smlfile "worlds");
 
+test ("plus", [ "examples/Plus.l10" ]);
+use (smlfile "terms-sig");
+use (smlfile "terms");
+use (smlfile "worlds-sig");
+use (smlfile "worlds");
+
 test ("l10", [ "examples/self/ast.l10" ]);
 use (smlfile "terms-sig");
 use (smlfile "terms");

@@ -15,6 +15,10 @@ w2 N zero <- w N N N.
 w2 N (suc N) <- w (suc N) (suc N) (suc N), w2 N zero.
 w2 N (suc (suc M)) <- w2 M N.
 
+w3: n -> n -> world.
+w3 N (suc M) <- w3 (suc N) M.
+w3 N N <- w N N N.
+
 true : rel @ w zero zero zero.
 db0 = true @ w (suc zero) (suc zero) (suc zero).
 db1 = true @ w (suc (suc (suc (suc (suc (suc zero)))))) zero zero.

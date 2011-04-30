@@ -228,25 +228,26 @@ fun emitWorld world =
              else (" (" 
                    ^ String.concatWith ", " (map nameOfVar pathTreeVars))
                   ^ ")")
-            ^ " x =")
+            ^ " worldmap =")
       ; incr ()
       ; emit ("let")
       ; incr ()
       ; emit ("val w = " ^ buildTerm startingWorld)
-      ; emit ("val () = if isSome (MapWorld.find (x, w))")
+      ; emit ("val () = if isSome (MapWorld.find (worldmap, w))")
       ; emit ("         then raise Revisit else ()")
-      ; emit ("val x = MapWorld.insert (x, w, ())" )
+      ; emit ("val worldmap = MapWorld.insert (worldmap, w, ())" )
       ; emit ("val child_searches = ")
       ; incr ()
       ; emitCase (world, startingTerms) (filterUnsplit pathTreeVars)
       ; decr ()
+      ; emit ("val worldmap' = child_searches worldmap")
       ; reportworld ()
       ; decr ()
       ; emit ("in")
       ; incr ()
-      ; emit "child_searches x"
+      ; emit "worldmap'"
       ; decr ()
-      ; emit ("end handle Revisit => x\n")
+      ; emit ("end handle Revisit => worldmap\n")
       ; decr ()
    end
 
