@@ -271,7 +271,8 @@ fun worlds () =
             ^ ":> " ^ getPrefix true "_" ^ "SEARCH" ^ " =")
       ; emit "struct"
       ; incr ()
-      ; emit ("open " ^ getPrefix true "" ^ "Terms\n")
+      ; emit ("open " ^ getPrefix true "" ^ "Terms")
+      ; emit ("open " ^ getPrefix true "" ^ "Deduce\n")
       ; emit ("exception Revisit\n")
       ; emit "fun fake () = ()\n"
       ; app emitWorld worlds

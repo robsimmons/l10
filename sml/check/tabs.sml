@@ -89,6 +89,7 @@ structure RuleTab :> sig
    val reset: unit -> unit
    val register: Ast.world * Ast.rule -> unit
    val lookup: Term.world -> (Subst.subst * Ast.rule) list 
+   val lookupw: Symbol.symbol -> (Ast.world * Ast.rule) list
 end = struct
 
    val database: (Ast.world * Ast.rule) list ref = ref []
@@ -102,7 +103,44 @@ end = struct
        | SOME subst => SOME (subst, rule)
 
    fun lookup world = List.mapPartial (lookup' world) (!database)
+
+   fun lookupw' w (world : Ast.world, rule) = 
+      if w = #1 world then SOME (world, rule) else NONE
+
+   fun lookupw w = List.mapPartial (lookupw' w) (!database)
+      
 end
+
+structure IndexTerm = 
+struct
+
+   datatype vartype = INPUT | OUTPUT | IGNORED
+
+   datatype index = 
+      Const of Symbol.symbol
+    | NatConst of IntInf.int
+    | StrConst of string
+    | Structured of Symbol.symbol * index list
+    | Var of vartype
+
+   fun strIndex index = 
+      case index of 
+         Const x => Symbol.name x
+       | NatConst i => IntInf.toString i
+       | StrConst s => "\"" ^ s ^ "\""
+       | Structured (f, indexes) => 
+         "(" ^ Symbol.name f ^ " " 
+         ^ String.concatWith " " (map strIndex indexes)
+         ^ ")"
+       | Var INPUT => "++"
+       | Var OUTPUT => "--"
+       | Var IGNORED => "??"
+
+end
+
+structure IndexTab = Symtab(type entrytp = IndexTerm.index list)
+
+structure InterTab = Multitab(type entrytp = int * int * SetX.set)
 
 (* Reset all tables *)
 structure Reset = struct
@@ -113,5 +151,7 @@ structure Reset = struct
        ; TypeConTab.reset ()
        ; RelTab.reset ()
        ; SearchTab.reset ()
-       ; RuleTab.reset ())
+       ; RuleTab.reset ()
+       ; IndexTab.reset ()
+       ; InterTab.reset ())
 end

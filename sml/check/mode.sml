@@ -3,13 +3,16 @@
 
 structure Mode:> sig
 
+   (* Takes a atomic propisition, pulls the underlying world *)
+   val pullWorld: Ast.atomic -> Ast.world
+
    (* Takes a rule, pulls its implicit world dependency.
     * Checkes that all conclusions are at the same world. *)
-   val pullDependency : Ast.rule -> Ast.dependency
+   val pullDependency: Ast.rule -> Ast.dependency
 
    (* Checks that a dependency is well-moded.
     * Returns the free variables grounded by the world *)
-   val checkDependency : Ast.dependency -> SetX.set
+   val checkDependency: Ast.dependency -> SetX.set
 
    (* Checks that a rule is well-moded given variables known to be ground.
     * Pulls one trick: swaps the order of equality judgments so that the first

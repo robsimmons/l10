@@ -4,6 +4,9 @@
 signature AST = 
 sig
 
+type typ = Symbol.symbol 
+val strTyps: typ list -> string
+
 datatype term = 
    Const of Symbol.symbol
  | NatConst of IntInf.int
@@ -22,9 +25,6 @@ val subTerms: subst * term list -> (term list) option (* total substitution  *)
 val subTerm': (term * Symbol.symbol) -> term -> term  (* substitution [M/x]N *)
 val uscoresInTerm: term -> bool
 val uscoresInTerms: term list -> bool
-
-type typ = Symbol.symbol 
-val strTyps: typ list -> string
 
 type arg = Symbol.symbol option * typ
 val strArgs: arg list -> string
