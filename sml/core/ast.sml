@@ -186,4 +186,15 @@ fun fvPattern pat =
 
 fun fvPatterns pats = foldl SetX.union SetX.empty (map fvPattern pats)
 
+fun fvPrem prem = 
+   case prem of 
+      Normal pat => fvPattern pat
+    | Negated pat => fvPattern pat
+    | Count _ => raise Fail "Unimplemented"
+    | Binrel (_, term1, term2) => SetX.union (fvTerm term1, fvTerm term2)
+
+fun fvRule (prems, concs) =
+   SetX.union (List.foldl SetX.union SetX.empty (map fvPrem prems)
+               , List.foldl SetX.union SetX.empty (map fvAtomic concs))
+
 end

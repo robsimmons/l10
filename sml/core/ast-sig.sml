@@ -63,6 +63,7 @@ val strPrem: prem -> string
 
 type dependency = world * world list
 type rule = prem list * atomic list
+val fvRule: rule -> SetX.set
 
 datatype decl = 
    DeclConst of Symbol.symbol * arg list * Symbol.symbol

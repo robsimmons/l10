@@ -113,10 +113,12 @@ end = struct
       
 end
 
+structure InterTab = Multitab (type entrytp = int * int * Ast.typ MapX.map)
+
 structure IndexTerm = 
 struct
 
-   datatype vartype = INPUT | OUTPUT | IGNORED
+   datatype vartype = INPUT | OUTPUT 
 
    datatype index = 
       Const of Symbol.symbol
@@ -136,13 +138,10 @@ struct
          ^ ")"
        | Var INPUT => "++"
        | Var OUTPUT => "--"
-       | Var IGNORED => "??"
 
 end
 
-structure IndexTab = Symtab (type entrytp = IndexTerm.index list)
-
-structure InterTab = Multitab (type entrytp = int * int * Ast.typ MapX.map)
+structure IndexTab = Multitab (type entrytp = IndexTerm.index list)
 
 (* Reset all tables *)
 structure Reset = struct

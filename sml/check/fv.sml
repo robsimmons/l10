@@ -9,6 +9,8 @@ structure FV:> sig
    val fvTerms: Ast.term list * Ast.typ list -> fv
    val fvAtomic: Ast.atomic -> fv
    val fvWorld: Ast.world -> fv
+   val fvPat: Ast.pattern -> fv
+   val termTyp: Ast.term * fv -> Ast.typ
 
 end = struct
 
@@ -41,5 +43,14 @@ fun fvPat pat =
       in if MapX.inDomain (fv, x) then #1 (MapX.remove (fv, x)) else fv end
     | Conj (pat1, pat2) => MapX.unionWith #1 (fvPat pat1, fvPat pat2)
     | One => MapX.empty
+
+fun termTyp (term, env) = 
+   case term of 
+      Var NONE => raise Fail "Can't determine type of underscore"
+    | Var (SOME x) => MapX.lookup (env, x)
+    | Structured (f, _) => #2 (valOf (ConTab.lookup f))
+    | Const c => #2 (valOf (ConTab.lookup c))
+    | NatConst _ => TypeTab.nat
+    | StrConst _ => TypeTab.string
 
 end
