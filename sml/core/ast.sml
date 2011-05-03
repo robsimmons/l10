@@ -172,4 +172,18 @@ and uscoresInTerms terms =
 
 fun uscoresInAtomic (_, terms) = uscoresInTerms terms
 
+val fvAtomic = fvWorld
+val fvAtomics = fvWorlds
+
+fun fvPattern pat = 
+   case pat of 
+      Atomic atomic => fvAtomic atomic
+    | Exists (x, pat) => 
+      let val fv = fvPattern pat 
+      in if SetX.member (fv, x) then SetX.delete (fv, x) else fv end
+    | Conj (pat1, pat2) => SetX.union (fvPattern pat1, fvPattern pat2)
+    | One => SetX.empty
+
+fun fvPatterns pats = foldl SetX.union SetX.empty (map fvPattern pats)
+
 end

@@ -19,7 +19,7 @@ w3: n -> n -> world.
 w3 N (suc M) <- w3 (suc N) M.
 w3 N N <- w N N N.
 
-true : rel @ w zero zero zero.
-db0 = true @ w (suc zero) (suc zero) (suc zero).
-db1 = true @ w (suc (suc (suc (suc (suc (suc zero)))))) zero zero.
-db2 = true @ w (suc (suc (suc zero))) (suc (suc (suc zero))) (suc (suc zero)).
+//true : rel @ w zero zero zero.
+//db0 = true @ w (suc zero) (suc zero) (suc zero).
+//db1 = true @ w (suc (suc (suc (suc (suc (suc zero)))))) zero zero.
+//db2 = true @ w (suc (suc (suc zero))) (suc (suc (suc zero))) (suc (suc zero)).

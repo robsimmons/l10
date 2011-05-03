@@ -18,6 +18,9 @@ structure DiscMap:> sig
    val subII: IntInf.int -> 'a map -> 'a map
    val subS: String.string -> 'a map -> 'a map
 
+   (* Combines the ORD_MAP intersectWith with a fold *)
+   val intersect: ('a * 'b * 'c -> 'c) -> 'c -> ('a map * 'b map) -> 'c
+
    type 'a zipmap 
    val id: 'a map -> 'a zipmap
    val unzip: int * int -> 'a zipmap -> 'a zipmap
@@ -35,6 +38,31 @@ struct
     | MX of 'a map' MapX.map
     | MII of 'a map' MapII.map
     | MS of 'a map' MapS.map
+
+   fun intersect f a (NONE, _) = a
+     | intersect f a (_, NONE) = a
+     | intersect f a (SOME m1, SOME m2) = 
+       case (m1, m2) of 
+          (D data1, D data2) => f (data1, data2, a)
+        | (M vec1, M vec2) => 
+          if Vector.length vec1 <> Vector.length vec2
+          then raise Fail "Invariant"
+          else Vector.foldri 
+             (fn (i, map1, a) => intersect f a (map1, Vector.sub (vec2, i)))
+             a vec1
+        | (MX map1, MX map2) =>
+          MapX.foldri
+             (fn (x, m1, a) => intersect f a (SOME m1, MapX.find (map2, x)))
+             a map1
+        | (MII map1, MII map2) =>
+          MapII.foldri
+             (fn (i, m1, a) => intersect f a (SOME m1, MapII.find (map2, i)))
+             a map1
+        | (MS map1, MS map2) => 
+          MapS.foldri
+             (fn (s, m1, a) => intersect f a (SOME m1, MapS.find (map2, s)))
+             a map1
+        | _ => raise Fail "Invariant"
 
    type 'a map = 'a map' option
 

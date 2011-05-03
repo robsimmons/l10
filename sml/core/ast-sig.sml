@@ -37,6 +37,8 @@ val strWorld': bool -> world -> string
 val strWorld:  world -> string
 
 type atomic = Symbol.symbol * term list
+val fvAtomic: atomic -> SetX.set
+val fvAtomics: atomic list -> SetX.set
 val strAtomic': bool -> world -> string
 val strAtomic:  world -> string
 val uscoresInAtomic: atomic -> bool
@@ -46,6 +48,8 @@ datatype pattern =
  | Exists of Symbol.symbol * pattern
  | Conj of pattern * pattern
  | One
+val fvPattern: pattern -> SetX.set
+val fvPatterns: pattern list -> SetX.set
 
 datatype binrel = Eq | Neq | Gt | Geq 
 val strBinrel: binrel -> string 

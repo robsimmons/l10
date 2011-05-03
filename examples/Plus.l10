@@ -23,7 +23,7 @@ plus (s N) M (s P) <- plus N M P.
 // that static scheduling (and execution) uses only a number of stages
 // proportional to the smallest of the two numbers.
 
-lt: {N: n} {M: m} rel @ w N M.
+lt: {N: n} {M: n} rel @ w N M.
 lt z (s N).
 lt (s N) (s M) <- lt N M.
 
