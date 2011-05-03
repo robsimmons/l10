@@ -10,7 +10,8 @@ fun emitSearchDatatype w =
       fun emitCase prefix (rule, point, fv) = 
          emit (prefix ^ embiggen (Symbol.name w) 
                ^ "_" ^ Int.toString rule
-               ^ "_" ^ Int.toString point)
+               ^ "_" ^ Int.toString point
+               ^ " of {" ^ "" ^ "}")
 
       fun emitCases [] = () (* World with no rules attached, sure *)
         | emitCases [ inter ] =
