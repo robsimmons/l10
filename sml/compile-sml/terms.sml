@@ -154,7 +154,7 @@ fun emitView isRec x =
            ; emit (" | " ^ embiggen (Symbol.name constructor)
                    ^ args (ConTab.lookup constructor)))
    in
-      emitCases (rev (TypeConTab.lookup x))
+      emitCases (TypeConTab.lookup x)
    end
 
 
@@ -195,7 +195,7 @@ fun emitInjSig x =
                        ^ String.concatWith " * " args ^ " -> " ^ name)
          end
    in
-      app emitSingle (TypeConTab.lookup x)
+      app emitSingle (rev (TypeConTab.lookup x))
    end
 
 fun emitInj x = 
