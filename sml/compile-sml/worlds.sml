@@ -90,7 +90,7 @@ fun emitCase (w, terms) [] =
        fun handleArgs prefix subst [] = emit (prefix ^ "(fn x => x)")
          | handleArgs prefix subst [ arg ] = handleArg prefix subst arg
          | handleArgs prefix subst (arg :: args) = 
-           (handleArgs prefix subst args; handleArg "o " subst arg)
+           (handleArgs prefix subst args; handleArg " o " subst arg)
 
        fun handleArgsIf subst [] = emit "then (fn x => x"
          | handleArgsIf subst [ arg ] = handleArg "then (" subst arg
@@ -112,12 +112,12 @@ fun emitCase (w, terms) [] =
                    ; decr ())
           end
        
-       fun handlePats [] = emit "(fn x => x)"
-         | handlePats [ (pat, args) ] = handlePat "" (pat, args)
+       fun handlePats [] = emit "((fn x => x)"
+         | handlePats [ (pat, args) ] = handlePat "(" (pat, args)
          | handlePats ((pat, args) :: pats) = 
-           (handlePats pats; handlePat "o " (pat, args))
+           (handlePats pats; handlePat " o " (pat, args))
     in 
-       handlePats pats
+       handlePats pats; emit ", [])"
     end 
     (* emit ("(" ^ String.concatWith ", " (map buildTerm terms) ^ ")") *)
   | emitCase world (pathTreeVars: pathTreeVar list) = 
@@ -236,7 +236,7 @@ fun emitWorld world =
       ; emit ("val () = if isSome (MapWorld.find (worldmap, w))")
       ; emit ("         then raise Revisit else ()")
       ; emit ("val worldmap = MapWorld.insert (worldmap, w, ())" )
-      ; emit ("val child_searches = ")
+      ; emit ("val (child_searches, inters0) = ")
       ; incr ()
       ; emitCase (world, startingTerms) (filterUnsplit pathTreeVars)
       ; decr ()

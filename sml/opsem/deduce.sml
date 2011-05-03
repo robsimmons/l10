@@ -70,7 +70,7 @@ fun runPrems predset (prems: Ast.prem list, subst: Subst.subst) =
 fun runConcs concs (subst, predset) = 
    List.foldl PredSet.add predset (map (Match.pullAtomic subst) concs)
 
-fun runRule ((subst, (prems, concs)), predset) = 
+fun runRule ((_, subst, (prems, concs)), predset) = 
    List.foldl (runConcs concs) predset (runPrems predset (prems, subst))
 
 fun runWorld (world, predset) = 

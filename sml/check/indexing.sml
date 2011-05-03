@@ -8,7 +8,7 @@ fun mapi' n [] = []
 
 fun mapi xs = mapi' 0 xs
 
-fun indexRule (rule_n, (world: Ast.world, (pats, concs))) = 
+fun indexRule (rule_n, world: Ast.world, (pats, concs)) = 
    let in
       print ("Binding intro for rule #" ^ Int.toString rule_n ^ "\n")
       ; InterTab.bind (#1 world, (rule_n, 0, FV.fvWorld world))
@@ -17,7 +17,7 @@ fun indexRule (rule_n, (world: Ast.world, (pats, concs))) =
 fun indexWorld w = 
    let
       val () = print ("Indexing for world " ^ Symbol.name w ^ "\n")
-      val rules = mapi (RuleTab.lookupw w)
+      val rules = rev (RuleTab.lookupw w)
       val () = print (Int.toString (length rules) ^ " applicable rule(s)\n")
    in
       app indexRule rules

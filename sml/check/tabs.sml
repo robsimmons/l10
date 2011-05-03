@@ -88,24 +88,26 @@ structure SearchTab = Multitab(type entrytp = Ast.term list * Ast.world list)
 structure RuleTab :> sig
    val reset: unit -> unit
    val register: Ast.world * Ast.rule -> unit
-   val lookup: Term.world -> (Subst.subst * Ast.rule) list 
-   val lookupw: Symbol.symbol -> (Ast.world * Ast.rule) list
+   val lookup: Term.world -> (int * Subst.subst * Ast.rule) list 
+   val lookupw: Symbol.symbol -> (int * Ast.world * Ast.rule) list
 end = struct
 
-   val database: (Ast.world * Ast.rule) list ref = ref []
-   fun reset () = database := []
+   val next = ref 0 
+   val database: (int * Ast.world * Ast.rule) list ref = ref []
+   fun reset () = (database := []; next := 0)
 
-   fun register data = database := data :: !database
+   fun register (world, rule) = 
+      (database := (!next, world, rule) :: !database; next := !next + 1)
 
-   fun lookup' world' (world, rule) = 
+   fun lookup' world' (n, world, rule) = 
       case Match.matchWorld Subst.empty world world' of
          NONE => NONE
-       | SOME subst => SOME (subst, rule)
+       | SOME subst => SOME (n, subst, rule)
 
    fun lookup world = List.mapPartial (lookup' world) (!database)
 
-   fun lookupw' w (world : Ast.world, rule) = 
-      if w = #1 world then SOME (world, rule) else NONE
+   fun lookupw' w (n, world : Ast.world, rule) = 
+      if w = #1 world then SOME (n, world, rule) else NONE
 
    fun lookupw w = List.mapPartial (lookupw' w) (!database)
       
