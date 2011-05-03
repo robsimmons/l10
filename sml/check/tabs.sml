@@ -138,9 +138,9 @@ struct
 
 end
 
-structure IndexTab = Symtab(type entrytp = IndexTerm.index list)
+structure IndexTab = Symtab (type entrytp = IndexTerm.index list)
 
-structure InterTab = Multitab(type entrytp = int * int * SetX.set)
+structure InterTab = Multitab (type entrytp = int * int * Ast.typ MapX.map)
 
 (* Reset all tables *)
 structure Reset = struct

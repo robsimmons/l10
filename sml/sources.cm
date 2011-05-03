@@ -30,6 +30,7 @@ Group is
 
    check/tabs.sml
    check/types.sml
+   check/fv.sml
    check/mode.sml
    check/load.sml
    check/check.sml
