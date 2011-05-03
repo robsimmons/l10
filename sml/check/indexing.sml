@@ -1,7 +1,15 @@
-structure Indexing = 
+(* Robert J. Simmons *)
+
+structure Indexing:> sig
+
+  (* Populates the InterTab, IndexTab, and MatchTab 
+   * by analyzing the rules of the program in RuleTab. *)
+  val index: unit -> unit
+
+end = 
 struct
 
-open IndexTerm
+open ModedTerm
 
 fun mapi' n [] = []
   | mapi' n (x :: xs) = (n, x) :: mapi' (n+1) xs
@@ -16,11 +24,10 @@ fun knownIndex (index, []) = false
     index = index' orelse knownIndex (index, indexes)
 
 fun addIndex (a, index) = 
-   if knownIndex (index, IndexTab.lookup a)
-   then (print ("New index recorded: " ^ Symbol.name a ^ " " 
-                ^ String.concatWith " " (map strIndex index) ^ "\n")
+   if knownIndex (index, IndexTab.lookup a) then ()
+   else (print ("   * New index recorded: " ^ Symbol.name a ^ " " 
+                ^ String.concatWith " " (map strTerm index) ^ "\n")
          ; IndexTab.bind (a, index))
-   else ()
 
 fun list fv = 
    String.concatWith ", " (map (Symbol.name o #1) (MapX.listItemsi fv))
@@ -29,20 +36,20 @@ fun list fv =
  * Ast.term, indexTerm creates a IndexTerm.term, a term mapping from 
  * input Ast variables to paths (which encodes equational constraints), and a
  * mapping back from the output paths back to Ast variables. *)
-fun indexTerm (known, path, term) = 
+fun indexTerm (known, path, (typ, term)) = 
    case term of 
       Ast.Var NONE => 
-      {term = Var OUTPUT, 
+      {term = Var (OUTPUT, typ), 
        input = MapX.empty,
        output = MapP.empty}
     | Ast.Var (SOME x) => 
       (case MapX.find (known, x) of
           NONE => 
-          {term = Var OUTPUT, 
+          {term = Var (OUTPUT, typ), 
            input = MapX.empty,
            output = MapP.singleton (path, x)}
         | SOME typ =>
-          {term = Var INPUT,
+          {term = Var (INPUT, typ),
            input = MapX.singleton (x, [ path ]),
            output = MapP.empty})
     | Ast.Const c => 
@@ -58,21 +65,24 @@ fun indexTerm (known, path, term) =
        input = MapX.empty,
        output = MapP.empty}
     | Ast.Structured (f, terms) =>
-      let val {terms, input, output} = indexTerms (known, 0, path, terms) 
+      let
+         val (typs, typ) = valOf (ConTab.lookup f)
+         val typterms = ListPair.zipEq (typs, terms)
+         val {terms, input, output} = indexTerms (known, 0, path, typterms) 
       in 
          {term = Structured (f, terms), 
           input = input, 
           output = output} 
       end
 
-and indexTerms (known, n, path, terms) = 
-   case terms of 
+and indexTerms (known, n, path, typterms) = 
+   case typterms of 
       [] => {terms = [], input = MapX.empty, output = MapP.empty}
-    | term :: terms =>
+    | typterm :: typterms =>
       let 
-         val {term, input, output} = indexTerm (known, path @ [ n ], term)
+         val {term, input, output} = indexTerm (known, path @ [ n ], typterm)
          val {terms, input = input', output = output'} = 
-             indexTerms (known, n+1, path, terms)
+             indexTerms (known, n+1, path, typterms)
          fun fail _ = raise Fail "Invariant"
       in
          {terms = term :: terms,
@@ -85,7 +95,8 @@ fun indexPat (known, pat) =
       Ast.One => raise Fail "Unimplemented"
     | Ast.Atomic (a, terms) =>
       let 
-         val res = indexTerms (known, 0, [], terms)
+         val typs = map #2 (#1 (valOf (RelTab.lookup a))) 
+         val res = indexTerms (known, 0, [], ListPair.zipEq (typs, terms))
       in
          addIndex (a, #terms res); res
       end
@@ -97,7 +108,7 @@ fun indexPat (known, pat) =
 
 fun indexRule' (rule_n, point, known, prems, concs) = 
    case prems of 
-      [] => (print "\n"; [])
+      [] => []
 
     | Ast.Normal pat :: prems =>
       let
@@ -109,9 +120,9 @@ fun indexRule' (rule_n, point, known, prems, concs) =
       in
          print (" - Normal point #" ^ Int.toString point 
                 ^ ": " ^ Ast.strPrem (Ast.Normal pat) ^ "\n")
+         ; indexPat (known, pat)
          ; print ("   - learned: " ^ list learned ^ "\n")
          ; print ("   - still needed: " ^ list needed ^ "\n")
-         ; indexPat (known, pat)
          ; indexRule' (rule_n, point+1, newknown, prems, concs)
       end      
 
@@ -121,8 +132,8 @@ fun indexRule' (rule_n, point, known, prems, concs) =
          val needed = MapX.filteri (fn (x, _) => SetX.member (free, x)) known
       in
          print (" - Negated point #" ^ Int.toString point ^ "\n")
-         ; print ("   - still needed: " ^ list needed ^ "\n")
          ; indexPat (known, pat)
+         ; print ("   - still needed: " ^ list needed ^ "\n")
          ; indexRule' (rule_n, point+1, known, prems, concs)
       end
 
@@ -144,7 +155,7 @@ fun indexRule' (rule_n, point, known, prems, concs) =
 fun indexRule (rule_n, world: Ast.world, (prems, concs)) = 
    let
       val fvworld = FV.fvWorld world
-      val () = print ("Binding intro for rule #" ^ Int.toString rule_n ^ "\n")
+      val () = print ("Analyzing rule #" ^ Int.toString rule_n ^ "\n")
       val compiled = indexRule' (rule_n, 0, fvworld, prems, concs)
    in
       InterTab.bind (#1 world, (rule_n, 0, FV.fvWorld world))
@@ -160,7 +171,24 @@ fun indexWorld w =
       ; print "\n"
    end
 
+fun createPathtree w = 
+   let 
+      val pathtree = map Coverage'.Unsplit (valOf (WorldTab.lookup w))
+      val indexes = IndexTab.lookup w 
+   in
+      print (Int.toString (length indexes) ^ " index(es) for world " 
+             ^ Symbol.name w ^ "\n")
+      ; MatchTab.bind (w, List.foldr Coverage'.extendpaths pathtree indexes)
+   end
+
 fun index () = 
-   app indexWorld (WorldTab.list ())
+   let 
+      val worlds = WorldTab.list () 
+   in
+      print "=== INDEXING ===\n"
+      ; app indexWorld worlds
+      ; print "=== CREATING PATH TREE ===\n"
+      ; app createPathtree worlds
+   end
 
 end

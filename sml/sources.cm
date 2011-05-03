@@ -34,7 +34,10 @@ Group is
    check/mode.sml
    check/load.sml
    check/check.sml
+   check/posttabs.sml
+
    check/coverage.sml
+   check/coverage'.sml
    check/indexing.sml
 
    opsem/search.sml
