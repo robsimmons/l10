@@ -77,52 +77,102 @@ fun strprj (pathvar as (_, (typ, _))) = nameOfPrj typ ^ nameOfVar pathvar
 fun filterUnsplit (pathTreeVars: pathTreeVar list) = 
    List.filter (not o Coverage.isUnsplit o #2 o #2) pathTreeVars
 
-fun emitCase (w, terms) [] = 
-    let 
-       val typs = valOf (WorldTab.lookup w)
-       val pats = List.filter (genTerms terms o #1) (SearchTab.lookup w)
-       fun strEq (typ, x, y) = nameOfEq typ (Symbol.name x) (Symbol.name y)
-       fun handleArg prefix subst (w, terms) = 
-          let val terms' = valOf (Ast.subTerms (subst, terms)) in  
-             emit (prefix ^ seekWorld (w, terms'))
-          end
+fun strEq (typ, x, y) = nameOfEq typ (Symbol.name x) (Symbol.name y)
 
-       fun handleArgs prefix subst [] = emit (prefix ^ "(fn x => x)")
-         | handleArgs prefix subst [ arg ] = handleArg prefix subst arg
-         | handleArgs prefix subst (arg :: args) = 
-           (handleArgs prefix subst args; handleArg " o " subst arg)
+fun emitChildSearches (w, terms) = 
+   let
+      val typs = valOf (WorldTab.lookup w)
+      fun handleArg prefix subst (w, terms) = 
+         let val terms' = valOf (Ast.subTerms (subst, terms)) in  
+            emit (prefix ^ seekWorld (w, terms'))
+         end
 
-       fun handleArgsIf subst [] = emit "then (fn x => x"
-         | handleArgsIf subst [ arg ] = handleArg "then (" subst arg
-         | handleArgsIf subst (arg :: args) = 
-           (handleArgsIf subst args; handleArg "      o " subst arg)
+      fun handleArgs prefix subst [] = emit (prefix ^ "(fn x => x)")
+        | handleArgs prefix subst [ arg ] = handleArg prefix subst arg
+        | handleArgs prefix subst (arg :: args) = 
+          (handleArgs prefix subst args; handleArg " o " subst arg)
 
-       fun handlePat prefix (pat, args) = 
-          let 
-             val pattyp = ListPair.zip (pat, typs)
-             val (terms, subst, eqs) = pathTerms pattyp
-          in
-             if null eqs 
-             then (handleArgs prefix subst args)
-             else (emit (prefix ^ "(if " 
-                         ^ String.concatWith " andalso " (map strEq eqs))
-                   ; incr ()
-                   ; handleArgsIf subst args
-                   ; emit ") else (fn x => x))"
-                   ; decr ())
-          end
+      fun handleArgsIf subst [] = emit "then (fn x => x"
+        | handleArgsIf subst [ arg ] = handleArg "then (" subst arg
+        | handleArgsIf subst (arg :: args) = 
+          (handleArgsIf subst args; handleArg "      o " subst arg)
+
+      fun handlePat prefix (pat, args) = 
+         let 
+            val pattyp = ListPair.zipEq (pat, typs)
+            val (terms, subst, eqs) = pathTerms pattyp
+         in
+            if null eqs 
+            then (handleArgs prefix subst args)
+            else (emit (prefix ^ "(if " 
+                        ^ String.concatWith " andalso " (map strEq eqs))
+                  ; incr ()
+                  ; handleArgsIf subst args
+                  ; emit ") else (fn x => x))"
+                  ; decr ())
+         end
        
-       fun handlePats [] = emit "((fn x => x)"
-         | handlePats [ (pat, args) ] = handlePat "(" (pat, args)
-         | handlePats ((pat, args) :: pats) = 
-           (handlePats pats; handlePat " o " (pat, args))
-    in 
-       handlePats pats; emit ", [])"
+      fun handlePats [] = emit "((fn x => x)"
+        | handlePats [ (pat, args) ] = handlePat "(" (pat, args)
+        | handlePats ((pat, args) :: pats) = 
+          (handlePats pats; handlePat " o " (pat, args))
+
+      val pats = List.filter (genTerms terms o #1) (SearchTab.lookup w)
+   in
+      handlePats pats
+   end
+
+fun emitInitialInters (w, terms) = 
+   let
+      val typs = valOf (WorldTab.lookup w)
+      fun handleSubst postfix [] = ()
+        | handleSubst postfix [ (x, term) ] = 
+          (emit (Symbol.name x ^ " = " ^ buildTerm term ^ " } " ^ postfix))
+        | handleSubst postfix ((x, term) :: subst) = 
+          (emit (Symbol.name x ^ " = " ^ buildTerm term ^ ",")
+           ; handleSubst postfix subst) 
+
+      fun handleSubst' prefix postfix (w, n, subst) = 
+        (emit (prefix ^ SMLCompileDeduce.nameInter (w, n, 0) 
+                        ^ (if MapX.isEmpty subst 
+                           then (" {} " ^ postfix) else " {"))
+         ; incr (); incr()
+         ; handleSubst postfix (MapX.listItemsi subst)
+         ; decr (); decr())
+
+      fun handleRule prefix (n, (w, pat), _) =
+         let
+            val pattyp = ListPair.zipEq (pat, typs)
+            val (terms, subst, eqs) = pathTerms pattyp
+         in
+            if null eqs
+            then handleSubst' prefix "::" (w, n, subst)
+            else (emit (prefix ^ "(if "
+                        ^ String.concatWith " andalso " (map strEq eqs))
+                  ; handleSubst' "   then [ " "]" (w, n, subst)
+                  ; emit "   else []) @")
+         end
+
+      fun handleRules [] = false
+        | handleRules [ rule ] = (handleRule ", " rule; true)
+        | handleRules (rule :: rules) = 
+          (handleRules rules before handleRule "  " rule)
+
+      val rules = List.filter (genTerms terms o #2 o #2) (RuleTab.lookupw w)
+   in
+      if handleRules rules
+      then emit "  [])"
+      else emit ", [])"
+   end  
+
+(* Either emits the case if splitting is done or else splits some more *)
+fun emitCase world [] = 
+    let in 
+       emitChildSearches world; emitInitialInters world
     end 
     (* emit ("(" ^ String.concatWith ", " (map buildTerm terms) ^ ")") *)
   | emitCase world (pathTreeVars: pathTreeVar list) = 
-    let
-    in
+    let in
        emit ("(case ("
              ^ String.concatWith ", " (map strprj pathTreeVars) ^ ") of")
        ; emitMatches "   " world pathTreeVars [] 

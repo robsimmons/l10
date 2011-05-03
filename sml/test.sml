@@ -56,6 +56,13 @@ use (smlfile "deduce");
 use (smlfile "worlds-sig");
 use (smlfile "worlds");
 
+test ("wr", [ "regression/worldrule.l10" ]);
+use (smlfile "terms-sig");
+use (smlfile "terms");
+use (smlfile "deduce");
+use (smlfile "worlds-sig");
+use (smlfile "worlds");
+
 test ("t", [ "regression/tree.l10" ]);
 use (smlfile "terms-sig");
 use (smlfile "terms");

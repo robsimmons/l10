@@ -4,7 +4,9 @@ struct
 open SMLCompileUtil
 open SMLCompileTypes
 open SMLCompileTerms
-open SMLCompileWorlds
+
+fun nameInter (w, rule, point) = 
+   embiggen (Symbol.name w) ^ "_" ^ Int.toString rule ^ "_" ^ Int.toString point
 
 fun emitSearchDatatype w = 
    let
@@ -12,9 +14,7 @@ fun emitSearchDatatype w =
          Symbol.name x ^ ": " ^ nameOfTypeExt typ
 
       fun emitCase prefix (rule, point, fv) = 
-         emit (prefix ^ embiggen (Symbol.name w) 
-               ^ "_" ^ Int.toString rule
-               ^ "_" ^ Int.toString point
+         emit (prefix ^ nameInter (w, rule, point) 
                ^ " of { " 
                ^ String.concatWith ", " (map fvtype (MapX.listItemsi fv))
                ^ " }")
