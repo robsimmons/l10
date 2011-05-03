@@ -2,16 +2,22 @@ structure SMLCompileDeduce =
 struct
 
 open SMLCompileUtil
+open SMLCompileTypes
 open SMLCompileTerms
 open SMLCompileWorlds
 
 fun emitSearchDatatype w = 
    let
+      fun fvtype (x, typ) = 
+         Symbol.name x ^ ": " ^ nameOfTypeExt typ
+
       fun emitCase prefix (rule, point, fv) = 
          emit (prefix ^ embiggen (Symbol.name w) 
                ^ "_" ^ Int.toString rule
                ^ "_" ^ Int.toString point
-               ^ " of {" ^ "" ^ "}")
+               ^ " of { " 
+               ^ String.concatWith ", " (map fvtype (MapX.listItemsi fv))
+               ^ " }")
 
       fun emitCases [] = () (* World with no rules attached, sure *)
         | emitCases [ inter ] =
@@ -34,6 +40,7 @@ fun deduce () =
       emit ("structure " ^ getPrefix true "" ^ "Deduce =")
       ; emit "struct"
       ; incr ()
+      (* ; emit ("open " ^ getPrefix true "" ^ "Terms\n") *)
       ; emit "(* Datatypes for intermediate stages in the McAllester loop *)"
       ; app emitSearchDatatype worlds
       ; decr ()

@@ -14,6 +14,7 @@ structure SMLCompileTypes:> sig
    val nameOfType: Symbol.symbol -> string (* All types in TypeTab *)
    val nameOfView: Symbol.symbol -> string (* requires encoded x = true *)
    val NameOfType: Symbol.symbol -> string (* requires encoded x = true *)
+   val nameOfTypeExt: Symbol.symbol -> string (* Adds Term*. prefix *)
       
    (* The name of the <whatever> function associated with this type *)
    val nameOfStr: Symbol.symbol -> string
@@ -42,6 +43,9 @@ fun nameOfType x =
       else if x = stringtyp then "String.string"
       else raise Fail "nameOfType called on unknown special type"
     | _ => Symbol.name x
+
+fun nameOfTypeExt x = 
+   (if encoded x then (getPrefix true "" ^ "Terms.") else "") ^ nameOfType x
 
 fun NameOfType x = 
    if encoded x then embiggen (Symbol.name x) else raise Fail "Invariant"
