@@ -22,7 +22,7 @@ fun inputPattern [] = "()"
 fun emitIndexType a (n, {terms, input, output}) = 
    let
       val input = rev (MapP.listItemsi input)
-      val output = rev (MapP.listItemsi output)
+      val output = MapP.listItemsi output
       val input' = String.concatWith " " (map (nameOfMap "map" o #2) input)
       val output' = 
          if length output = 0 then "unit"
@@ -60,7 +60,7 @@ fun emitIndexType a (n, {terms, input, output}) =
            ; emitInsertLets (n+1, pathtyps))
 
       fun emitInsertInserts (n, []) = 
-          emit (inputPattern (rev (map #1 output)) 
+          emit (inputPattern (map #1 output)
                 ^ " :: y_" ^ Int.toString n
                 ^ repeat (n, #")"))
         | emitInsertInserts (n, (path, typ) :: pathtyps) = 
@@ -71,7 +71,7 @@ fun emitIndexType a (n, {terms, input, output}) =
       fun emitInsert () = 
         (emit ("fun " ^ name ^ "_insert (y_0: " ^ name ^ ", "
                ^ inputPattern (rev (map #1 input)) ^ ", "
-               ^ inputPattern (rev (map #1 output)) ^ ") = ")
+               ^ inputPattern (map #1 output) ^ ") = ")
          ; incr ()
          ; emit "let"
          ; incr ()
@@ -106,30 +106,64 @@ and substPaths (i :: path, terms, term) =
     @ tl (List.drop (terms, i))
   | substPaths _ = raise Fail "substPaths invariant"
 
-fun emitMatches shapes [] = emit "()"
-  | emitMatches shapes ((path, Coverage'.Unsplit _) :: pathtree) =
-    emitMatches shapes pathtree
-  | emitMatches shapes ((path, Coverage'.Split (typ, subtrees)) :: pathtree) =
+(* Checking to see if a moded term fits a particular shape *)
+
+fun genTerm (shape, term) = 
+   case (shape, term) of
+      (_, ModedTerm.Var _) => true
+    | (Ast.Var _, _) => raise Fail "Shape not sufficiently general"
+    | (Ast.Const _, ModedTerm.Structured _) => false
+    | (Ast.Structured _, ModedTerm.Const _) => false
+    | (Ast.Const c, ModedTerm.Const c') => c = c'
+    | (Ast.Structured (f, terms), ModedTerm.Structured (f', terms')) =>
+      f = f' andalso genTerms terms terms'
+    | (Ast.NatConst i, ModedTerm.NatConst i') => i = i'
+    | (Ast.StrConst s, ModedTerm.StrConst s') => s = s'
+    | _ => raise Fail "Typing invariant in shape"
+
+and genTerms shapes terms = 
+   List.all genTerm (ListPair.zipEq (shapes, terms))
+
+(* Deep matching relations to create the indexing structure *)
+
+fun emitMatches (a, shapes) [] = 
+    let
+       fun filter (n, {terms, input, output}) = genTerms shapes terms
+       fun emitOne (n, {terms, input, output}) = 
+          emit (" ; " ^ Symbol.name a ^ "_" ^ Int.toString n ^ " := "
+                ^ Symbol.name a ^ "_" ^ Int.toString n ^ "_insert (!"
+                ^ Symbol.name a ^ "_" ^ Int.toString n ^ ", "
+                ^ inputPattern (MapP.listKeys input) ^ ", " 
+                ^ inputPattern (MapP.listKeys output) ^ ") ")
+    in
+       emit "(()"
+       ; app emitOne (List.filter filter (mapi (rev (IndexTab.lookup a))))
+       ; emit ")"
+    end
+  | emitMatches shape ((path, Coverage'.Unsplit _) :: pathtree) =
+    emitMatches shape pathtree
+  | emitMatches shape ((path, Coverage'.Split (typ, subtrees)) :: pathtree) =
     let
        val constructors = TypeConTab.lookup typ
     in 
        emit ("(case " ^ nameOfPrj typ ^ pathStr path ^ " of")
-       ; emitMatchCases "   " shapes path typ subtrees pathtree constructors
+       ; emitMatchCases "   " shape path typ subtrees pathtree constructors
        ; emit ")"
     end
-  | emitMatches shapes _ = raise Fail "Unimplemented form of splitting"
+  | emitMatches shape _ = raise Fail "Unimplemented form of splitting"
 
-and emitMatchCases prefix shapes path typ subtrees pathtree [] = 
+and emitMatchCases prefix shape path typ subtrees pathtree [] = 
     emit (prefix ^ "Void_" ^ embiggen (Symbol.name typ) 
           ^ " x = abort" ^ embiggen (Symbol.name typ) ^ " x")
-  | emitMatchCases prefix shapes path typ subtrees pathtree [ c ] = 
-    emitMatchCase prefix shapes path subtrees pathtree c
-  | emitMatchCases prefix shapes path typ subtrees pathtree (c :: cs) =
-    (emitMatchCases prefix shapes path typ subtrees pathtree cs
-     ; emitMatchCase " | " shapes path subtrees pathtree c)
+  | emitMatchCases prefix shape path typ subtrees pathtree [ c ] = 
+    emitMatchCase prefix shape path subtrees pathtree c
+  | emitMatchCases prefix shape path typ subtrees pathtree (c :: cs) =
+    (emitMatchCases prefix shape path typ subtrees pathtree cs
+     ; emitMatchCase " | " shape path subtrees pathtree c)
 
-and emitMatchCase prefix shapes (path: int list) subtrees pathtree constructor = 
+and emitMatchCase prefix shape (path: int list) subtrees pathtree constructor = 
    let 
+      val (a, shapes) = shape
       val typs = #1 (valOf (ConTab.lookup constructor))
       val shape = 
          if null typs then Ast.Const constructor
@@ -144,14 +178,14 @@ and emitMatchCase prefix shapes (path: int list) subtrees pathtree constructor =
                else (" " ^ inputPattern (map #1 new_pathtree)))
             ^ " => ")
       ; incr ()
-      ; emitMatches shapes (new_pathtree @ pathtree)
+      ; emitMatches (a, shapes) (new_pathtree @ pathtree)
       ; decr ()
    end
 
 fun emitMatching a = 
    let
       val typs = map #2 (#1 (valOf (RelTab.lookup a)))
-      val shapes = map (fn _ => Ast.Var NONE) typs
+      val shape = (a, map (fn _ => Ast.Var NONE) typs)
       val pathtrees = 
          map (fn (i, pathtree) => ([ i ], pathtree)) 
             (mapi (valOf (MatchTab.lookup a)))
@@ -172,7 +206,7 @@ fun emitMatching a =
       ; decr ()
 
       ; decr (); emit ("in"); incr ()
-      ; emitMatches shapes pathtrees
+      ; emitMatches shape pathtrees
       ; decr (); emit ("end handle Brk => () (* Duplicate assertion *)\n")
       ; decr ()
    end 
