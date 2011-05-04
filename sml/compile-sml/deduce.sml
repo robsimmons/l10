@@ -14,6 +14,11 @@ fun nameIndex (a, n) = Symbol.name a ^ "_" ^ Int.toString n
 
 fun pathStr path = "x_" ^ String.concatWith "_" (map Int.toString path)
 
+fun inputPattern [] = "()"
+  | inputPattern [ path ] = pathStr path
+  | inputPattern paths = 
+    "(" ^ String.concatWith ", " (map pathStr paths) ^ ")"
+
 fun emitIndexType a (n, {terms, input, output}) = 
    let
       val input = rev (MapP.listItemsi input)
@@ -24,11 +29,6 @@ fun emitIndexType a (n, {terms, input, output}) =
          else if length output = 1 then nameOfType (#2 (hd output))
          else "(" ^ String.concatWith " * " (map (nameOfType o #2) output) ^ ")"
       val name = nameIndex (a, n)
-
-      fun inputPattern [] = "()"
-        | inputPattern [ path ] = pathStr path
-        | inputPattern paths = 
-          "(" ^ String.concatWith ", " (map pathStr paths) ^ ")"
 
       fun emitLookupCases (n, []) = emit ("x" ^ repeat (n, #")"))
         | emitLookupCases (n, (path, typ) :: pathtyps) = 
@@ -41,8 +41,8 @@ fun emitIndexType a (n, {terms, input, output}) =
            ; decr ())
 
       fun emitLookup () = 
-        (emit ("fun " ^ name ^ "_lookup (x: " ^ name ^ ") " 
-               ^ inputPattern (rev (map #1 input)) ^ " = ")
+        (emit ("fun " ^ name ^ "_lookup (x: " ^ name ^ ", " 
+               ^ inputPattern (rev (map #1 input)) ^ ") = ")
          ; incr ()
          ; emitLookupCases (0, rev input)
          ; decr ())
@@ -69,9 +69,9 @@ fun emitIndexType a (n, {terms, input, output}) =
            ; emitInsertInserts (n+1, pathtyps))
 
       fun emitInsert () = 
-        (emit ("fun " ^ name ^ "_insert (y_0: " ^ name ^ ") "
-               ^ inputPattern (rev (map #1 input)) ^ " "
-               ^ inputPattern (rev (map #1 output)) ^ " = ")
+        (emit ("fun " ^ name ^ "_insert (y_0: " ^ name ^ ", "
+               ^ inputPattern (rev (map #1 input)) ^ ", "
+               ^ inputPattern (rev (map #1 output)) ^ ") = ")
          ; incr ()
          ; emit "let"
          ; incr ()
@@ -95,6 +95,88 @@ fun emitIndexType a (n, {terms, input, output}) =
 
 fun emitIndexTypes a = app (emitIndexType a) (mapi (rev (IndexTab.lookup a)))
 
+fun substPath ([], Ast.Var NONE, term) = term 
+  | substPath (path, Ast.Structured (f, terms), term) = 
+    Ast.Structured (f, substPaths (path, terms, term))
+  | substPath _ = raise Fail "substPath invariant"
+
+and substPaths (i :: path, terms, term) = 
+    List.take (terms, i) 
+    @ [ substPath (path, List.nth (terms, i), term) ]
+    @ tl (List.drop (terms, i))
+  | substPaths _ = raise Fail "substPaths invariant"
+
+fun emitMatches shapes [] = emit "()"
+  | emitMatches shapes ((path, Coverage'.Unsplit _) :: pathtree) =
+    emitMatches shapes pathtree
+  | emitMatches shapes ((path, Coverage'.Split (typ, subtrees)) :: pathtree) =
+    let
+       val constructors = TypeConTab.lookup typ
+    in 
+       emit ("(case " ^ nameOfPrj typ ^ pathStr path ^ " of")
+       ; emitMatchCases "   " shapes path typ subtrees pathtree constructors
+       ; emit ")"
+    end
+  | emitMatches shapes _ = raise Fail "Unimplemented form of splitting"
+
+and emitMatchCases prefix shapes path typ subtrees pathtree [] = 
+    emit (prefix ^ "Void_" ^ embiggen (Symbol.name typ) 
+          ^ " x = abort" ^ embiggen (Symbol.name typ) ^ " x")
+  | emitMatchCases prefix shapes path typ subtrees pathtree [ c ] = 
+    emitMatchCase prefix shapes path subtrees pathtree c
+  | emitMatchCases prefix shapes path typ subtrees pathtree (c :: cs) =
+    (emitMatchCases prefix shapes path typ subtrees pathtree cs
+     ; emitMatchCase " | " shapes path subtrees pathtree c)
+
+and emitMatchCase prefix shapes (path: int list) subtrees pathtree constructor = 
+   let 
+      val typs = #1 (valOf (ConTab.lookup constructor))
+      val shape = 
+         if null typs then Ast.Const constructor
+         else Ast.Structured (constructor, map (fn _ => Ast.Var NONE) typs)
+      val shapes = substPaths (path, shapes, shape)
+      val new_pathtree = 
+         map (fn (i, pathtree) => (path @ [ i ], pathtree))
+            (mapi (MapX.lookup (subtrees, constructor)))
+   in
+      emit (prefix ^ embiggen (Symbol.name constructor) 
+            ^ (if null new_pathtree then ""
+               else (" " ^ inputPattern (map #1 new_pathtree)))
+            ^ " => ")
+      ; incr ()
+      ; emitMatches shapes (new_pathtree @ pathtree)
+      ; decr ()
+   end
+
+fun emitMatching a = 
+   let
+      val typs = map #2 (#1 (valOf (RelTab.lookup a)))
+      val shapes = map (fn _ => Ast.Var NONE) typs
+      val pathtrees = 
+         map (fn (i, pathtree) => ([ i ], pathtree)) 
+            (mapi (valOf (MatchTab.lookup a)))
+          handle Option => []
+   in
+      emit ("fun assert" ^ embiggen (Symbol.name a) 
+            ^ " " ^ inputPattern (map #1 pathtrees) ^ " =")
+      ; incr ()
+      ; emit ("let"); incr ()
+
+      (* Check for re-assertion *)
+      ; emit ("val () = ")
+      ; incr ()
+      ; emit ("if null (" ^ Symbol.name a ^ "_0_lookup (!"
+              ^ Symbol.name a ^ "_0, "
+              ^ inputPattern (map #1 pathtrees) ^ "))")
+      ; emit ("then () else raise Brk")
+      ; decr ()
+
+      ; decr (); emit ("in"); incr ()
+      ; emitMatches shapes pathtrees
+      ; decr (); emit ("end handle Brk => () (* Duplicate assertion *)\n")
+      ; decr ()
+   end 
+
 fun emitSaturate w (rule, point, fv) = 
    let in
       emit ""
@@ -117,6 +199,9 @@ fun deduce () =
       ; emit ("open " ^ getPrefix true "" ^ "Terms\n") 
       ; emit "(* Index types *)\n"
       ; app emitIndexTypes (IndexTab.list ())
+      ; emit "(* Term matching *)\n"
+      ; emit "exception Brk\n"
+      ; app emitMatching (RelTab.list ())
       ; emit "(* Eager run-saturation functions for the McAllester loop *)\n"
       ; emit "fun fake () = ()"
       ; app emitSaturates worlds

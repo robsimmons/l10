@@ -197,25 +197,27 @@ fun indexWorld w =
       ; print "\n"
    end
 
-fun createPathtree w = 
+fun createPathtree a = 
    let 
-      val pathtree = map Coverage'.Unsplit (valOf (WorldTab.lookup w))
-      val indexes = map #terms (IndexTab.lookup w)
+      val pathtree = 
+         map Coverage'.Unsplit (map #2 (#1 (valOf (RelTab.lookup a))))
+      val indexes = map #terms (IndexTab.lookup a)
    in
-      print (Int.toString (length indexes) ^ " index(es) for world " 
-             ^ Symbol.name w ^ "\n")
-      ; MatchTab.bind (w, List.foldr Coverage'.extendpaths pathtree indexes)
+      print (Int.toString (length indexes) ^ " index(es) for relation " 
+             ^ Symbol.name a ^ "\n")
+      ; MatchTab.bind (a, List.foldr Coverage'.extendpaths pathtree indexes)
    end
 
 fun index () = 
    let 
+      val rels = RelTab.list ()
       val worlds = WorldTab.list () 
    in
       print "=== INDEXING ===\n"
-      ; app indexDefault (RelTab.list ())
+      ; app indexDefault rels
       ; app indexWorld worlds
       ; print "=== CREATING PATH TREE ===\n"
-      ; app createPathtree worlds
+      ; app createPathtree rels
    end
 
 end
