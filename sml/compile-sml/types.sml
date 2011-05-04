@@ -21,6 +21,7 @@ structure SMLCompileTypes:> sig
    val nameOfPrj: Symbol.symbol -> string
    val nameOfTree: string -> Symbol.symbol -> string
    val nameOfEq: Symbol.symbol -> string -> string -> string
+   val nameOfMap: string -> Symbol.symbol -> string
 
 end = 
 struct
@@ -79,5 +80,11 @@ fun nameOfEq x arg1 arg2 =
       TypeTab.YES => "eq" ^ (embiggen (Symbol.name x)) ^ " " ^ arg1 ^ " " ^ arg2
     | TypeTab.NO => "eq" ^ (embiggen (Symbol.name x)) ^ " " ^ arg1 ^ " " ^ arg2
     | _ => arg1 ^ " = " ^ arg2
+
+fun nameOfMap thing x = 
+   if x = TypeTab.t then ("MapX." ^ thing)
+   else if x = TypeTab.nat then ("MapII." ^ thing)
+   else if x = TypeTab.string then ("MapS." ^ thing)
+   else ("Map" ^ embiggen (Symbol.name x) ^ "." ^ thing)
 
 end

@@ -34,6 +34,7 @@ structure SMLCompileUtil:> sig
 
    (* Fiddly utility functions *)
    val mapi: 'a list -> (int * 'a) list 
+   val repeat: int * char -> string
       
 end = 
 struct
@@ -89,5 +90,7 @@ fun embiggen s =
       if not (Char.isLower fst) then raise Domain
       else str (Char.toUpper fst) ^ rest
    end
+
+fun repeat (n, c) = String.implode (List.tabulate (n, fn _ => c))
 
 end

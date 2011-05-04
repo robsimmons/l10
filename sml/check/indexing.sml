@@ -37,7 +37,7 @@ fun modedVars mode path term =
     | _ => MapP.empty 
 and modedVars' mode path (i, term) = modedVars mode (path @ [ i ]) term
 
-fun addIndex (a, {terms, input, output}) = 
+fun addIndex (a, {terms, input = _, output = _}) = 
    if knownIndex (terms, map #terms (IndexTab.lookup a)) then ()
    else (print ("   * New index recorded: " ^ Symbol.name a ^ " " 
                 ^ String.concatWith " " (map strTerm terms) ^ "\n")
@@ -177,6 +177,16 @@ fun indexRule (rule_n, world: Ast.world, (prems, concs)) =
       InterTab.bind (#1 world, (rule_n, 0, FV.fvWorld world))
    end
 
+fun indexDefault a = 
+   let 
+      val typs = map #2 (#1 (valOf (RelTab.lookup a)))
+      val terms = map (fn typ => Var (INPUT, typ)) typs
+   in
+      IndexTab.bind (a, {terms = terms,
+                         input = modedVars INPUT [] (Structured (a, terms)),
+                         output = MapP.empty})
+   end
+
 fun indexWorld w = 
    let
       val () = print ("Indexing for world " ^ Symbol.name w ^ "\n")
@@ -202,6 +212,7 @@ fun index () =
       val worlds = WorldTab.list () 
    in
       print "=== INDEXING ===\n"
+      ; app indexDefault (RelTab.list ())
       ; app indexWorld worlds
       ; print "=== CREATING PATH TREE ===\n"
       ; app createPathtree worlds

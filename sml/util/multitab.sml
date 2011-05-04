@@ -6,7 +6,7 @@ functor Multitab (type entrytp) :> sig
    val reset : unit -> unit
    val bind : Symbol.symbol * entry -> unit
    val lookup : Symbol.symbol -> entry list
-   val list : unit -> (Symbol.symbol * entry) list
+   val list : unit -> Symbol.symbol list
 end = 
 struct
 
@@ -27,10 +27,7 @@ fun lookup (id) =
     | SOME xs => xs
 
 fun list () = 
-   List.concat 
-      (map 
-          (fn (id, xs) => map (fn x => (id, x)) xs)
-          (MapX.listItemsi (!symtab)))
+   map (fn (id, xs) => id) (MapX.listItemsi (!symtab))
 
 end
 
