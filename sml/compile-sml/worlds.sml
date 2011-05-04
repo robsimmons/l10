@@ -133,7 +133,7 @@ fun emitInitialInters (w, terms) =
            ; handleSubst postfix subst) 
 
       fun handleSubst' prefix postfix (w, n, subst) = 
-        (emit (prefix ^ SMLCompileDeduce.nameInter (w, n, 0) 
+        (emit (prefix ^ SMLCompileDeduce.nameSaturate (w, n, 0) 
                         ^ (if MapX.isEmpty subst 
                            then (" {} " ^ postfix) else " {"))
          ; incr (); incr()
@@ -184,7 +184,7 @@ and emitMatch prefix (w, terms) (matches: pathConstructorVar list) =
     let 
        fun constructorMap (is, (constructor, subpaths)) = 
           constructorPattern 
-             (fn (n, _) => List.nth (subpaths, n-1)) 
+             (fn (n, _) => List.nth (subpaths, n)) 
              (is, ()) constructor
            
        val (patterns, pathvars) = ListPair.unzip (map constructorMap matches)

@@ -16,18 +16,35 @@ fun mapi' n [] = []
 
 fun mapi xs = mapi' 0 xs
 
+fun fail _ = raise Fail "Invariant"
+
+fun unionP ms = MapP.unionWith fail ms
+
 fun union ms = MapX.unionWith #1 ms
+
 fun minus ms = MapX.mergeWith (fn (SOME x, NONE) => SOME x | _ => NONE) ms
 
 fun knownIndex (index, []) = false
   | knownIndex (index, (index' :: indexes)) = 
     index = index' orelse knownIndex (index, indexes)
 
-fun addIndex (a, index) = 
-   if knownIndex (index, IndexTab.lookup a) then ()
+fun modedVars mode path term = 
+   case term of    
+      Var (mode', typ) => 
+      if mode = mode' then MapP.singleton (path, typ) else MapP.empty
+    | Structured (f, terms) =>
+      List.foldl unionP MapP.empty (map (modedVars' mode path) (mapi terms))
+    | _ => MapP.empty 
+and modedVars' mode path (i, term) = modedVars mode (path @ [ i ]) term
+
+fun addIndex (a, {terms, input, output}) = 
+   if knownIndex (terms, map #terms (IndexTab.lookup a)) then ()
    else (print ("   * New index recorded: " ^ Symbol.name a ^ " " 
-                ^ String.concatWith " " (map strTerm index) ^ "\n")
-         ; IndexTab.bind (a, index))
+                ^ String.concatWith " " (map strTerm terms) ^ "\n")
+         ; IndexTab.bind (a,
+           {terms = terms,
+            input = modedVars INPUT [] (Structured (a, terms)),
+            output = modedVars OUTPUT [] (Structured (a, terms))}))
 
 fun list fv = 
    String.concatWith ", " (map (Symbol.name o #1) (MapX.listItemsi fv))
@@ -83,7 +100,6 @@ and indexTerms (known, n, path, typterms) =
          val {term, input, output} = indexTerm (known, path @ [ n ], typterm)
          val {terms, input = input', output = output'} = 
              indexTerms (known, n+1, path, typterms)
-         fun fail _ = raise Fail "Invariant"
       in
          {terms = term :: terms,
           input = MapX.unionWith (op @) (input, input'),
@@ -98,7 +114,7 @@ fun indexPat (known, pat) =
          val typs = map #2 (#1 (valOf (RelTab.lookup a))) 
          val res = indexTerms (known, 0, [], ListPair.zipEq (typs, terms))
       in
-         addIndex (a, #terms res); res
+         addIndex (a, res); res
       end
     | Ast.Conj _ => raise Fail "Unimplemented"
     | Ast.Exists (x, pat) =>
@@ -174,7 +190,7 @@ fun indexWorld w =
 fun createPathtree w = 
    let 
       val pathtree = map Coverage'.Unsplit (valOf (WorldTab.lookup w))
-      val indexes = IndexTab.lookup w 
+      val indexes = map #terms (IndexTab.lookup w)
    in
       print (Int.toString (length indexes) ^ " index(es) for world " 
              ^ Symbol.name w ^ "\n")

@@ -5,33 +5,22 @@ open SMLCompileUtil
 open SMLCompileTypes
 open SMLCompileTerms
 
-fun nameInter (w, rule, point) = 
-   embiggen (Symbol.name w) ^ "_" ^ Int.toString rule ^ "_" ^ Int.toString point
+fun nameSaturate (w, rule, point) = 
+   "saturate" ^ embiggen (Symbol.name w) 
+   ^ "_" ^ Int.toString rule
+   ^ (if point = 0 then "" else ("_" ^ Int.toString point))
 
-fun emitSearchDatatype w = 
-   let
-      fun fvtype (x, typ) = 
-         Symbol.name x ^ ": " ^ nameOfTypeExt typ
-
-      fun emitCase prefix (rule, point, fv) = 
-         emit (prefix ^ nameInter (w, rule, point) 
-               ^ " of { " 
-               ^ String.concatWith ", " (map fvtype (MapX.listItemsi fv))
-               ^ " }")
-
-      fun emitCases [] = () (* World with no rules attached, sure *)
-        | emitCases [ inter ] =
-          (emit ""
-           ; emit ("datatype inter" ^ embiggen (Symbol.name w) ^ " = ")
-           ; emitCase "   " inter)
-        | emitCases (inter :: inters) = 
-          (print ("Number of cases: " ^ Int.toString (length inters + 1) ^ "\n")
-           ; emitCases inters
-           ; emitCase " | " inter)
-
-   in
-      emitCases (InterTab.lookup w)
+fun emitSaturate w (rule, point, fv) = 
+   let in
+      emit ""
+      ; emit ("and " ^ nameSaturate (w, rule, point)
+              ^ " { " 
+              ^ String.concatWith ", " 
+                 (map (Symbol.name o #1) (MapX.listItemsi fv))
+              ^ " } () = ()")
    end
+
+fun emitSaturates w = app (emitSaturate w) (rev (InterTab.lookup w))
 
 fun deduce () = 
    let 
@@ -40,9 +29,11 @@ fun deduce () =
       emit ("structure " ^ getPrefix true "" ^ "Deduce =")
       ; emit "struct"
       ; incr ()
+      ; emit "(* Index types *)\n"
       (* ; emit ("open " ^ getPrefix true "" ^ "Terms\n") *)
-      ; emit "(* Datatypes for intermediate stages in the McAllester loop *)"
-      ; app emitSearchDatatype worlds
+      ; emit "(* Eager run-saturation functions for the McAllester loop *)\n"
+      ; emit "fun fake () = ()"
+      ; app emitSaturates worlds
       ; decr ()
       ; emit "end"
    end

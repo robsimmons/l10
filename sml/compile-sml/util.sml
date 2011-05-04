@@ -41,7 +41,7 @@ struct
 fun mapi' n [] = []
   | mapi' n (x :: xs) = (n, x) :: mapi' (n+1) xs
 
-fun mapi xs = mapi' 1 xs
+fun mapi xs = mapi' 0 xs
 
 val prefix = ref "l10"
 

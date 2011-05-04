@@ -100,7 +100,7 @@ fun pathTerm (term: Ast.term * Ast.typ, path, subst, eqs) =
       let 
          val (typs, _) = valOf (ConTab.lookup f)
          val (terms', subst', eqs') = 
-            pathTerms (ListPair.zipEq (terms, typs), path, 1, subst, eqs)
+            pathTerms (ListPair.zipEq (terms, typs), path, 0, subst, eqs)
       in
          (Ast.Structured (f, terms'), (subst', eqs'))
       end
@@ -126,7 +126,7 @@ val pathTerm = fn term =>
 
 val pathTerms = fn terms =>
    let
-      val (terms, subst, eqs) = pathTerms (terms, [], 1, MapX.empty, [])
+      val (terms, subst, eqs) = pathTerms (terms, [], 0, MapX.empty, [])
    in
       (terms, MapX.map (Ast.Var o SOME) subst, eqs) 
    end
@@ -286,9 +286,9 @@ fun emitMapHelper kind x =
             ; app emitSingle (rev pathvars)
             ; if width = 1 then (emit "(fn x => x)"; raise Brk) else ()
             ; if kind = "unzip" 
-              then emit ("DiscMap.unzip (" ^ Int.toString (consnum-1) ^ ", " 
+              then emit ("DiscMap.unzip (" ^ Int.toString consnum ^ ", " 
                          ^ Int.toString width ^ ")")
-              else emit ("DiscMap.sub " ^ Int.toString (consnum-1))
+              else emit ("DiscMap.sub " ^ Int.toString consnum)
             ; decr ()
          end handle Brk => decr ()
 
