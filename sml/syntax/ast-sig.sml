@@ -41,6 +41,7 @@ val fvWorld:   world -> SetX.set
 val fvWorlds:  world list -> SetX.set
 val strWorld': bool -> world -> string
 val strWorld:  world -> string
+val uscoresInWorld: world -> bool
 
 type atomic = Symbol.symbol * term list
 val fvAtomic: atomic -> SetX.set

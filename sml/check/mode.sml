@@ -75,6 +75,9 @@ fun pullPrems concWorld prems =
                (* XXX this check alone is not, I think, enough; 
                 * the variables could be different and substituted for the
                 * same terms. - RJS 4/21/11 *)
+               (* I think the above comment is only relevant if we're using
+                * Ast.Conj, which is currently not part of the parsed
+                * language. - RJS 5/5/11 *)
                if List.exists (A.eqWorld concWorld) worlds
                then raise Fail "Negated premise at the same world as conclusion"
                else worlds
@@ -91,7 +94,6 @@ fun pullDependency (prems, concs) =
 
 (* Checks that a dependency is well-moded *)
 (* Returns the free variables grounded by the world *)
-(* XXX does this need to check about underscores? - RJS 4/21/11 *)
 fun checkDependency (world, worlds) = 
    let
       val headFV = A.fvWorld world
@@ -104,8 +106,12 @@ fun checkDependency (world, worlds) =
                         ^ ", which determines world, bound in premise and not "
                         ^ " conclusion.")
    in
-      app checkprem worlds;
-      headFV
+      if List.exists A.uscoresInWorld worlds
+      then raise Fail ("Underscore present where are argument is needed"
+                       ^ " to determine world")
+      else ()
+      ; app checkprem worlds
+      ; headFV
    end
 
 (* Checks that a rule is well-moded given variables known to be ground *)
@@ -149,6 +155,7 @@ fun checkRule ((prems, concs), groundedByWorld) =
             (checkNegatedPrem (pat, ground, SetX.empty); (prem, ground))
           | A.Count _ => raise Fail "Count not supported yet"
           (* XXX probably need to check for underscores - RJS 4/22/11 *)
+          (* Actually not sure about here - RJS 5/5/11 *)
           | A.Binrel (A.Eq, term1, term2) =>
             let val (fv1, fv2) = (A.fvTerm term1, A.fvTerm term2) in
                if SetX.isSubset (fv1, ground) 

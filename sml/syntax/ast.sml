@@ -175,6 +175,7 @@ and uscoresInTerms terms =
    List.foldr (fn (term, b) => b orelse uscoresInTerm term) false terms
 
 fun uscoresInAtomic (_, terms) = uscoresInTerms terms
+fun uscoresInWorld (_, terms) = uscoresInTerms terms
 
 val fvAtomic = fvWorld
 val fvAtomics = fvWorlds

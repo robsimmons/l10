@@ -1,0 +1,4 @@
+w: world.
+r: t -> t -> rel @ w.
+
+r a b -> r b _.
