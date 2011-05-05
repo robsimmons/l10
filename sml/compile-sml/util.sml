@@ -38,10 +38,10 @@ structure SMLCompileUtil:> sig
       
    (* Utilities for dealing with deep pattern matching *)
    type path = int list (* Paths uniquely identify positions in terms *)
-   val substPath: path * Ast.term * Ast.term -> Ast.term 
-   val substPaths: path * Ast.term list * Ast.term -> Ast.term list
-   val genTerm: Ast.term * BasicTerm.modedTerm -> bool
-   val genTerms: Ast.term list -> BasicTerm.modedTerm list -> bool
+   val substPath: path * 'a Ast.term' * 'a Ast.term' -> 'a Ast.term' 
+   val substPaths: path * 'a Ast.term' list * 'a Ast.term' -> 'a Ast.term' list
+   val genTerm: 'a Ast.term' * 'b Ast.term' -> bool
+   val genTerms: 'a Ast.term' list -> 'b Ast.term' list -> bool
 
    (* Turn paths (which uniquely identify positions in terms) into strings *)
    val strPath: int list -> string (* strPath [ 1, 2, 5 ] = 1_2_5 *)
@@ -148,7 +148,7 @@ fun strPath path = String.concatWith "_" (map Int.toString path)
 fun varPath path = "x_" ^ strPath path
 
 
-fun substPath ([], Ast.Var NONE, term) = term 
+fun substPath ([], Ast.Var _, term) = term 
   | substPath (path, Ast.Structured (f, terms), term) = 
     Ast.Structured (f, substPaths (path, terms, term))
   | substPath _ = raise Fail "substPath invariant"
@@ -159,19 +159,17 @@ and substPaths (i :: path, terms, term) =
     @ tl (List.drop (terms, i))
   | substPaths _ = raise Fail "substPaths invariant"
 
-open BasicTerm
-
 fun genTerm (shape, term) = 
    case (shape, term) of
-      (_, Var _) => true
+      (_, Ast.Var _) => true
     | (Ast.Var _, _) => raise Fail "Shape not sufficiently general"
-    | (Ast.Const _, Structured _) => false
-    | (Ast.Structured _, Const _) => false
-    | (Ast.Const c, Const c') => c = c'
-    | (Ast.Structured (f, terms), Structured (f', terms')) =>
+    | (Ast.Const _, Ast.Structured _) => false
+    | (Ast.Structured _, Ast.Const _) => false
+    | (Ast.Const c, Ast.Const c') => c = c'
+    | (Ast.Structured (f, terms), Ast.Structured (f', terms')) =>
       f = f' andalso genTerms terms terms'
-    | (Ast.NatConst i, NatConst i') => i = i'
-    | (Ast.StrConst s, StrConst s') => s = s'
+    | (Ast.NatConst i, Ast.NatConst i') => i = i'
+    | (Ast.StrConst s, Ast.StrConst s') => s = s'
     | _ => raise Fail "Typing invariant in shape"
 
 and genTerms shapes terms = 

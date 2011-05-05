@@ -9,7 +9,6 @@ Group is
    util/multitab.sml
    util/sets-maps.sml
 
-   syntax/basicterm.sml
    syntax/ast-sig.sml
    syntax/ast.sml
    syntax/l10.lex

@@ -12,6 +12,8 @@ datatype 'a term' =
  | Var of 'a
 
 type term = Symbol.symbol option term'
+type shapeTerm = unit term'
+type modedTerm = (bool * Symbol.symbol) term'
 
 (* Partial substitution *)
 fun subTerm' (term', x) term = 
@@ -95,25 +97,25 @@ fun strBinrel binrel =
       Eq => "==" | Neq => "!=" 
     | Gt => ">" | Geq => ">=" 
 
-fun strTerm' parens term = 
+fun strTerm' str term = 
    case term of 
       Const c => Symbol.name c
     | NatConst i => IntInf.toString i
     | StrConst s => "\"" ^ s ^ "\""
     | Structured (f, terms) => 
-      lp parens 
+      "(" 
       ^ Symbol.name f 
-      ^ String.concat (map (fn term => " " ^ strTerm' true term) terms)
-      ^ rp parens
-    | Var NONE => "_"
-    | Var (SOME x) => Symbol.name x
-val strTerm = strTerm' false 
+      ^ String.concat (map (fn term => " " ^ strTerm' str term) terms)
+      ^ ")"
+    | Var x => str x
+val strTerm = strTerm' (fn NONE => "_" | SOME x => Symbol.name x)
+val strModedTerm = strTerm' (fn (true, _:Symbol.symbol) => "++" | (false, _) => "--")
 
 fun strWorld' parens (w, []) = Symbol.name w
   | strWorld' parens (w, terms) =
     lp parens
     ^ Symbol.name w 
-    ^ String.concat (map (fn term => " " ^ (strTerm' true) term) terms)
+    ^ String.concat (map (fn term => " " ^ strTerm term) terms)
     ^ rp parens
 val strWorld = strWorld' false
 
@@ -121,7 +123,7 @@ fun strAtomic' parens (a, []) = Symbol.name a
   | strAtomic' parens (a, terms) =
     lp parens
     ^ Symbol.name a
-    ^ String.concat (map (fn term => " " ^ (strTerm' true) term) terms)
+    ^ String.concat (map (fn term => " " ^ strTerm term) terms)
     ^ rp parens
 val strAtomic = strAtomic' false
 

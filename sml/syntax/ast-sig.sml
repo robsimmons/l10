@@ -14,19 +14,23 @@ datatype 'a term' =
  | Structured of Symbol.symbol * 'a term' list
  | Var of 'a
 
-type term = Symbol.symbol option term'
+val strTerm': ('a -> string) -> 'a term' -> string
 
+type term = Symbol.symbol option term'
 type subst = term MapX.map
 val eqTerm:   term * term -> bool
 val fvTerm:   term -> SetX.set
 val fvTerms:  term list -> SetX.set
-val strTerm': bool -> term -> string
 val strTerm:  term -> string
 val subTerm:  subst * term -> term option             (* total substitution  *)
 val subTerms: subst * term list -> (term list) option (* total substitution  *)
 val subTerm': (term * Symbol.symbol) -> term -> term  (* substitution [M/x]N *)
 val uscoresInTerm: term -> bool
 val uscoresInTerms: term list -> bool
+
+type shapeTerm = unit term'
+type modedTerm = (bool * typ) term'
+val strModedTerm: modedTerm -> string
 
 type arg = Symbol.symbol option * typ
 val strArgs: arg list -> string

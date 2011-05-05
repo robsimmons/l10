@@ -9,7 +9,7 @@ structure Indexing:> sig
 end = 
 struct
 
-open BasicTerm
+open Ast
 
 fun mapi' n [] = []
   | mapi' n (x :: xs) = (n, x) :: mapi' (n+1) xs
