@@ -33,11 +33,11 @@ val nattyp = Symbol.symbol "nat"
 val stringtyp = Symbol.symbol "string"
 
 fun encoded x = 
-   let val extensible = valOf (TypeTab.lookup x) 
+   let val extensible = TypeTab.lookup x
    in extensible = TypeTab.YES orelse extensible = TypeTab.NO end
 
 fun nameOfType x = 
-   case valOf (TypeTab.lookup x) of 
+   case TypeTab.lookup x of 
       TypeTab.CONSTANTS => "Symbol.symbol"
     | TypeTab.SPECIAL => 
       if x = nattyp then "IntInf.int"
@@ -55,7 +55,7 @@ fun nameOfView x =
 
 
 fun nameOfPrj x = 
-   case valOf (TypeTab.lookup x) of
+   case TypeTab.lookup x of
       TypeTab.YES => "prj" ^ NameOfType x ^ " "
     | TypeTab.NO => "prj" ^ NameOfType x ^ " "
     | _ => ""
@@ -66,7 +66,7 @@ fun nameOfTree prefix x =
 
 
 fun nameOfStr x = 
-   case valOf (TypeTab.lookup x) of
+   case TypeTab.lookup x of
       TypeTab.CONSTANTS => "Symbol.name"
     | TypeTab.SPECIAL =>
       if x = nattyp then "IntInf.toString"
@@ -76,7 +76,7 @@ fun nameOfStr x =
     | _ => "str" ^ (embiggen (Symbol.name x))
 
 fun nameOfEq x arg1 arg2 =
-   case valOf (TypeTab.lookup x) of
+   case TypeTab.lookup x of
       TypeTab.YES => "eq" ^ (embiggen (Symbol.name x)) ^ " " ^ arg1 ^ " " ^ arg2
     | TypeTab.NO => "eq" ^ (embiggen (Symbol.name x)) ^ " " ^ arg1 ^ " " ^ arg2
     | _ => arg1 ^ " = " ^ arg2

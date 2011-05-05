@@ -112,7 +112,7 @@ fun deduce facts world =
    end
 
 fun deduceStored name = 
-   case DbTab.lookup (Symbol.symbol name) of
+   case DbTab.find (Symbol.symbol name) of
       NONE => raise Fail ("No stored database " ^ name)
     | SOME (facts, world) =>
       deduce (map (Subst.applyAtomic Subst.empty) facts)

@@ -128,6 +128,7 @@ fun write filename f =
        ; outstream := TextIO.stdOut)
       handle exn => (if !started then TextIO.closeOut (!outstream) else ()
                      ; outstream := TextIO.stdOut
+                     ; print ("Error while outputting " ^ filename ^ "\n")
                      ; raise exn)
    end
 

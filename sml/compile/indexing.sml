@@ -83,7 +83,7 @@ fun indexTerm (known, path, (typ, term)) =
        paths = MapP.empty}
     | Ast.Structured (f, terms) =>
       let
-         val (typs, typ) = valOf (ConTab.lookup f)
+         val (typs, typ) = ConTab.lookup f
          val typterms = ListPair.zipEq (typs, terms)
          val {terms, outputs, paths} = indexTerms (known, 0, path, typterms) 
       in 
@@ -112,7 +112,7 @@ fun indexPat (known, pat) =
       Ast.One => raise Fail "Unimplemented"
     | Ast.Atomic (a, terms) =>
       let 
-         val typs = map #2 (#1 (valOf (RelTab.lookup a))) 
+         val typs = map #2 (#1 (RelTab.lookup a)) 
          val {terms, outputs, paths} = 
             indexTerms (known, 0, [], ListPair.zipEq (typs, terms))
       in
@@ -210,7 +210,7 @@ fun indexRule (rule_n, world: Ast.world, (prems, concs)) =
 
 fun indexDefault a = 
    let 
-      val typs = map #2 (#1 (valOf (RelTab.lookup a)))
+      val typs = map #2 (#1 (RelTab.lookup a))
       val terms = map (fn typ => Var (true, typ)) typs
    in
       IndexTab.bind (a, {terms = terms,
@@ -231,7 +231,7 @@ fun indexWorld w =
 fun createPathtree a = 
    let 
       val pathtree = 
-         map Coverage'.Unsplit (map #2 (#1 (valOf (RelTab.lookup a))))
+         map Coverage'.Unsplit (map #2 (#1 (RelTab.lookup a)))
       val indexes = map #terms (IndexTab.lookup a)
       val newPathtree = 
          List.foldr (Coverage'.extendpaths #2) pathtree indexes
@@ -255,11 +255,3 @@ fun index () =
 
 end
 
-(* Reset all tables *)
-structure Reset = struct
-   fun reset () = 
-      (Reset.reset ()
-       ; IndexTab.reset ()
-       ; InterTab.reset ()
-       ; MatchTab.reset ())
-end

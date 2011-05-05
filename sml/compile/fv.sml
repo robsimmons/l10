@@ -22,7 +22,7 @@ fun fvTerm (term, typ) =
    case term of 
       Var (SOME x) => MapX.singleton (x, typ)
     | Structured (f, terms) =>
-      fvTerms (terms, #1 (valOf (ConTab.lookup f)))
+      fvTerms (terms, #1 (ConTab.lookup f))
     | _ => MapX.empty
 
 and fvTerms (terms, typs) = 
@@ -31,9 +31,9 @@ and fvTerms (terms, typs) =
 and fvFolder ((term, typ), map) =
    MapX.unionWith #1 (map, fvTerm (term, typ))
 
-fun fvAtomic (a, terms) = fvTerms (terms, map #2 (#1 (valOf (RelTab.lookup a))))
+fun fvAtomic (a, terms) = fvTerms (terms, map #2 (#1 (RelTab.lookup a)))
 
-fun fvWorld (w, terms) = fvTerms (terms, valOf (WorldTab.lookup w))
+fun fvWorld (w, terms) = fvTerms (terms, WorldTab.lookup w)
 
 fun fvPat pat = 
    case pat of 
@@ -48,8 +48,8 @@ fun termTyp (term, env) =
    case term of 
       Var NONE => raise Fail "Can't determine type of underscore"
     | Var (SOME x) => MapX.lookup (env, x)
-    | Structured (f, _) => #2 (valOf (ConTab.lookup f))
-    | Const c => #2 (valOf (ConTab.lookup c))
+    | Structured (f, _) => #2 (ConTab.lookup f)
+    | Const c => #2 (ConTab.lookup c)
     | NatConst _ => TypeTab.nat
     | StrConst _ => TypeTab.string
 

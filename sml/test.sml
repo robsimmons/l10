@@ -3,7 +3,7 @@ CM.make "sml/elton.cm";
 fun smlfile name = "/tmp/" ^ SMLCompileUtil.getPrefix false "." ^ name ^ ".sml";
 
 fun test (prefix, files) = 
-  (Reset.reset ()
+  (ResetElton.reset ()
    ; SMLCompileUtil.setPrefix prefix
    ; Go.readfiles files
    ; Indexing.index ()

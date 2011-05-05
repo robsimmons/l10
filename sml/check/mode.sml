@@ -27,18 +27,17 @@ open Symbol
   
 (* pullWorld uses RelTab; takes an atomic proposition and gets a world *)
 fun pullWorld (a, terms) = 
-   case RelTab.lookup a of
-      NONE => raise Fail "Invariant"
-    | SOME (args, (w, worldterms)) =>
-      let 
-         fun folder ((arg, _), term, map) =
-            case arg of 
-               NONE => map
-             | SOME x => MapX.insert (map, x, term)
-         val map = ListPair.foldl folder MapX.empty (args, terms)
-      in
-         (w, valOf (A.subTerms (map, worldterms)))
-      end
+   let 
+      val (args, (w, worldterms)) = RelTab.lookup a 
+
+      fun folder ((arg, _), term, map) =
+         case arg of 
+            NONE => map
+          | SOME x => MapX.insert (map, x, term)
+      val map = ListPair.foldl folder MapX.empty (args, terms)
+   in
+      (w, valOf (A.subTerms (map, worldterms)))
+   end
 
 (* pullConcs checks that all conclusions are at the same world
  * and returns that world. *)

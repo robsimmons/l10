@@ -26,7 +26,7 @@ fun tc_newvar (syntax, x, lookup_result) =
 
 (* tc_type typ - asserts that a symbol is a type *)
 fun tc_typ typ = 
-   case TypeTab.lookup typ of
+   case TypeTab.find typ of
       NONE => raise Fail ("Type " ^ name typ ^ " not declared.")
     | _ => ()
 
@@ -50,8 +50,8 @@ fun require typ1 typ2 =
 fun tc_term env (term, typ) = 
    case term of  
       A.Const c => 
-      (case ConTab.lookup c of 
-          NONE => (case TypeTab.lookup typ of
+      (case ConTab.find c of 
+          NONE => (case TypeTab.find typ of
                       SOME TypeTab.YES => 
                       (ConTab.bind (c, ([], typ)); env)
                     | SOME TypeTab.CONSTANTS => 
@@ -67,8 +67,8 @@ fun tc_term env (term, typ) =
     | A.NatConst n => (require typ TypeTab.nat; env)
     | A.StrConst s => (require typ TypeTab.string; env)
     | A.Structured (f, terms) => 
-      (case ConTab.lookup f of
-          NONE => (case TypeTab.lookup typ of
+      (case ConTab.find f of
+          NONE => (case TypeTab.find typ of
                       SOME TypeTab.YES => 
                       let val typs = List.tabulate (length terms, (fn _ => typ))
                       in 
@@ -103,7 +103,7 @@ and tc_terms env [] = env
  * (potentially) larger context if it found any type variables that were
  * not already in the environment. *)
 fun tc_world env (w, terms) = 
-   case WorldTab.lookup w of
+   case WorldTab.find w of
       NONE => raise Fail ("World " ^ name w ^ " not declared.")
     | SOME typs =>
       if length terms = length typs
@@ -118,7 +118,7 @@ fun tc_worlds env [] = env
     tc_worlds (tc_world env world) worlds
 
 fun tc_atomic env (r, terms) = 
-   case RelTab.lookup r of
+   case RelTab.find r of
       NONE => raise Fail ("Relation " ^ name r ^ " not declared.")
     | SOME (args, world) => 
       if length terms = length args
@@ -165,7 +165,7 @@ fun seek_typ env [] =
   | seek_typ env (term :: terms) =
     case term of
        A.Const c => 
-       (case ConTab.lookup c of 
+       (case ConTab.find c of 
            NONE => (ignore (tc_term env (term, symbol "_unknown_"))
                     (* raises Fail *) 
                     ; raise Fail "Unreachable")
@@ -173,7 +173,7 @@ fun seek_typ env [] =
      | A.NatConst _ => TypeTab.nat
      | A.StrConst _ => TypeTab.string
      | A.Structured (f, _) =>
-       (case ConTab.lookup f of
+       (case ConTab.find f of
            NONE => (ignore (tc_term env (term, symbol "_unknown_"))
                     (* raises Fail *) 
                     ; raise Fail "Unreachable")
@@ -209,7 +209,7 @@ fun checkDecl decl =
    case decl of 
       (* Types are well-formed 
        * if they haven't been declared already *)
-      A.DeclType typ => tc_newvar ("Type", typ, TypeTab.lookup typ)
+      A.DeclType typ => tc_newvar ("Type", typ, TypeTab.find typ)
 
       (* Worlds are well-formed 
        * if they haven't been declared already
@@ -220,7 +220,7 @@ fun checkDecl decl =
        * if they haven't been declared already
        * and if their indices are valid types *)
     | A.DeclConst (c, args, typ) => 
-      (tc_newvar ("Constant", c, ConTab.lookup c)
+      (tc_newvar ("Constant", c, ConTab.find c)
        ; ignore (tc_args args) 
        ; tc_typ typ)
 
@@ -230,7 +230,7 @@ fun checkDecl decl =
        * if the associated world is valid under (only) the named indices *)
     | A.DeclRelation (r, args, world) =>
       let
-         val () = tc_newvar ("Relation", r, RelTab.lookup r)
+         val () = tc_newvar ("Relation", r, RelTab.find r)
          val env = tc_args args 
          val env' = tc_world env world
          val newenv = 

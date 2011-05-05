@@ -15,7 +15,7 @@ open SMLCompileTerms
 fun emitWorldSig world = 
    let
       val Name = embiggen (Symbol.name world)
-      val args = valOf (WorldTab.lookup world)
+      val args = WorldTab.lookup world
       fun gettyp x = 
          if encoded x 
          then getPrefix true "" ^ "Terms." ^ Symbol.name x
@@ -81,7 +81,7 @@ fun strEq (typ, x, y) = nameOfEq typ (Symbol.name x) (Symbol.name y)
 
 fun emitChildSearches (w, terms) = 
    let
-      val typs = valOf (WorldTab.lookup w)
+      val typs = WorldTab.lookup w
       fun handleArg prefix subst (w, terms) = 
          let val terms' = valOf (Ast.subTerms (subst, terms)) in  
             emit (prefix ^ seekWorld (w, terms'))
@@ -124,7 +124,7 @@ fun emitChildSearches (w, terms) =
 
 fun emitInitialInters (w, terms) = 
    let
-      val typs = valOf (WorldTab.lookup w)
+      val typs = WorldTab.lookup w
 
       fun handleSubst' prefix postfix (w, n, subst) = 
          emit (prefix ^ nameOfExec (n, 0) 
@@ -241,7 +241,7 @@ fun emitWorld world =
    let 
       val name = Symbol.name world
       val Name = embiggen (Symbol.name world)
-      val typs = valOf (WorldTab.lookup world)
+      val typs = WorldTab.lookup world
       val args = mapi typs
       val pathTreeVars = makePaths world args
       fun makeStartingTerm pathTreeVar = 

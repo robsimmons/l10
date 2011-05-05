@@ -49,7 +49,7 @@ fun makepath (typ: 'a -> typ) term: pathtree =
    let
       fun subpath (f, terms) (constructor, pathtrees) = 
          let 
-            val (typs, _) = valOf (ConTab.lookup constructor)
+            val (typs, _) = ConTab.lookup constructor
          in
             if f <> constructor
             then MapX.insert (pathtrees, constructor, map Unsplit typs)
@@ -62,13 +62,13 @@ fun makepath (typ: 'a -> typ) term: pathtree =
       case term of 
          Var x => Unsplit (typ x)
        | Const c => 
-         let val typ = #2 (valOf (ConTab.lookup c)) in
+         let val typ = #2 (ConTab.lookup c) in
             if typ = TypeTab.t
             then SymbolSplit (SetX.singleton c)
             else Split (typ, splitpath ((c, []), typ))
          end
        | Structured (f, terms) => 
-         let val typ = #2 (valOf (ConTab.lookup f)) 
+         let val typ = #2 (ConTab.lookup f)
          in Split (typ, splitpath ((f, terms), typ)) end
        | StrConst s => StringSplit (SetS.singleton s)
        | NatConst i => NatSplit (SetII.singleton i)

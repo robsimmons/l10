@@ -51,5 +51,14 @@ structure IndexTab =
                              input: Ast.typ MapP.map,
                              output: Ast.typ MapP.map})
    
-structure MatchTab = Symtab (type entrytp = Coverage'.pathtree list)
+structure MatchTab = Symtab (type entrytp = Coverage'.pathtree list
+val name = "MatchTab")
 
+(* Reset all tables *)
+structure ResetElton = struct
+   fun reset () = 
+      (Reset.reset ()
+       ; IndexTab.reset ()
+       ; InterTab.reset ()
+       ; MatchTab.reset ())
+end

@@ -134,7 +134,7 @@ fun emitMatches (a, shapes) [] =
 and emitMatchesCase shape path subtrees pathtree prefix constructor = 
    let 
       val (a, shapes) = shape
-      val typs = #1 (valOf (ConTab.lookup constructor))
+      val typs = #1 (ConTab.lookup constructor)
       val shape = 
          if null typs then Ast.Const constructor
          else Ast.Structured (constructor, map (fn _ => Ast.Var NONE) typs)
@@ -158,11 +158,11 @@ and emitMatchesCase shape path subtrees pathtree prefix constructor =
 
 fun emitAssertion a = 
    let
-      val typs = map #2 (#1 (valOf (RelTab.lookup a)))
+      val typs = map #2 (#1 (RelTab.lookup a))
       val shape = (a, map (fn _ => Ast.Var NONE) typs)
       val pathtrees = 
          map (fn (i, pathtree) => ([ i ], pathtree)) 
-            (mapi (valOf (MatchTab.lookup a)))
+            (mapi (MatchTab.lookup a))
           handle Option => []
    in
       emit ("fun assert" ^ embiggen (Symbol.name a) 

@@ -39,7 +39,7 @@ type 'a pathvar = int list * 'a
 fun nameOfVar (is, _) = "x_" ^ String.concatWith "_" (map Int.toString is)
 
 fun constructorPattern f (pathvar: 'a pathvar) constructor = 
-   case valOf (ConTab.lookup constructor) of
+   case ConTab.lookup constructor of
       ([], _) => (embiggen (Symbol.name constructor), [])
     | (typs, _) => 
       let
@@ -81,7 +81,7 @@ fun pathTerm (term: Ast.term * Ast.typ, path, subst, eqs) =
       end
     | Ast.Structured (f, terms) => 
       let 
-         val (typs, _) = valOf (ConTab.lookup f)
+         val (typs, _) = ConTab.lookup f
          val (terms', subst', eqs') = 
             pathTerms (ListPair.zipEq (terms, typs), path, 0, subst, eqs)
       in
@@ -131,7 +131,7 @@ fun emitView isRec x =
           emit ("   Void_" ^ embiggen name ^ " of " ^ view)
       fun emitCase prefix constructor = 
           emit (prefix ^ embiggen (Symbol.name constructor) 
-                ^ args (valOf (ConTab.lookup constructor)))
+                ^ args (ConTab.lookup constructor))
    in
       emit (keyword isRec ^ " " ^ view ^ " =")
       ; appFirst emitVoid emitCase ("   ", " | ") (rev (TypeConTab.lookup x))
@@ -166,7 +166,7 @@ fun emitInjSig x =
       val name = nameOfType x
       fun emitSingle constructor = 
          let 
-            val args = map nameOfType (#1 (valOf (ConTab.lookup constructor)))
+            val args = map nameOfType (#1 (ConTab.lookup constructor))
          in
             if null args 
             then emit ("val " ^ bigName constructor ^ "': " ^ name)
@@ -181,7 +181,7 @@ fun emitInj x =
    let
       fun emitSingle constructor = 
          let 
-            val args = map nameOfType (#1 (valOf (ConTab.lookup constructor)))
+            val args = map nameOfType (#1 (ConTab.lookup constructor))
          in
             if null args 
             then emit ("val " ^ bigName constructor ^ "' = " 

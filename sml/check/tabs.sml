@@ -11,7 +11,7 @@
 structure TypeTab = 
 struct
    datatype extensible = YES | NO | CONSTANTS | SPECIAL 
-   structure S = Symtab(type entrytp = extensible)
+   structure S = Symtab(type entrytp = extensible val name = "TypeTab")
    open S
    val t = Symbol.symbol "t"
    val nat = Symbol.symbol "nat"
@@ -33,7 +33,7 @@ end
 (* World constant table
  * For a world constant w : tp1 -> ... -> tpn -> world.
  * WorldTab.lookup w = SOME ([ tp1, ..., tpn ]) *)
-structure WorldTab = Symtab(type entrytp = Ast.typ list)
+structure WorldTab = Symtab(type entrytp = Ast.typ list val name = "WorldTab")
 
 (* TypeCon table
  * Reverse lookup - lists all the constructors that can be used to make 
@@ -45,7 +45,8 @@ structure TypeConTab = Multitab(type entrytp = Symbol.symbol)
  * ConTab.lookup a = SOME ([ tp1, ..., tpn ], tp) *)
 structure ConTab = 
 struct
-   structure S = Symtab(type entrytp = Ast.typ list * Ast.typ)
+   structure S = Symtab(type entrytp = Ast.typ list * Ast.typ 
+   val name = "ConTab")
 
    open S
 
@@ -69,7 +70,8 @@ end
 (* Relation constant table
  * For a relation constant r : tp1 -> ... -> {Tn: tpn} -> rel @ W,
  * RelTab.lookup r = SOME ([ (NONE, tp1), ..., (SOME Tn, tpn) ], W) *)
-structure RelTab = Symtab(type entrytp = Ast.arg list * Ast.world)
+structure RelTab = Symtab(type entrytp = Ast.arg list * Ast.world
+val name = "RelTab")
 
 (* World dependency table
  * For a world dependency w t1...tn <- w1, ..., wm,
@@ -78,7 +80,7 @@ structure SearchTab = Multitab(type entrytp = Ast.term list * Ast.world list)
 
 (* Rule table 
  * Rules are given identifying names (integers) when loaded into the table,
- * and *)
+ * and can be taken as a list or looked up by world name. *)
 structure RuleTab :> sig
    val reset: unit -> unit
    val register: Ast.world * Ast.rule -> unit
@@ -102,8 +104,10 @@ end = struct
                   
 end
 
-(* Database table *)
-structure DbTab = Symtab(type entrytp = Ast.atomic list * Ast.world)
+(* Database table
+ * Straightforward: map from database names to their contents. *)
+structure DbTab = Symtab(type entrytp = Ast.atomic list * Ast.world 
+val name = "DbTab")
 
 structure Reset = struct
    fun reset () = 
@@ -113,7 +117,8 @@ structure Reset = struct
        ; TypeConTab.reset ()
        ; RelTab.reset ()
        ; SearchTab.reset ()
-       ; RuleTab.reset ())
+       ; RuleTab.reset ()
+       ; DbTab.reset ())
 end
 
 

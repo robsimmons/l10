@@ -22,10 +22,3 @@ Group is
    (* check/check.sml *)
 
    frontend/go.sml
-
-(*
-   opsem/search.sml
-   opsem/deduce.sml
-*)
-
-
