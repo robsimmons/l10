@@ -4,7 +4,7 @@ datatype compiledPrem =
    Normal of { knownBefore: Symbol.symbol list,
 
                (* This premise needs to call to this index *)
-               index: (Symbol.symbol * ModedTerm.term list),
+               index: (Symbol.symbol * BasicTerm.modedTerm list),
 
                (* The call uses some symbols *)
                inputPattern: (int list * Symbol.symbol) list,
@@ -21,7 +21,7 @@ datatype compiledPrem =
  | Negated of { knownBefore: Symbol.symbol list,
 
                 (* The premise needs to call this index *)
-                index: (Symbol.symbol * ModedTerm.term list),
+                index: (Symbol.symbol * BasicTerm.modedTerm list),
 
                 (* The call uses some symbols *)
                 inputPattern: (int list * Symbol.symbol) list,
@@ -47,7 +47,7 @@ Multitab (type entrytp = int * int * Compiled.compiledPrem)
 
 (* Desciribes all the modes (indxes) over a given relation *)
 structure IndexTab = 
-   Multitab (type entrytp = {terms: ModedTerm.term list,
+   Multitab (type entrytp = {terms: BasicTerm.modedTerm list,
                              input: Ast.typ MapP.map,
                              output: Ast.typ MapP.map})
    

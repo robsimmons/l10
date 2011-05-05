@@ -14,6 +14,7 @@ Group is
    util/layout.sml *)
 
    core/global.sml
+   core/basicterm.sml
    core/ast-sig.sml
    core/ast.sml
 

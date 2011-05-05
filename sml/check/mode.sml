@@ -1,33 +1,6 @@
 (* Mode checking *)
 (* Robert J. Simmons *)
 
-(* XXX Doesn't really belong here I think? *)
-structure ModedTerm = 
-struct
-
-   datatype vartype = INPUT | OUTPUT 
-
-   datatype term = 
-      Const of Symbol.symbol
-    | NatConst of IntInf.int
-    | StrConst of string
-    | Structured of Symbol.symbol * term list
-    | Var of vartype * Ast.typ
-
-   fun strTerm term = 
-      case term of 
-         Const x => Symbol.name x
-       | NatConst i => IntInf.toString i
-       | StrConst s => "\"" ^ s ^ "\""
-       | Structured (f, terms) => 
-         "(" ^ Symbol.name f ^ " " 
-         ^ String.concatWith " " (map strTerm terms)
-         ^ ")"
-       | Var (INPUT, _) => "++"
-       | Var (OUTPUT, _) => "--"
-
-end
-
 structure Mode:> sig
 
    (* Takes a atomic propisition, pulls the underlying world *)

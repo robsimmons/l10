@@ -40,8 +40,8 @@ structure SMLCompileUtil:> sig
    type path = int list (* Paths uniquely identify positions in terms *)
    val substPath: path * Ast.term * Ast.term -> Ast.term 
    val substPaths: path * Ast.term list * Ast.term -> Ast.term list
-   val genTerm: Ast.term * ModedTerm.term -> bool
-   val genTerms: Ast.term list -> ModedTerm.term list -> bool
+   val genTerm: Ast.term * BasicTerm.modedTerm -> bool
+   val genTerms: Ast.term list -> BasicTerm.modedTerm list -> bool
 
    (* Turn paths (which uniquely identify positions in terms) into strings *)
    val strPath: int list -> string (* strPath [ 1, 2, 5 ] = 1_2_5 *)
@@ -159,17 +159,19 @@ and substPaths (i :: path, terms, term) =
     @ tl (List.drop (terms, i))
   | substPaths _ = raise Fail "substPaths invariant"
 
+open BasicTerm
+
 fun genTerm (shape, term) = 
    case (shape, term) of
-      (_, ModedTerm.Var _) => true
+      (_, Var _) => true
     | (Ast.Var _, _) => raise Fail "Shape not sufficiently general"
-    | (Ast.Const _, ModedTerm.Structured _) => false
-    | (Ast.Structured _, ModedTerm.Const _) => false
-    | (Ast.Const c, ModedTerm.Const c') => c = c'
-    | (Ast.Structured (f, terms), ModedTerm.Structured (f', terms')) =>
+    | (Ast.Const _, Structured _) => false
+    | (Ast.Structured _, Const _) => false
+    | (Ast.Const c, Const c') => c = c'
+    | (Ast.Structured (f, terms), Structured (f', terms')) =>
       f = f' andalso genTerms terms terms'
-    | (Ast.NatConst i, ModedTerm.NatConst i') => i = i'
-    | (Ast.StrConst s, ModedTerm.StrConst s') => s = s'
+    | (Ast.NatConst i, NatConst i') => i = i'
+    | (Ast.StrConst s, StrConst s') => s = s'
     | _ => raise Fail "Typing invariant in shape"
 
 and genTerms shapes terms = 

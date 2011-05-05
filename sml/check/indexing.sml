@@ -9,7 +9,7 @@ structure Indexing:> sig
 end = 
 struct
 
-open ModedTerm
+open BasicTerm
 
 fun mapi' n [] = []
   | mapi' n (x :: xs) = (n, x) :: mapi' (n+1) xs
@@ -40,11 +40,11 @@ and modedVars' mode path (i, term) = modedVars mode (path @ [ i ]) term
 fun addIndex (a, terms) = 
    if knownIndex (terms, map #terms (IndexTab.lookup a)) then ()
    else (print ("   * New index recorded: " ^ Symbol.name a ^ " " 
-                ^ String.concatWith " " (map strTerm terms) ^ "\n")
+                ^ String.concatWith " " (map strModedTerm terms) ^ "\n")
          ; IndexTab.bind (a,
            {terms = terms,
-            input = modedVars INPUT [] (Structured (a, terms)),
-            output = modedVars OUTPUT [] (Structured (a, terms))}))
+            input = modedVars true [] (Structured (a, terms)),
+            output = modedVars false [] (Structured (a, terms))}))
 
 fun list fv = 
    String.concatWith ", " (map (Symbol.name o #1) (MapX.listItemsi fv))
@@ -56,17 +56,17 @@ fun list fv =
 fun indexTerm (known, path, (typ, term)) = 
    case term of 
       Ast.Var NONE => 
-      {term = Var (OUTPUT, typ), 
+      {term = Var (false, typ), 
        outputs = MapX.empty,
        paths = MapP.singleton (path, NONE)}
     | Ast.Var (SOME x) => 
       (case MapX.find (known, x) of
           NONE => 
-          {term = Var (OUTPUT, typ), 
+          {term = Var (false, typ), 
            outputs = MapX.singleton (x, (typ, [ path ])),
            paths = MapP.singleton (path, NONE)}
         | SOME typ =>
-          {term = Var (INPUT, typ),
+          {term = Var (true, typ),
            outputs = MapX.empty,
            paths = MapP.singleton (path, SOME x)})
     | Ast.Const c => 
@@ -211,10 +211,10 @@ fun indexRule (rule_n, world: Ast.world, (prems, concs)) =
 fun indexDefault a = 
    let 
       val typs = map #2 (#1 (valOf (RelTab.lookup a)))
-      val terms = map (fn typ => Var (INPUT, typ)) typs
+      val terms = map (fn typ => Var (true, typ)) typs
    in
       IndexTab.bind (a, {terms = terms,
-                         input = modedVars INPUT [] (Structured (a, terms)),
+                         input = modedVars true [] (Structured (a, terms)),
                          output = MapP.empty})
    end
 
@@ -233,10 +233,12 @@ fun createPathtree a =
       val pathtree = 
          map Coverage'.Unsplit (map #2 (#1 (valOf (RelTab.lookup a))))
       val indexes = map #terms (IndexTab.lookup a)
+      val newPathtree = 
+         List.foldr (Coverage'.extendpaths #2) pathtree indexes
    in
       print (Int.toString (length indexes) ^ " index(es) for relation " 
              ^ Symbol.name a ^ "\n")
-      ; MatchTab.bind (a, List.foldr Coverage'.extendpaths pathtree indexes)
+      ; MatchTab.bind (a, newPathtree)
    end
 
 fun index () = 
