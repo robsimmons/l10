@@ -1,10 +1,6 @@
 (* Forward chaining *)
 (* Robert J. Simmons *)
 
-(* Database table *)
-structure DbTab = Symtab(type entrytp = Term.atomic list * Term.world)
-
-
 structure Deduce = 
 struct
 
@@ -79,7 +75,7 @@ fun runRule ((_, subst, (prems, concs)), predset) =
 
 fun runWorld (world, predset) = 
    let
-      val rules = RuleTab.lookup world
+      val rules = Lookups.lookupRules world
       val num = length rules
 
       fun loop old_predset n = 
@@ -118,6 +114,8 @@ fun deduce facts world =
 fun deduceStored name = 
    case DbTab.lookup (Symbol.symbol name) of
       NONE => raise Fail ("No stored database " ^ name)
-    | SOME (facts, world) => deduce facts world
+    | SOME (facts, world) =>
+      deduce (map (Subst.applyAtomic Subst.empty) facts)
+             (Subst.applyWorld Subst.empty world)
 
 end

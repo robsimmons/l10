@@ -1,0 +1,15 @@
+Group is
+   $/basis.cm
+   $/smlnj-lib.cm
+   sources.cm
+
+   term/term.sml
+   term/termmap.sml
+   term/predmap.sml
+   term/subst.sml
+   term/match.sml
+   term/predset.sml
+
+   opsem/lookups.sml
+   opsem/search.sml
+   opsem/deduce.sml

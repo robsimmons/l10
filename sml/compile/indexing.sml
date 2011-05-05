@@ -255,17 +255,10 @@ fun index () =
 
 end
 
-
 (* Reset all tables *)
 structure Reset = struct
    fun reset () = 
-      (TypeTab.reset ()
-       ; WorldTab.reset ()
-       ; ConTab.reset ()
-       ; TypeConTab.reset ()
-       ; RelTab.reset ()
-       ; SearchTab.reset ()
-       ; RuleTab.reset ()
+      (Reset.reset ()
        ; IndexTab.reset ()
        ; InterTab.reset ()
        ; MatchTab.reset ())

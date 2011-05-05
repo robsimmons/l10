@@ -150,7 +150,7 @@ fun schedule (depmap, refmap) numplaces =
           let
              fun printWorld (world, n) = 
                 let 
-                   val rules = RuleTab.lookup world
+                   val rules = Lookups.lookupRules world
                    val num = length rules
                    (* val {place, seq} = 
                           valOf (PredMap.find (!schedmap, world)) *)
