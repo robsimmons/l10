@@ -2,6 +2,8 @@ Group is
    $/basis.cm
    sources.cm
 
+   util/disctree.sml
+
    compile/tabs.sml
    compile/coverage.sml
    compile/coverage'.sml

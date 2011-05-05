@@ -4,14 +4,11 @@ Group is
    $/smlnj-lib.cm
    $/ml-yacc-lib.cm
 
-   util/heap-sig.sml
-   util/heap.sml
    util/symbol.sml
    util/symtab.sml
    util/multitab.sml
-   util/disctree.sml
+   util/sets-maps.sml
 
-   core/global.sml
    core/basicterm.sml
    core/ast-sig.sml
    core/ast.sml

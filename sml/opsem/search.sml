@@ -141,7 +141,7 @@ fun schedule (depmap, refmap) numplaces =
        (* Pulls schedulable worlds and the schedules them *)
        fun loop n = 
           case pull [] of
-             [] => Global.assert (fn () => not (isSome (Heap.min heap))) 
+             [] => () (* assert (fn () => not (isSome (Heap.min heap))) *)
            | worlds => loop (place 0 worlds)
 
        val rawSchedule = (loop 0; Array.vector sched)

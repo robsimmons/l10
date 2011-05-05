@@ -3,6 +3,9 @@ Group is
    $/smlnj-lib.cm
    sources.cm
 
+   util/heap-sig.sml
+   util/heap.sml
+
    term/term.sml
    term/termmap.sml
    term/predmap.sml

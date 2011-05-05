@@ -19,12 +19,6 @@ RedBlackSetFn(struct type ord_key = IntInf.int val compare = IntInf.compare end)
 structure MapII = 
 RedBlackMapFn(struct type ord_key = IntInf.int val compare = IntInf.compare end)
 
-structure Global = struct
-
-  fun assert a = if a() then () else raise Fail "Invariant"
-
-end
-
 structure MapP = 
 RedBlackMapFn(struct 
    type ord_key = int list 

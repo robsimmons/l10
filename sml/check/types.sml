@@ -15,7 +15,6 @@ structure Types :> sig
 end = struct
 
 structure A = Ast
-open Global
 open Symbol
 
 (* tc_newvar (syntax, x, lookup_result) 
