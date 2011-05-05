@@ -21,7 +21,7 @@ use (smlfile "tables");
 use (smlfile "worlds-sig");
 use (smlfile "worlds");
 
-test ("bork", [ "regression/reservedword.l10" ]);
+test ("bork", [ "regression/error-worldunderscore.l10" ]);
 use (smlfile "terms-sig");
 use (smlfile "terms");
 use (smlfile "tables");

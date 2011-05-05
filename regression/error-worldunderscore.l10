@@ -1,0 +1,7 @@
+n: type.
+z: n.
+s: n -> n.
+
+w: n -> n -> world.
+
+w (s N) (s M) <- w N _.

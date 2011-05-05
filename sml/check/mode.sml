@@ -180,15 +180,4 @@ fun checkRule ((prems, concs), groundedByWorld) =
 
    in (checked_prems, concs) end
 
-(*
-(* Input: a set of symbols, a term (which may include Var NONE) *)
-(* Output: *)
-fun fvTerm (set, term) =
-   case term of 
-      Var NONE => 
-      let val s = unique set "_" 
-      in (SetX.insert (set, s), Var (SOME s)) end
-    | Var (SOME s) => (SetX.insert (set, s), 
-*)
-
 end
