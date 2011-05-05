@@ -136,7 +136,7 @@ fun emitMatches (a, shapes) [] =
                 ^ inputPattern (MapP.listKeys input) ^ ", " 
                 ^ inputPattern (MapP.listKeys output) ^ ") ")
     in
-       emit "(()"
+       emit "(cnt := !cnt + 1"
        ; app emitOne (List.filter filter (mapi (rev (IndexTab.lookup a))))
        ; emit ")"
     end
@@ -282,6 +282,7 @@ fun deduce () =
       ; incr ()
       ; emit ("open " ^ getPrefix true "" ^ "Terms\n") 
       ; emit "(* Indexes on terms *)\n"
+      ; emit "val cnt = ref 0\n"
       ; app emitIndexTypes (IndexTab.list ())
       ; emit "(* Term matching *)\n"
       ; emit "exception Brk\n"
