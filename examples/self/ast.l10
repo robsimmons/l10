@@ -1,7 +1,7 @@
 // A variable can be an underscore or a symbol 
-var: type.
-underscore: var.
-some: t -> var.
+v: type.
+underscore: v.
+some: t -> v.
 
 // Terms and lists of terms are mutually recursive 
 term: type.
@@ -11,7 +11,7 @@ const: t -> term.
 natConst: nat -> term.
 strConst: string -> term.
 structured: t -> terms -> term.
-var: var -> term.
+var: v -> term.
 
 nil: terms.
 cons: term -> terms -> terms.
@@ -20,7 +20,7 @@ cons: term -> terms -> terms.
 wFv: world.
 fvTerm: term -> rel @ wFv.
 fvTerms: terms -> rel @ wFv.
-fv: var -> rel @ wFv.
+fv: v -> rel @ wFv.
 
 // Presence or absense of underscores in a term
 wUscores: world.

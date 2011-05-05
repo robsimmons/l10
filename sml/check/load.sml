@@ -70,15 +70,16 @@ fun loadDecl decl =
          val (world, worlds) = Mode.pullDependency (prems, concs)
          val fv = Mode.checkDependency (world, worlds)
          val (checked_prems, concs) = Mode.checkRule ((prems, concs), fv)
+         val premsStr = String.concatWith ", " (map A.strPrem prems)
+         val concsStr = String.concatWith ", " (map A.strAtomic concs) 
       in
          bindDependency (world, worlds)
          ; RuleTab.register (world, (prems, concs))
-         ; if null prems then ()
-           else print (String.concatWith ", " (map A.strPrem prems) ^ "\n -> ")
-         ; print (String.concatWith ", " (map A.strAtomic concs) 
-                  ^ ".\n")
-         (* ; print (A.strWorld world ^ " <- "
-                ^ String.concatWith ", " (map A.strWorld worlds) ^ ".\n") *)
+         ; if premsStr = "" 
+           then print (concsStr ^ ".\n")
+           else if size premsStr + size concsStr < 75
+           then print (premsStr ^ " -> " ^ concsStr ^ ".\n")
+           else print (premsStr ^ "\n -> " ^ concsStr ^ ".\n")
          ; print "\n"
       end
 
