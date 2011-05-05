@@ -1,5 +1,3 @@
-<!-- -*- markdown -*- -->
-
 L10 Logic Programming Language
 ==============================
 

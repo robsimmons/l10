@@ -21,6 +21,13 @@ use (smlfile "tables");
 use (smlfile "worlds-sig");
 use (smlfile "worlds");
 
+test ("bork", [ "regression/reservedword.l10" ]);
+use (smlfile "terms-sig");
+use (smlfile "terms");
+use (smlfile "tables");
+use (smlfile "worlds-sig");
+use (smlfile "worlds");
+
 test ("plus", [ "examples/Plus.l10" ]);
 use (smlfile "terms-sig");
 use (smlfile "terms");

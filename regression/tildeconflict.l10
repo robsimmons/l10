@@ -1,0 +1,12 @@
+// We can have tildes in uppercase identifiers, but this means
+// that they can potentially conflict with the embiggened term constructors
+// in the emitted code. 
+
+n: type.
+z: n.
+s: n -> n.
+
+w: n -> world.
+r: {N: n} rel @ w N.
+
+r S' -> r (s (s S')).

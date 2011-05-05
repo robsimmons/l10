@@ -1,0 +1,8 @@
+// Need a way of dealing with SML reserved words that are types, in particular.
+
+struct: type.
+structure: type.
+var: type.
+let: type.
+in: type.
+end: type.
