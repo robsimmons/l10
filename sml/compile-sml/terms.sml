@@ -79,8 +79,10 @@ fun buildTerm term =
     | Ast.NatConst i => IntInf.toString i
     | Ast.StrConst s => "\"" ^ String.toCString s ^ "\""
     | Ast.Structured (f, terms) => 
-      (* termprefix () ^ *) embiggen (Symbol.name f)  ^ "' "
-      ^ "(" ^ String.concatWith ", " (map buildTerm terms) ^ ")"
+      if f = ConTab.plus 
+      then buildTerm (hd terms) ^ " + " ^ buildTerm (hd (tl terms))
+      else embiggen (Symbol.name f)  ^ "' "
+           ^ "(" ^ String.concatWith ", " (map buildTerm terms) ^ ")"
     | Ast.Var NONE => raise Fail "Building term with unknown part"
     | Ast.Var (SOME x) => Symbol.name x
 
@@ -352,7 +354,8 @@ fun termsSig () =
       val types = TypeTab.list ()
       val encodedTypes = List.filter encoded types
    in 
-      emit ("signature " ^ getPrefix true "_" ^ "TERMS = ")
+      emit ("signature " ^ String.map Char.toUpper (getPrefix true "_")
+            ^ "TERMS = ")
       ; emit "sig"
       ; incr ()
       ; app (fn x => emit ("type " ^ nameOfType x)) 
@@ -408,7 +411,7 @@ fun terms () =
       ; decr ()
       ; emit "end\n"
       ; emit ("structure " ^ getPrefix true "" ^ "Terms:> " 
-              ^ getPrefix true "_" ^ "TERMS = " 
+              ^ String.map Char.toUpper (getPrefix true "_") ^ "TERMS = " 
               ^ getPrefix true "" ^ "TermsImpl")
    end
 

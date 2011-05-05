@@ -35,6 +35,8 @@ structure SMLCompileUtil:> sig
    (* Fiddly utility functions *)
    val mapi: 'a list -> (int * 'a) list 
    val repeat: int * char -> string
+   val tuple: ('a -> string) -> 'a list -> string
+   val optTuple: ('a -> string) -> 'a list -> string
       
 end = 
 struct
@@ -48,10 +50,31 @@ val prefix = ref "l10"
 
 val Prefix = ref "L10"
 
+fun embiggen' s = 
+   let 
+      val len = size s
+      val fst = if len = 0 then raise Domain else String.sub (s, 0)
+      val rest = String.substring (s, 1, len - 1)
+   in
+      str (Char.toUpper fst) ^ rest
+   end
+
+fun embiggen s = 
+   let 
+      val len = size s
+      val fst = if len = 0 then raise Domain else String.sub (s, 0)
+      val rest = String.substring (s, 1, len - 1)
+   in
+      if not (Char.isLower fst) 
+      then raise Fail ("Function 'embiggen' called on string with " 
+                       ^ "first character '" ^ str fst ^ "'")
+      else str (Char.toUpper fst) ^ rest
+   end
+
 fun setPrefix str = 
    if List.all Char.isAlphaNum (explode str)
    then (prefix := String.map Char.toLower str
-         ; Prefix := String.map Char.toUpper str)
+         ; Prefix := embiggen str)
    else raise Fail ("String \"" ^ String.toCString str ^ "\" not alphanumeric")
 
 fun getPrefix false postfix = if !prefix = "" then "" else !prefix ^ postfix
@@ -81,16 +104,14 @@ fun write filename f =
                      ; raise exn)
    end
 
-fun embiggen s = 
-   let 
-      val len = size s
-      val fst = if len = 0 then raise Domain else String.sub (s, 0)
-      val rest = String.substring (s, 1, len - 1)
-   in
-      if not (Char.isLower fst) then raise Domain
-      else str (Char.toUpper fst) ^ rest
-   end
+
 
 fun repeat (n, c) = String.implode (List.tabulate (n, fn _ => c))
+
+fun tuple f [ x ] = f x
+  | tuple f xs = "(" ^ String.concatWith ", " (map f xs) ^ ")"
+
+fun optTuple f [] = ""
+  | optTuple f xs = " " ^ tuple f xs
 
 end

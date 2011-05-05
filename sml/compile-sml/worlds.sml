@@ -125,20 +125,10 @@ fun emitChildSearches (w, terms) =
 fun emitInitialInters (w, terms) = 
    let
       val typs = valOf (WorldTab.lookup w)
-      fun handleSubst postfix [] = ()
-        | handleSubst postfix [ (x, term) ] = 
-          (emit (Symbol.name x ^ " = " ^ buildTerm term ^ " } " ^ postfix))
-        | handleSubst postfix ((x, term) :: subst) = 
-          (emit (Symbol.name x ^ " = " ^ buildTerm term ^ ",")
-           ; handleSubst postfix subst) 
 
       fun handleSubst' prefix postfix (w, n, subst) = 
-        (emit (prefix ^ SMLCompileDeduce.nameSaturate (w, n, 0) 
-                        ^ (if MapX.isEmpty subst 
-                           then (" {} " ^ postfix) else " {"))
-         ; incr (); incr()
-         ; handleSubst postfix (MapX.listItemsi subst)
-         ; decr (); decr())
+         emit (prefix ^ SMLCompileDeduce.nameSaturate (w, n, 0) 
+               ^ optTuple buildTerm (MapX.listItems subst) ^ " ::")
 
       fun handleRule prefix (n, (w, pat), _) =
          let
@@ -305,7 +295,8 @@ fun worldsSig () =
    let 
       val worlds = WorldTab.list ()
    in
-      emit ("signature " ^ getPrefix true "_" ^ "SEARCH =")
+      emit ("signature " ^ String.map Char.toUpper (getPrefix true "_")
+            ^ "SEARCH =")
       ; emit "sig" 
       ; incr ()
       ; app emitWorldSig worlds 
@@ -318,7 +309,8 @@ fun worlds () =
       val worlds = WorldTab.list ()
    in
       emit ("structure " ^ getPrefix true "" ^ "Search" 
-            ^ ":> " ^ getPrefix true "_" ^ "SEARCH" ^ " =")
+            ^ ":> " ^ String.map Char.toUpper (getPrefix true "_")
+            ^ "SEARCH" ^ " =")
       ; emit "struct"
       ; incr ()
       ; emit ("open " ^ getPrefix true "" ^ "Terms")

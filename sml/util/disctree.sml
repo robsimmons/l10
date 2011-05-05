@@ -1,9 +1,10 @@
 (* Discrimination trees as used in the L10 compiler *)
 (* Robert J. Simmons *)
 
-(* Hopefully this won't wind up write-only; the invariants are complicated.
- * This is basically a hack to get around SML's lack of polymorphic recursion,
- * which would enforce the shape invariants that we're counting on. *)
+(* Hopefully this won't wind up write-only; the invariants are 
+ * complicated. This is basically a hack to get around SML's lack of 
+ * polymorphic recursion, which would enforce the shape invariants that
+ * we're counting on. *)  
 
 structure DiscMap:> sig
    type 'a map 
@@ -32,6 +33,8 @@ structure DiscMap:> sig
    val replace: 'a zipmap * 'a map -> 'a zipmap
 end = 
 struct
+   exception Invariant
+
    datatype 'a map' = 
       D of 'a 
     | M of 'a map' option vector
@@ -46,23 +49,27 @@ struct
           (D data1, D data2) => f (data1, data2, a)
         | (M vec1, M vec2) => 
           if Vector.length vec1 <> Vector.length vec2
-          then raise Fail "Invariant"
+          then raise Invariant
           else Vector.foldri 
-             (fn (i, map1, a) => intersect f a (map1, Vector.sub (vec2, i)))
+             (fn (i, map1, a) => 
+                intersect f a (map1, Vector.sub (vec2, i)))
              a vec1
         | (MX map1, MX map2) =>
           MapX.foldri
-             (fn (x, m1, a) => intersect f a (SOME m1, MapX.find (map2, x)))
+             (fn (x, m1, a) =>
+                intersect f a (SOME m1, MapX.find (map2, x)))
              a map1
         | (MII map1, MII map2) =>
           MapII.foldri
-             (fn (i, m1, a) => intersect f a (SOME m1, MapII.find (map2, i)))
+             (fn (i, m1, a) => 
+                intersect f a (SOME m1, MapII.find (map2, i)))
              a map1
         | (MS map1, MS map2) => 
           MapS.foldri
-             (fn (s, m1, a) => intersect f a (SOME m1, MapS.find (map2, s)))
+             (fn (s, m1, a) => 
+                intersect f a (SOME m1, MapS.find (map2, s)))
              a map1
-        | _ => raise Fail "Invariant"
+        | _ => raise Invariant
 
    type 'a map = 'a map' option
 
@@ -89,64 +96,65 @@ struct
 
    fun prj NONE = raise NotThere
      | prj (SOME (D x)) = x
-     | prj _ = raise Fail "Invariant"
+     | prj _ = raise Invariant
 
    (* XXX Uses Unsafe.Vector.sub *)
    fun sub n map =
       case map of 
          NONE => raise NotThere
        | SOME (M vector) => Unsafe.Vector.sub (vector, n) 
-       | _ => raise Fail "Invariant"
+       | _ => raise Invariant
 
    fun subX x map = 
       case map of
          NONE => raise NotThere
        | SOME (MX map) => MapX.find (map, x)
-       | _ => raise Fail "Invariant"
+       | _ => raise Invariant
 
    fun subII i map = 
       case map of 
          NONE => raise NotThere
        | SOME (MII map) => MapII.find (map, i)
-       | _ => raise Fail "Invariant"
+       | _ => raise Invariant
 
    fun subS s map = 
       case map of
          NONE => raise NotThere
        | SOME (MS map) => MapS.find (map, s)
-       | _ => raise Fail "Invariant"
+       | _ => raise Invariant
 
    (* XXX Uses Unsafe.Vector.sub *)
    fun unzip (n, typ) (zipper, map) = 
       case map of 
-          NONE => (Z (n, Vector.tabulate (typ, fn _ => NONE)) :: zipper, NONE)
+          NONE => 
+          (Z (n, Vector.tabulate (typ, fn _ => NONE)) :: zipper, NONE)
         | SOME (M vector) => 
           (Z (n, vector) :: zipper, Unsafe.Vector.sub (vector, n))
-        | SOME _ => raise Fail "Invariant"
+        | SOME _ => raise Invariant
 
    fun unzipX x (zipper, map) = 
       case map of 
          NONE => (ZX (x, MapX.empty) :: zipper, NONE)
        | SOME (MX map) =>
          (ZX (x, map) :: zipper, MapX.find (map, x))
-       | _ => raise Fail "Invariant"
+       | _ => raise Invariant
 
    fun unzipII i (zipper, map) = 
       case map of 
          NONE => (ZII (i, MapII.empty) :: zipper, NONE)
        | SOME (MII map) =>
          (ZII (i, map) :: zipper, MapII.find (map, i))
-       | _ => raise Fail "Invariant"
+       | _ => raise Invariant
 
    fun unzipS s (zipper, map) = 
       case map of 
          NONE => (ZS (s, MapS.empty) :: zipper, NONE)
        | SOME (MS map) =>
          (ZS (s, map) :: zipper, MapS.find (map, s))
-       | _ => raise Fail "Invariant"
+       | _ => raise Invariant
 
-   (* XXX these insertion functions need to be revised if the rezip function 
-    * has the possibility of *deleting* entries *)
+   (* XXX these insertion functions need to be revised if the rezip
+    * function has the possibility of *deleting* entries *)
    fun insertX (map, x, NONE) = map
      | insertX (map, x, SOME discmap) = MapX.insert (map, x, discmap)
 

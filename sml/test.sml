@@ -35,7 +35,7 @@ use (smlfile "deduce");
 use (smlfile "worlds-sig");
 use (smlfile "worlds");
 
-test ("re", [ "examples/Regexp.l10", 
+(* test ("re", [ "examples/Regexp.l10", 
               "examples/RegexpQuery.l10", 
               "examples/RegexpNot.l10", 
               "examples/RegexpNot2.l10" ]);
@@ -68,7 +68,7 @@ use (smlfile "terms-sig");
 use (smlfile "terms");
 use (smlfile "deduce");
 use (smlfile "worlds-sig");
-use (smlfile "worlds");
+use (smlfile "worlds"); 
 open TTerms;
 val map1 = MapTree.singleton (Leaf', 1);
 val map2 = MapTree.insert (map1, Node' (Node' (Leaf', Leaf'), Leaf'), 2);
@@ -85,7 +85,7 @@ val map3 = List.foldr MapList.insert' MapList.empty
 val x5 = MapList.find (map3, Cons' (9, End'))
 val x6 = MapList.find (map3, Cons' (4, Cons' (12, Cons' (6, End'))))
 val x7 = MapList.find (map3, Cons' (11, End'))
-val x8 = MapList.find (map3, Cons' (4, (Cons' (12, End'))))
+val x8 = MapList.find (map3, Cons' (4, (Cons' (12, End')))) *)
 
 
 (*

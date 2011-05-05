@@ -211,15 +211,65 @@ fun emitMatching a =
       ; decr ()
    end 
 
-fun emitSaturate w (rule, point, fv) = 
-   let in
-      emit ""
-      ; emit ("and " ^ nameSaturate (w, rule, point)
-              ^ " { " 
-              ^ String.concatWith ", " 
-                 (map (Symbol.name o #1) (MapX.listItemsi fv))
-              ^ " } () = ()")
+fun nameOfShape (a, shape) = 
+   let 
+      val shapes = mapi (rev (map #terms (IndexTab.lookup a)))
+      fun find (shape, []) = raise Fail "Invariant"
+        | find (shape, (i, shape') :: shapes) = 
+          if shape = shape' 
+          then (Symbol.name a ^ "_" ^ Int.toString i)
+          else find (shape, shapes)
+   in
+      find (shape, shapes) 
    end
+
+fun emitSaturate w (rule, point, Compiled.Normal args) = 
+   let
+      val {knownBefore, 
+           index, 
+           inputPattern, 
+           outputPattern, 
+           constraints, 
+           knownAfterwards} = args
+      val funName = nameSaturate (w, rule, point)
+      val indexName = nameOfShape index
+      fun aftermap (x, NONE) = Symbol.name x
+        | aftermap (x, SOME path) = pathStr path
+      val knownBefore = optTuple Symbol.name knownBefore
+   in
+      emit ""
+      ; emit ("and " ^ funName ^ knownBefore ^ " () =")
+      ; incr ()
+      ; emit ("app (" ^ funName ^ "_app" ^ knownBefore ^ ")")
+      ; emit ("   (" ^ indexName ^ "_lookup (!" ^ indexName ^ ", "
+              ^ tuple (Symbol.name o #2) inputPattern ^ "))\n")
+      ; decr ()
+
+      ; emit ("and " ^ funName ^ "_app" ^ knownBefore 
+              ^ " " ^ tuple pathStr outputPattern ^ " =")
+      ; incr ()
+      ; if length constraints = 0 
+        then emit (nameSaturate (w, rule, point+1) 
+                   ^ optTuple aftermap knownAfterwards ^ " ()")
+        else emit "() (* NEED TO DO CONSTRAINTS *)"
+      ; decr ()
+   end
+  | emitSaturate w (rule, point, Compiled.Conclusion {knownBefore, facts}) = 
+    let 
+    in
+       emit ""
+       ; emit ("and " ^ nameSaturate (w, rule, point)
+             ^ optTuple Symbol.name knownBefore ^ " () = (()")
+       ; incr ()
+       ; app (fn (a, terms) => 
+                emit ("; assert" ^ embiggen (Symbol.name a) 
+                      ^ " " ^ tuple buildTerm terms))
+             facts
+       ; emit ")"
+       ; decr ()
+    end
+
+  | emitSaturate w (rule, point, _) = ()
 
 fun emitSaturates w = app (emitSaturate w) (rev (InterTab.lookup w))
 
@@ -231,7 +281,7 @@ fun deduce () =
       ; emit "struct"
       ; incr ()
       ; emit ("open " ^ getPrefix true "" ^ "Terms\n") 
-      ; emit "(* Index types *)\n"
+      ; emit "(* Indexes on terms *)\n"
       ; app emitIndexTypes (IndexTab.list ())
       ; emit "(* Term matching *)\n"
       ; emit "exception Brk\n"
