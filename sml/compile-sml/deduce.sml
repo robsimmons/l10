@@ -1,4 +1,12 @@
-structure SMLCompileDeduce = 
+(* Robert J. Simmons *)
+
+structure SMLCompileDeduce:> sig
+
+   val deduce: unit -> unit
+   val nameIndex: Symbol.symbol * int -> string
+   val nameSaturate: Symbol.symbol * int * int -> string
+
+end = 
 struct
 
 open SMLCompileUtil
