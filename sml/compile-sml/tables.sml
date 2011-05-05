@@ -119,13 +119,12 @@ fun emitMatches (a, shapes) [] =
   | emitMatches shape ((path, Path.Unsplit _) :: pathtree) =
     emitMatches shape pathtree
   | emitMatches shape ((path, Path.Split (typ, subtrees)) :: pathtree) =
-    let
-       val constructors = TypeConTab.lookup typ
+    let val constructors = TypeConTab.lookup typ
     in 
        emit ("(case " ^ nameOfPrj typ ^ Path.var path ^ " of")
        ; appFirst 
-          (fn () => emit ("   Void_" ^ embiggen (Symbol.name typ) 
-                          ^ " x = abort" ^ embiggen (Symbol.name typ) ^ " x"))
+          (fn () => emit ("   Void_" ^ NameOfType typ 
+                          ^ " x = abort" ^ NameOfType typ ^ " x"))
           (emitMatchesCase shape path subtrees pathtree)
           ("   ", " | ") constructors
        ; emit ")"

@@ -48,9 +48,15 @@ structure SMLCompileUtil:> sig
    val repeat: int * char -> string     (* Length n string of chars  *)
    val bigName: Symbol.symbol -> string (* embiggen o Symbol.name    *)
    val nameOfExec: int * int -> string
+   val caseConstructor: 
+      (Ast.shapeTerm list -> unit)      (* Act, given a general shape *)
+      -> Path.tree list                 (* Initial list of pathtrees *)
+      -> unit
 
 end = 
 struct
+
+fun caseConstructor _ = raise Domain
 
 fun mapi' n [] = []
   | mapi' n (x :: xs) = (n, x) :: mapi' (n+1) xs

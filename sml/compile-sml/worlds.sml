@@ -12,7 +12,7 @@ open SMLCompileUtil
 open SMLCompileTypes
 open SMLCompileTerms
 
-(* Emit the correct seek functions *) 
+(* Emit the correct seek functions for a world in the signature *) 
 
 fun emitWorldSig world = 
    let
@@ -31,11 +31,9 @@ fun emitWorldSig world =
                  ^ maptyp ^ " -> " ^ maptyp) 
    end
 
-fun seekWorld (world, args) =
-   let 
-      val Name = embiggen (Symbol.name world)
-      val strargs = optTuple buildTerm args
-   in "seek" ^ Name ^ strargs end
+
+(* *)
+
 
 type pathConstructorVar = (Symbol.symbol * Coverage.pathtree list) pathvar
 type pathTreeVar = Coverage.pathtree pathvar
@@ -82,7 +80,8 @@ fun emitChildSearches (w, terms) =
       val typs = WorldTab.lookup w
       fun handleArg prefix subst (w, terms) = 
          let val terms' = valOf (Ast.subTerms (subst, terms)) in  
-            emit (prefix ^ seekWorld (w, terms'))
+            emit (prefix ^ "seek" ^ embiggen (Symbol.name w) 
+                  ^ optTuple buildTerm terms') 
          end
 
       fun handleArgs prefix subst [] = emit (prefix ^ "(fn x => x)")
@@ -164,8 +163,7 @@ fun emitCase world [] =
     (* emit ("(" ^ String.concatWith ", " (map buildTerm terms) ^ ")") *)
   | emitCase world (pathTreeVars: pathTreeVar list) = 
     let in
-       emit ("(case ("
-             ^ String.concatWith ", " (map strprj pathTreeVars) ^ ") of")
+       emit ("(case " ^ tuple strprj pathTreeVars ^ " of")
        ; emitMatches "   " world pathTreeVars [] 
        ; emit ")"
     end
