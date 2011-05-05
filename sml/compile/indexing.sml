@@ -221,7 +221,7 @@ fun indexDefault a =
 fun indexWorld w = 
    let
       val () = print ("Indexing for world " ^ Symbol.name w ^ "\n")
-      val rules = rev (RuleTab.lookupw w)
+      val rules = rev (RuleTab.lookup w)
       val () = print (Int.toString (length rules) ^ " applicable rule(s)\n")
    in
       app indexRule rules

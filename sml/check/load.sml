@@ -82,7 +82,8 @@ fun loadDecl decl =
          ; print "\n"
       end
 
-    | A.DeclDatabase (db, facts, world) => 
+    | A.DeclDatabase (db, facts, world) => ()
+(*
       let
          val facts' = map (Subst.applyAtomic Subst.empty) facts
          val world' = Subst.applyWorld Subst.empty world
@@ -92,5 +93,6 @@ fun loadDecl decl =
                 ^ ")\n   @ " ^ A.strWorld world ^ "\n\n") 
          ; DbTab.bind (db, (facts', world'))
       end
+*)
 
 end

@@ -1,6 +1,10 @@
 (* Forward chaining *)
 (* Robert J. Simmons *)
 
+(* Database table *)
+structure DbTab = Symtab(type entrytp = Term.atomic list * Term.world)
+
+
 structure Deduce = 
 struct
 

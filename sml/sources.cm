@@ -22,32 +22,28 @@ Group is
    parse/l10.grm
    parse/parse.sml
 
+(*
    term/term.sml
    term/termmap.sml
    term/predmap.sml
    term/subst.sml
    term/match.sml
    term/predset.sml
+*)
 
    check/tabs.sml
    check/types.sml
    check/fv.sml
    check/mode.sml
    check/load.sml
-   check/check.sml
+   (* check/check.sml *)
    check/posttabs.sml
-
-   check/coverage.sml
-   check/coverage'.sml
-   check/indexing.sml
-
-   opsem/search.sml
-   opsem/deduce.sml
 
    frontend/go.sml
 
-   compile-sml/util.sml
-   compile-sml/types.sml
-   compile-sml/terms.sml 
-   compile-sml/tables.sml
-   compile-sml/worlds.sml
+(*
+   opsem/search.sml
+   opsem/deduce.sml
+*)
+
+

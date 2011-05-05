@@ -69,9 +69,6 @@ struct
    val () = reset ()
 end
 
-(* Database table *)
-structure DbTab = Symtab(type entrytp = Term.atomic list * Term.world)
-
 (* Relation constant table
  *
  * For a relation constant r : tp1 -> ... -> {Tn: tpn} -> rel @ W,
@@ -88,8 +85,8 @@ structure SearchTab = Multitab(type entrytp = Ast.term list * Ast.world list)
 structure RuleTab :> sig
    val reset: unit -> unit
    val register: Ast.world * Ast.rule -> unit
-   val lookup: Term.world -> (int * Subst.subst * Ast.rule) list 
-   val lookupw: Symbol.symbol -> (int * Ast.world * Ast.rule) list
+   (* val lookup: Term.world -> (int * Subst.subst * Ast.rule) list *)
+   val lookup: Symbol.symbol -> (int * Ast.world * Ast.rule) list
 end = struct
 
    val next = ref 0 
@@ -99,17 +96,19 @@ end = struct
    fun register (world, rule) = 
       (database := (!next, world, rule) :: !database; next := !next + 1)
 
+(*
    fun lookup' world' (n, world, rule) = 
       case Match.matchWorld Subst.empty world world' of
          NONE => NONE
        | SOME subst => SOME (n, subst, rule)
 
    fun lookup world = List.mapPartial (lookup' world) (!database)
+*)
 
-   fun lookupw' w (n, world : Ast.world, rule) = 
+   fun lookup' w (n, world : Ast.world, rule) = 
       if w = #1 world then SOME (n, world, rule) else NONE
 
-   fun lookupw w = List.mapPartial (lookupw' w) (!database)
+   fun lookup w = List.mapPartial (lookup' w) (!database)
       
 end
 

@@ -148,7 +148,7 @@ fun emitInitialInters (w, terms) =
         | handleRules (rule :: rules) = 
           (handleRules rules before handleRule "  " rule)
 
-      val rules = List.filter (genTerms terms o #2 o #2) (RuleTab.lookupw w)
+      val rules = List.filter (genTerms terms o #2 o #2) (RuleTab.lookup w)
    in
       if handleRules rules
       then emit "  [])"
