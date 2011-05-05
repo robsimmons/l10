@@ -1,13 +1,29 @@
+(* Discovering indexes from patterns *)
 (* Robert J. Simmons *)
 
-structure Indexing:> sig
+structure Indexing':> sig
 
-  (* Populates the InterTab, IndexTab, and MatchTab 
-   * by analyzing the rules of the program in RuleTab. *)
-  val index: unit -> unit
+   (* Given free variables and a pattern, determines the mode in which 
+    * the relation needs to be queried and the resulting substitution and 
+    * constraints. *)
+   val indexPat: Ast.typ MapX.map * Ast.pattern
+      -> { (* A abstraction of the term as inputs and outputs *)
+           index: Symbol.symbol * Ast.modedTerm list, 
 
-end = 
-struct
+           (* Every free variable of the pattern that is not bound by
+            * in the incoming type environment will be bound in this map,
+            * along with the one-or-more paths that it is equal to.
+            * If a variable is bound to more than one path, that represents
+            * an equality constraint: an index match will only be valid
+            * in the cases where all of the paths bound to the same variable
+            * are equal. *)
+           outputs: (Ast.typ * Path.path list) MapX.map,
+
+           (* Every path is bound to the variable (or underscore) that was
+            * in that position in the input term. *)
+           paths: Symbol.symbol option MapP.map }
+
+end = struct
 
 open Ast
 
@@ -18,14 +34,7 @@ fun mapi xs = mapi' 0 xs
 
 fun fail _ = raise Fail "Invariant"
 
-      fun makeConstraints (typ, []) = []
-        | makeConstraints (typ, [ _ ]) = []
-        | makeConstraints (typ, a :: b :: c) = 
-          (typ, a, b) :: makeConstraints (typ, b :: c)
-
 fun unionP ms = MapP.unionWith fail ms
-
-fun union ms = MapX.unionWith #1 ms
 
 fun minus ms = MapX.mergeWith (fn (SOME x, NONE) => SOME x | _ => NONE) ms
 
@@ -41,15 +50,6 @@ fun modedVars mode path term =
       List.foldl unionP MapP.empty (map (modedVars' mode path) (mapi terms))
     | _ => MapP.empty 
 and modedVars' mode path (i, term) = modedVars mode (path @ [ i ]) term
-
-fun addIndex (a, terms) = 
-   if knownIndex (terms, map #terms (IndexTab.lookup a)) then ()
-   else (print ("   * New index recorded: " ^ Symbol.name a ^ " " 
-                ^ String.concatWith " " (map strModedTerm terms) ^ "\n")
-         ; IndexTab.bind (a,
-           {terms = terms,
-            input = modedVars true [] (Structured (a, terms)),
-            output = modedVars false [] (Structured (a, terms))}))
 
 fun list fv = 
    String.concatWith ", " (map (Symbol.name o #1) (MapX.listItemsi fv))
@@ -121,8 +121,7 @@ fun indexPat (known, pat) =
          val {terms, outputs, paths} = 
             indexTerms (known, 0, [], ListPair.zipEq (typs, terms))
       in
-         addIndex (a, terms)
-         ; {index = (a, terms), outputs = outputs, paths = paths}
+         {index = (a, terms), outputs = outputs, paths = paths}
       end
     | Ast.Conj _ => raise Fail "Unimplemented"
     | Ast.Exists (x, pat) =>
@@ -130,130 +129,4 @@ fun indexPat (known, pat) =
       then indexPat (#1 (MapX.remove (known, x)), pat)
       else indexPat (known, pat)
 
-
-fun indexRule' (w, rule_n, point, known, prems, concs) = 
-   case prems of 
-      [] => 
-      let val compiled = Rule.Conclusion {facts = concs}
-      in 
-         CompiledPremTab.bind (rule_n, point, MapX.listKeys known, compiled) 
-      end
-
-    | Ast.Normal pat :: prems =>
-      let
-         val fvpat = FV.fvPat pat
-         val newknown = union (known, FV.fvPat pat) 
-         val learned = minus (fvpat, known)
-         val free = Ast.fvRule (prems, concs)
-         val needed = MapX.filteri (fn (x, _) => SetX.member (free, x)) newknown
-
-         val () = print (" - Normal point #" ^ Int.toString point 
-                         ^ ": " ^ Ast.strPrem (Ast.Normal pat) ^ "\n")
-         val { index, outputs, paths } = indexPat (known, pat)
-
-         val compiled = 
-            { index = index,
-              inputPattern =
-              MapP.listItemsi (MapP.mapPartial (fn x => x) paths),
-              outputPattern =
-              MapP.listKeys (MapP.filter (not o Option.isSome) paths),
-              constraints =
-              MapX.foldl (fn (x, y) => makeConstraints x @ y) [] outputs,
-              knownAfterwards = 
-              MapX.listItemsi
-                  (MapX.mapi (fn (x, _) =>
-                                 (case MapX.find (outputs, x) of 
-                                    SOME paths => SOME (hd (#2 paths))
-                                  | NONE => NONE)) needed) } 
-      in
-         print ("   - learned: " ^ list learned ^ "\n")
-         ; print ("   - still needed: " ^ list needed ^ "\n")
-         ; CompiledPremTab.bind 
-              (rule_n, point, MapX.listKeys known, Rule.Normal compiled)
-         ; indexRule' (w, rule_n, point+1, needed, prems, concs)
-      end      
-
-    | Ast.Negated pat :: prems =>
-      let
-         val free = Ast.fvRule (prems, concs)
-         val needed = MapX.filteri (fn (x, _) => SetX.member (free, x)) known
-      in
-         print (" - Negated point #" ^ Int.toString point ^ "\n")
-         ; indexPat (known, pat)
-         ; print ("   - still needed: " ^ list needed ^ "\n")
-         ; CompiledPremTab.bind 
-              (rule_n, point, MapX.listKeys known, Rule.Placeholder)
-         ; indexRule' (w, rule_n, point+1, needed, prems, concs)
-      end
-
-    | Ast.Count _ :: _ => raise Fail "Unimplemented"
-                           
-    | Ast.Binrel (Ast.Eq, term1, term2) :: prems => raise Fail "Unimplemented"
-      
-    | Ast.Binrel (_, term1, term2) :: prems => 
-      let
-         val free = Ast.fvRule (prems, concs)
-         val needed = MapX.filteri (fn (x, _) => SetX.member (free, x)) known
-      in
-         print (" - Comparison point #" ^ Int.toString point ^ "\n")
-         ; print ("   - still needed: " ^ list needed ^ "\n")
-         ; CompiledPremTab.bind 
-              (rule_n, point, MapX.listKeys known, Rule.Placeholder)
-         ; indexRule' (w, rule_n, point+1, needed, prems, concs)
-      end
-      
-fun indexRule (rule_n, world: Ast.world, (prems, concs)) = 
-   let
-      val fvworld = FV.fvWorld world
-      val () = print ("Analyzing rule #" ^ Int.toString rule_n ^ "\n")
-   in
-      indexRule' (#1 world, rule_n, 0, fvworld, prems, concs)
-   end
-
-fun indexDefault a = 
-   let 
-      val typs = map #2 (#1 (RelTab.lookup a))
-      val terms = map (fn typ => Var (true, typ)) typs
-   in
-      IndexTab.bind (a, {terms = terms,
-                         input = modedVars true [] (Structured (a, terms)),
-                         output = MapP.empty})
-   end
-
-fun indexWorld w = 
-   let
-      val () = print ("Indexing for world " ^ Symbol.name w ^ "\n")
-      val rules = rev (RuleTab.lookup w)
-      val () = print (Int.toString (length rules) ^ " applicable rule(s)\n")
-   in
-      app indexRule rules
-      ; print "\n"
-   end
-
-fun createPathtree a = 
-   let 
-      val pathtree = 
-         map Path.Unsplit (map #2 (#1 (RelTab.lookup a)))
-      val indexes = map #terms (IndexTab.lookup a)
-      val newPathtree = 
-         List.foldr (Path.extendpaths #2) pathtree indexes
-   in
-      print (Int.toString (length indexes) ^ " index(es) for relation " 
-             ^ Symbol.name a ^ "\n")
-      ; RelMatchTab.bind (a, newPathtree)
-   end
-
-fun index () = 
-   let 
-      val rels = RelTab.list ()
-      val worlds = WorldTab.list () 
-   in
-      print "=== INDEXING ===\n"
-      ; app indexDefault rels
-      ; app indexWorld worlds
-      ; print "=== CREATING PATH TREE ===\n"
-      ; app createPathtree rels
-   end
-
 end
-

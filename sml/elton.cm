@@ -7,7 +7,7 @@ Group is
    compile/fv.sml
    compile/path.sml
    compile/rule.sml
-   compile/indexing'.sml
+   compile/indexing.sml
    compile/state.sml
 
    compile/coverage.sml
