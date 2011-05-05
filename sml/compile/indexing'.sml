@@ -3,9 +3,6 @@
 
 structure Indexing':> sig
 
-   (* Paths uniquely identify positions in terms *)
-   type path = int list 
-
    (* Given free variables and a pattern, determines the mode in which 
     * the relation needs to be queried and the resulting substitution and 
     * constraints. *)
@@ -20,7 +17,7 @@ structure Indexing':> sig
             * an equality constraint: an index match will only be valid
             * in the cases where all of the paths bound to the same variable
             * are equal. *)
-           outputs: (Ast.typ * path list) MapX.map,
+           outputs: (Ast.typ * Path.path list) MapX.map,
 
            (* Every path is bound to the variable (or underscore) that was
             * in that position in the input term. *)
@@ -29,8 +26,6 @@ structure Indexing':> sig
 end = struct
 
 open Ast
-
-type path = int list
 
 fun mapi' n [] = []
   | mapi' n (x :: xs) = (n, x) :: mapi' (n+1) xs

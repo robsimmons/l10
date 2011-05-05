@@ -16,7 +16,7 @@ structure IndexTab =
  * MatchTab r = [ pathtree1, ..., pathtreeN ], which describes all the ways
  * a declared atomic proposition (r t1 ... tn) may need to be matched against
  * a premise. *)
-structure RelMatchTab = Symtab (type entrytp = Coverage'.pathtree list
+structure RelMatchTab = Symtab (type entrytp = Path.tree list
 val name = "MatchTab")
 
 (* Compiled Premise Table 

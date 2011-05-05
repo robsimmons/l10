@@ -115,9 +115,9 @@ fun emitMatches (a, shapes) [] =
        ; app emitOne (List.filter filter (mapi (rev (IndexTab.lookup a))))
        ; emit ")"
     end
-  | emitMatches shape ((path, Coverage'.Unsplit _) :: pathtree) =
+  | emitMatches shape ((path, Path.Unsplit _) :: pathtree) =
     emitMatches shape pathtree
-  | emitMatches shape ((path, Coverage'.Split (typ, subtrees)) :: pathtree) =
+  | emitMatches shape ((path, Path.Split (typ, subtrees)) :: pathtree) =
     let
        val constructors = TypeConTab.lookup typ
     in 

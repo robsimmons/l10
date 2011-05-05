@@ -233,10 +233,10 @@ fun indexWorld w =
 fun createPathtree a = 
    let 
       val pathtree = 
-         map Coverage'.Unsplit (map #2 (#1 (RelTab.lookup a)))
+         map Path.Unsplit (map #2 (#1 (RelTab.lookup a)))
       val indexes = map #terms (IndexTab.lookup a)
       val newPathtree = 
-         List.foldr (Coverage'.extendpaths #2) pathtree indexes
+         List.foldr (Path.extendpaths #2) pathtree indexes
    in
       print (Int.toString (length indexes) ^ " index(es) for relation " 
              ^ Symbol.name a ^ "\n")

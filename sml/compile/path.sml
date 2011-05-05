@@ -1,41 +1,66 @@
-(* Coverage tools *)
+(* Paths into terms, coverage, and generalization *)
 (* Robert J. Simmons *)
 
-(* Currently, this is only used in the complier; no coverage checking is done *)
+structure Path:> sig
 
-structure Coverage':> sig
+   (* Paths uniquely identify positions in terms *)
+   type path = int list 
+
+   (* substPath (p, term, term') substitues term' at location p in term *)
+   (* substPaths (i::p, terms, term') substitues in the i'th term in terms *)
+   (* It is an error if the path doesn't point to an Ast.Var *)
+   val subst: path * 'a Ast.term' * 'a Ast.term' -> 'a Ast.term' 
+   val substs: path * 'a Ast.term' list * 'a Ast.term' -> 'a Ast.term' list
 
    (* A pathtree represents a covering set of patterns over a datatype *)
-   datatype pathtree = 
+   datatype tree = 
       Unsplit of Ast.typ
-    | Split of Ast.typ * pathtree list MapX.map
+    | Split of Ast.typ * tree list MapX.map
     | StringSplit of SetS.set 
     | NatSplit of SetII.set
     | SymbolSplit of SetX.set
 
-   val isUnsplit: pathtree -> bool
+   val isUnsplit: tree -> bool
 
    val makepath: 
-      ('a -> Ast.typ) -> 'a Ast.term' -> pathtree
+      ('a -> Ast.typ) -> 'a Ast.term' -> tree
 
    val extendpath: 
-      ('a -> Ast.typ) -> 'a Ast.term' * pathtree -> pathtree
+      ('a -> Ast.typ) -> 'a Ast.term' * tree -> tree
 
    val extendpaths: 
-      ('a -> Ast.typ) -> 'a Ast.term' list * pathtree list -> pathtree list
+      ('a -> Ast.typ) -> 'a Ast.term' list * tree list -> tree list
 
 end = 
 struct
 
 open Ast
 
+type path = int list
+
+
+(* Substitution *)
+
+fun subst ([], Ast.Var _, term) = term 
+  | subst (path, Ast.Structured (f, terms), term) = 
+    Ast.Structured (f, substs (path, terms, term))
+  | subst _ = raise Fail "substPath invariant"
+
+and substs (i :: path, terms, term) = 
+    List.take (terms, i) 
+    @ [ subst (path, List.nth (terms, i), term) ]
+    @ tl (List.drop (terms, i))
+  | substs _ = raise Fail "substPaths invariant"
+
+
+
 (* We maintain the invariant that these trees are always fully general. 
  * This means that when we split a structured type, we always split 
  * all possible types. Since a full split is impossible for strings, integers,
  * and symbols, these splits are necessarily partial. *)
-datatype pathtree = 
+datatype tree = 
    Unsplit of typ
- | Split of typ * pathtree list MapX.map
+ | Split of typ * tree list MapX.map
  | StringSplit of SetS.set 
  | NatSplit of SetII.set
  | SymbolSplit of SetX.set
@@ -45,7 +70,7 @@ fun isUnsplit (Unsplit _) = true
 
 (* Given an arbitrary term at a given type, split to the point where 
  * it generalizes the term. *)
-fun makepath (typ: 'a -> typ) term: pathtree = 
+fun makepath (typ: 'a -> typ) term = 
    let
       fun subpath (f, terms) (constructor, pathtrees) = 
          let 
