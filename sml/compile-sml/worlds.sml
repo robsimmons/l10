@@ -128,7 +128,7 @@ fun emitInitialInters (w, terms) =
 
       fun handleSubst' prefix postfix (w, n, subst) = 
          emit (prefix ^ nameOfExec (n, 0) 
-               ^ optTuple buildTerm (MapX.listItems subst) ^ " ::")
+               ^ optTuple buildTerm (MapX.listItems subst) ^ postfix)
 
       fun handleRule prefix (n, (w, pat), _) =
          let
@@ -139,8 +139,7 @@ fun emitInitialInters (w, terms) =
             then handleSubst' prefix "::" (w, n, subst)
             else (emit (prefix ^ "(if "
                         ^ String.concatWith " andalso " (map strEq eqs))
-                  ; handleSubst' "   then [ " "]" (w, n, subst)
-                  ; emit "   else []) @")
+                  ; handleSubst' "   then [ " " ] else []) @" (w, n, subst))
          end
 
       fun handleRules [] = false

@@ -13,7 +13,6 @@ struct
 open SMLCompileUtil
 open SMLCompileTypes
 open SMLCompileTerms
-structure CD = CompiledData
 
 fun nameIndex (a, n) = Symbol.name a ^ "_" ^ Int.toString n
 
@@ -204,10 +203,9 @@ fun nameOfShape (a, shape) =
 
 (* *)
 
-fun emitSaturate (rule, point, CD.Normal args) = 
+fun emitSaturate (rule, point, known, Rule.Normal args) = 
    let
-      val {knownBefore, 
-           index, 
+      val {index, 
            inputPattern, 
            outputPattern, 
            constraints, 
@@ -216,7 +214,7 @@ fun emitSaturate (rule, point, CD.Normal args) =
       val indexName = nameOfShape index
       fun aftermap (x, NONE) = Symbol.name x
         | aftermap (x, SOME path) = varPath path
-      val knownBefore = optTuple Symbol.name knownBefore
+      val knownBefore = optTuple Symbol.name known
    in
       emit ""
       ; emit ("and " ^ funName ^ knownBefore ^ " () =")
@@ -235,12 +233,12 @@ fun emitSaturate (rule, point, CD.Normal args) =
         else emit "() (* NEED TO DO CONSTRAINTS *)"
       ; decr ()
    end
-  | emitSaturate (rule, point, CD.Conclusion {knownBefore, facts}) = 
+  | emitSaturate (rule, point, known, Rule.Conclusion {facts}) = 
     let 
     in
        emit ""
        ; emit ("and " ^ nameOfExec (rule, point)
-             ^ optTuple Symbol.name knownBefore ^ " () = (()")
+               ^ optTuple Symbol.name known ^ " () = (()")
        ; incr ()
        ; app (fn (a, terms) => 
                 emit ("; assert" ^ embiggen (Symbol.name a) 
@@ -250,7 +248,14 @@ fun emitSaturate (rule, point, CD.Normal args) =
        ; decr ()
     end
 
-  | emitSaturate (rule, point, _) = ()
+  | emitSaturate (rule, point, known, _) = 
+    let
+    in
+       emit ""
+       ; emit ("and " ^ nameOfExec (rule, point)
+               ^ optTuple Symbol.name known ^ "  () =")
+       ; emit "   raise Fail \"Unimplemented\""
+    end
 
 
 (* STRUCTURE FooTables *)

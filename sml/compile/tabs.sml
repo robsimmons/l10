@@ -22,13 +22,13 @@ val name = "MatchTab")
 (* Compiled Premise Table 
  * Stores instructions for running each premise in isolation. *)
 structure CompiledPremTab:> sig
-   type entry = int * int * CompiledData.prem
+   type entry = int * int * Symbol.symbol list * Rule.compiledPrem
    val reset: unit -> unit
    val bind: entry -> unit
    val lookup: unit -> entry list
 end = struct
 
-   type entry = int * int * CompiledData.prem
+   type entry = int * int * Symbol.symbol list * Rule.compiledPrem
 
    val db: entry list ref = ref []
 

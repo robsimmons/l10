@@ -10,7 +10,6 @@ end =
 struct
 
 open Ast
-structure CD = CompiledData
 
 fun mapi' n [] = []
   | mapi' n (x :: xs) = (n, x) :: mapi' (n+1) xs
@@ -134,9 +133,10 @@ fun makeConstraints (typ, []) = []
 fun indexRule' (w, rule_n, point, known, prems, concs) = 
    case prems of 
       [] => 
-      let val compiled = CD.Conclusion {knownBefore = MapX.listKeys known,
-                                        facts = concs}
-      in CompiledPremTab.bind (rule_n, point, compiled) end
+      let val compiled = Rule.Conclusion {facts = concs}
+      in 
+         CompiledPremTab.bind (rule_n, point, MapX.listKeys known, compiled) 
+      end
 
     | Ast.Normal pat :: prems =>
       let
@@ -151,8 +151,7 @@ fun indexRule' (w, rule_n, point, known, prems, concs) =
          val { index, outputs, paths } = indexPat (known, pat)
 
          val compiled = 
-            { knownBefore = MapX.listKeys known,
-              index = index,
+            { index = index,
               inputPattern =
               MapP.listItemsi (MapP.mapPartial (fn x => x) paths),
               outputPattern =
@@ -168,8 +167,9 @@ fun indexRule' (w, rule_n, point, known, prems, concs) =
       in
          print ("   - learned: " ^ list learned ^ "\n")
          ; print ("   - still needed: " ^ list needed ^ "\n")
-         ; CompiledPremTab.bind (rule_n, point, CD.Normal compiled)
-         ; indexRule' (w, rule_n, point+1, newknown, prems, concs)
+         ; CompiledPremTab.bind 
+              (rule_n, point, MapX.listKeys known, Rule.Normal compiled)
+         ; indexRule' (w, rule_n, point+1, needed, prems, concs)
       end      
 
     | Ast.Negated pat :: prems =>
@@ -180,7 +180,8 @@ fun indexRule' (w, rule_n, point, known, prems, concs) =
          print (" - Negated point #" ^ Int.toString point ^ "\n")
          ; indexPat (known, pat)
          ; print ("   - still needed: " ^ list needed ^ "\n")
-         ; CompiledPremTab.bind (rule_n, point, CD.Placeholder)
+         ; CompiledPremTab.bind 
+              (rule_n, point, MapX.listKeys known, Rule.Placeholder)
          ; indexRule' (w, rule_n, point+1, needed, prems, concs)
       end
 
@@ -195,7 +196,8 @@ fun indexRule' (w, rule_n, point, known, prems, concs) =
       in
          print (" - Comparison point #" ^ Int.toString point ^ "\n")
          ; print ("   - still needed: " ^ list needed ^ "\n")
-         ; CompiledPremTab.bind (rule_n, point, CD.Placeholder)
+         ; CompiledPremTab.bind 
+              (rule_n, point, MapX.listKeys known, Rule.Placeholder)
          ; indexRule' (w, rule_n, point+1, needed, prems, concs)
       end
       
