@@ -20,4 +20,4 @@ Group is
    check/mode.sml
    check/load.sml
 
-   frontend/go.sml
+   frontend/read.sml

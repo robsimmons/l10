@@ -20,14 +20,14 @@ use PredSet.match to selectively query the resulting database of facts.
 
     bash-3.2$ cd l10
     bash-3.2$ sml -m sml/smlten.cm   
-    - Go.readfiles ["examples/EdgePath1.l10"];
+    - Read.file "examples/EdgePath1.l10";
     - val db1 = Deduce.deduceStored "db1";
     - PredSet.printSet db1;
     - Reset.reset ();
-    - Go.readfiles ["examples/Regexp.l10", 
-                    "examples/RegexpQuery.l10", 
-                    "examples/RegexpNot.l10", 
-                    "examples/RegexpNot2.l10"];
+    - Read.files ["examples/Regexp.l10", 
+                  "examples/RegexpQuery.l10", 
+                  "examples/RegexpNot.l10", 
+                  "examples/RegexpNot2.l10"];
     - fun matches db = 
          let 
             open Ast
@@ -45,8 +45,8 @@ use PredSet.match to selectively query the resulting database of facts.
     - matches (Deduce.deduceStored "db3c");
     - matches (Deduce.deduceStored "db4c");
     - Reset.reset ();
-    - Go.readfiles ["examples/ProgAnalysisA.l10", 
-                    "examples/ProgAnalysisB.l10", 
-                    "examples/ProgAnalysisC.l10", 
-                    "examples/ProgAnalysisD.l10", 
-                    "examples/ProgAnalysisE.l10"];
+    - Read.files ["examples/ProgAnalysisA.l10", 
+                  "examples/ProgAnalysisB.l10", 
+                  "examples/ProgAnalysisC.l10", 
+                  "examples/ProgAnalysisD.l10", 
+                  "examples/ProgAnalysisE.l10"];
