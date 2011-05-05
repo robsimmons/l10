@@ -34,7 +34,7 @@ fun emitIndexType a (n, {terms, input, output}) =
       fun emitLookupCases (n, []) = emit ("x" ^ repeat (n, #")"))
         | emitLookupCases (n, (path, typ) :: pathtyps) = 
           (emit ("(case " ^ nameOfMap "find" typ 
-                 ^ " (x, " ^ varPath path ^ ") of") 
+                 ^ " (x, " ^ Path.var path ^ ") of") 
            ; emit ("   NONE => []")
            ; emit (" | SOME x => ")
            ; incr ()
@@ -43,7 +43,7 @@ fun emitIndexType a (n, {terms, input, output}) =
 
       fun emitLookup () = 
         (emit ("fun " ^ name ^ "_lookup (x: " ^ name ^ ", " 
-               ^ tuple (varPath o #1) (rev input) ^ ") = ")
+               ^ tuple (Path.var o #1) (rev input) ^ ") = ")
          ; incr ()
          ; emitLookupCases (0, rev input)
          ; decr ())
@@ -55,24 +55,24 @@ fun emitIndexType a (n, {terms, input, output}) =
         | emitInsertLets (n, (path, typ) :: pathtyps) = 
           (emit ("val y_" ^ Int.toString n ^ " = ")
            ; emit ("   case " ^ nameOfMap "find" typ ^ " (y_" 
-                   ^ Int.toString (n-1) ^ ", " ^ varPath path ^ ") of")
+                   ^ Int.toString (n-1) ^ ", " ^ Path.var path ^ ") of")
            ; emit ("      NONE => " ^ next pathtyps)
            ; emit ("    | SOME y => y")
            ; emitInsertLets (n+1, pathtyps))
 
       fun emitInsertInserts (n, []) = 
-          emit (tuple (varPath o #1) output
+          emit (tuple (Path.var o #1) output
                 ^ " :: y_" ^ Int.toString n
                 ^ repeat (n, #")"))
         | emitInsertInserts (n, (path, typ) :: pathtyps) = 
           (emit (nameOfMap "insert" typ ^ " (y_" ^ Int.toString n ^ ", "
-                 ^ varPath path ^ ",")
+                 ^ Path.var path ^ ",")
            ; emitInsertInserts (n+1, pathtyps))
 
       fun emitInsert () = 
         (emit ("fun " ^ name ^ "_insert (y_0: " ^ name ^ ", "
-               ^ tuple (varPath o #1) (rev input) ^ ", "
-               ^ tuple (varPath o #1) output ^ ") = ")
+               ^ tuple (Path.var o #1) (rev input) ^ ", "
+               ^ tuple (Path.var o #1) output ^ ") = ")
          ; incr ()
          ; emit "let"
          ; incr ()
@@ -103,13 +103,13 @@ fun emitIndexTypes a = app (emitIndexType a) (mapi (rev (IndexTab.lookup a)))
 
 fun emitMatches (a, shapes) [] = 
     let
-       fun filter (n, {terms, input, output}) = genTerms shapes terms
+       fun filter (n, {terms, input, output}) = Path.genTerms shapes terms
        fun emitOne (n, {terms, input, output}) = 
           emit (" ; " ^ Symbol.name a ^ "_" ^ Int.toString n ^ " := "
                 ^ Symbol.name a ^ "_" ^ Int.toString n ^ "_insert (!"
                 ^ Symbol.name a ^ "_" ^ Int.toString n ^ ", "
-                ^ tuple varPath (MapP.listKeys input) ^ ", " 
-                ^ tuple varPath (MapP.listKeys output) ^ ") ")
+                ^ tuple Path.var (MapP.listKeys input) ^ ", " 
+                ^ tuple Path.var (MapP.listKeys output) ^ ") ")
     in
        emit "(cnt := !cnt + 1"
        ; app emitOne (List.filter filter (mapi (rev (IndexTab.lookup a))))
@@ -121,7 +121,7 @@ fun emitMatches (a, shapes) [] =
     let
        val constructors = TypeConTab.lookup typ
     in 
-       emit ("(case " ^ nameOfPrj typ ^ varPath path ^ " of")
+       emit ("(case " ^ nameOfPrj typ ^ Path.var path ^ " of")
        ; appFirst 
           (fn () => emit ("   Void_" ^ embiggen (Symbol.name typ) 
                           ^ " x = abort" ^ embiggen (Symbol.name typ) ^ " x"))
@@ -138,14 +138,14 @@ and emitMatchesCase shape path subtrees pathtree prefix constructor =
       val shape = 
          if null typs then Ast.Const constructor
          else Ast.Structured (constructor, map (fn _ => Ast.Var NONE) typs)
-      val shapes = substPaths (path, shapes, shape)
+      val shapes = Path.substs (path, shapes, shape)
       val new_pathtree = 
          map (fn (i, pathtree) => (path @ [ i ], pathtree))
             (mapi (MapX.lookup (subtrees, constructor)))
    in
       emit (prefix ^ embiggen (Symbol.name constructor) 
             ^ (if null new_pathtree then ""
-               else (" " ^ tuple (varPath o #1) new_pathtree))
+               else (" " ^ tuple (Path.var o #1) new_pathtree))
             ^ " => ")
       ; incr ()
       ; emitMatches (a, shapes) (new_pathtree @ pathtree)
@@ -166,7 +166,7 @@ fun emitAssertion a =
           handle Option => []
    in
       emit ("fun assert" ^ embiggen (Symbol.name a) 
-            ^ " " ^ tuple (varPath o #1) pathtrees ^ " =")
+            ^ " " ^ tuple (Path.var o #1) pathtrees ^ " =")
       ; incr ()
       ; emit ("let"); incr ()
 
@@ -175,7 +175,7 @@ fun emitAssertion a =
       ; incr ()
       ; emit ("if null (" ^ Symbol.name a ^ "_0_lookup (!"
               ^ Symbol.name a ^ "_0, "
-              ^ tuple (varPath o #1) pathtrees ^ "))")
+              ^ tuple (Path.var o #1) pathtrees ^ "))")
       ; emit ("then () else raise Brk")
       ; decr ()
 
@@ -213,7 +213,7 @@ fun emitSaturate (rule, point, known, Rule.Normal args) =
       val funName = nameOfExec (rule, point)
       val indexName = nameOfShape index
       fun aftermap (x, NONE) = Symbol.name x
-        | aftermap (x, SOME path) = varPath path
+        | aftermap (x, SOME path) = Path.var path
       val knownBefore = optTuple Symbol.name known
    in
       emit ""
@@ -225,7 +225,7 @@ fun emitSaturate (rule, point, known, Rule.Normal args) =
       ; decr ()
 
       ; emit ("and " ^ funName ^ "_app" ^ knownBefore 
-              ^ " " ^ tuple varPath outputPattern ^ " =")
+              ^ " " ^ tuple Path.var outputPattern ^ " =")
       ; incr ()
       ; if length constraints = 0 
         then emit (nameOfExec (rule, point+1) 

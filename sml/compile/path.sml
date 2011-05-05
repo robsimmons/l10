@@ -5,6 +5,8 @@ structure Path:> sig
 
    (* Paths uniquely identify positions in terms *)
    type path = int list 
+   val str: int list -> string (* strPath [ 1, 2, 5 ] = 1_2_5 *)
+   val var: int list -> string (* varPath [ 1, 2, 5 ] = x_1_2_5 *)
 
    (* substPath (p, term, term') substitues term' at location p in term *)
    (* substPaths (i::p, terms, term') substitues in the i'th term in terms *)
@@ -31,12 +33,28 @@ structure Path:> sig
    val extendpaths: 
       ('a -> Ast.typ) -> 'a Ast.term' list * tree list -> tree list
 
+   (* Pathtrees can be used to create split-enough terms *)
+   (* Given a shape that is split-enough with respect to the term, genTerm
+    * returns true if the term generalizes the shape. genTerm treats both
+    * the shape and the term as if all variable occurances were linear.
+    *
+    * genTerm (s (s _), s N) = true
+    * genTerm (s (s _), s z) = false 
+    * genTerm (s (s _), s (s (s N)) = FAILS INVARIANT 
+    * genTerm (f (_, _), f(X, X)) = true *)
+   val genTerm: 'a Ast.term' * 'b Ast.term' -> bool
+   val genTerms: 'a Ast.term' list -> 'b Ast.term' list -> bool
+
 end = 
 struct
 
 open Ast
 
 type path = int list
+
+fun str path = String.concatWith "_" (map Int.toString path)
+
+fun var path = "x_" ^ str path
 
 
 (* Substitution *)
@@ -52,6 +70,24 @@ and substs (i :: path, terms, term) =
     @ tl (List.drop (terms, i))
   | substs _ = raise Fail "substPaths invariant"
 
+
+(* Generalization *)
+
+fun genTerm (shape, term) = 
+   case (shape, term) of
+      (_, Ast.Var _) => true
+    | (Ast.Var _, _) => raise Fail "Shape not sufficiently general"
+    | (Ast.Const _, Ast.Structured _) => false
+    | (Ast.Structured _, Ast.Const _) => false
+    | (Ast.Const c, Ast.Const c') => c = c'
+    | (Ast.Structured (f, terms), Ast.Structured (f', terms')) =>
+      f = f' andalso genTerms terms terms'
+    | (Ast.NatConst i, Ast.NatConst i') => i = i'
+    | (Ast.StrConst s, Ast.StrConst s') => s = s'
+    | _ => raise Fail "Typing invariant in shape"
+
+and genTerms shapes terms = 
+   List.all genTerm (ListPair.zipEq (shapes, terms))
 
 
 (* We maintain the invariant that these trees are always fully general. 
