@@ -6,11 +6,6 @@ structure SMLCompileTerms:> sig
    val termsSig: unit -> unit
    val terms: unit -> unit
 
-   (* Give a pattern-matching-ready SML term corresponding to an AST term *)
-   (* XXX note: is this used? 
-    * doesn't make sense with depth-1 patternmatching - RJS 4/28/11 *)
-   val matchTerm: Ast.term -> string
- 
    (* Give a constructing-ready SML term corresponding to an AST term *)
    val buildTerm: Ast.term -> string
 
@@ -60,22 +55,9 @@ fun constructorPattern f (pathvar: 'a pathvar) constructor =
          (strpat, pathvars)
       end
 
-fun termprefix () = getPrefix true "" ^ "Terms."
-
-fun matchTerm term = 
-   case term of
-      Ast.Const x => termprefix () ^ embiggen (Symbol.name x)
-    | Ast.NatConst i => IntInf.toString i
-    | Ast.StrConst s => "\"" ^ String.toCString s ^ "\""
-    | Ast.Structured (f, terms) => 
-      termprefix () ^ embiggen (Symbol.name f) 
-      ^ "(" ^ String.concatWith ", " (map matchTerm terms) ^ ")"
-    | Ast.Var NONE => "_"
-    | Ast.Var (SOME x) => "x_" ^ Symbol.name x
-
 fun buildTerm term = 
    case term of
-      Ast.Const x => (* termprefix () ^ *) embiggen (Symbol.name x) ^ "'"
+      Ast.Const x => embiggen (Symbol.name x) ^ "'"
     | Ast.NatConst i => IntInf.toString i
     | Ast.StrConst s => "\"" ^ String.toCString s ^ "\""
     | Ast.Structured (f, terms) => 
@@ -133,67 +115,63 @@ val pathTerms = fn terms =>
       (terms, MapX.map (Ast.Var o SOME) subst, eqs) 
    end
 
+
+
 (* The fundamental view datatype *)
+
 fun emitView isRec x = 
    let
       val () = emit ""
       val name = nameOfType x
       val view = nameOfView x
       fun keyword isRec = if isRec then "and" else "datatype"
-      fun args NONE = raise Domain
-        | args (SOME ([], _)) = ""
-        | args (SOME (types, _)) =
+      fun args ([], _) = ""
+        | args (types, _) =
           " of " ^ String.concatWith " * " (map nameOfType types)
-      fun emitCases [] = 
-          (emit (keyword isRec ^ " " ^ view ^ " =")
-           ; emit ("   Void_" ^ embiggen name ^ " of " ^ view))
-        | emitCases [ constructor ] = 
-          (emit (keyword isRec ^ " " ^ view ^ " =")
-           ; emit ("   " ^ embiggen (Symbol.name constructor) 
-                   ^ args (ConTab.lookup constructor)))
-        | emitCases (constructor :: constructors) = 
-          (emitCases constructors
-           ; emit (" | " ^ embiggen (Symbol.name constructor)
-                   ^ args (ConTab.lookup constructor)))
+      fun emitVoid () = 
+          emit ("   Void_" ^ embiggen name ^ " of " ^ view)
+      fun emitCase prefix constructor = 
+          emit (prefix ^ embiggen (Symbol.name constructor) 
+                ^ args (valOf (ConTab.lookup constructor)))
    in
-      emitCases (TypeConTab.lookup x)
+      emit (keyword isRec ^ " " ^ view ^ " =")
+      ; appFirst emitVoid emitCase ("   ", " | ") (rev (TypeConTab.lookup x))
    end
 
 
+
 (* SML doesn't handle empty types well, so we write an abort function *)
+
 fun emitAbortSig x = 
    if null (TypeConTab.lookup x) 
-   then emit ("val abort" ^ NameOfType x ^ ": "
-              ^ nameOfView x ^ " -> 'a")
+   then emit ("val abort" ^ bigName x ^ ": "^ nameOfView x ^ " -> 'a")
    else ()
 
 fun emitAbort x = 
    if null (TypeConTab.lookup x)
-   then (emit ("fun abort" ^ NameOfType x ^ " (Void_" ^ NameOfType x ^ " x) = "
-               ^ "abort" ^ NameOfType x ^ " x"))
+   then (emit ("fun abort" ^ bigName x ^ " (Void_" ^ bigName x ^ " x) = "
+               ^ "abort" ^ bigName x ^ " x"))
    else ()
 
 
 (* Projection functions: quite simple in this implementation *)
+
 fun emitPrj x = 
-   let 
-      val Name = embiggen (nameOfType x)
-   in
-      emit ("fun prj" ^ Name ^ " (inj" ^ Name ^ " x) = x")
-   end
+   emit ("fun prj" ^ bigName x ^ " (inj" ^ bigName x ^ " x) = x")
+
 
 (* Injecting versions of each of the constructors *)
+
 fun emitInjSig x = 
    let
       val name = nameOfType x
       fun emitSingle constructor = 
          let 
             val args = map nameOfType (#1 (valOf (ConTab.lookup constructor)))
-            val constructor = embiggen (Symbol.name constructor) 
          in
             if null args 
-            then emit ("val " ^ constructor ^ "': " ^ name)
-            else emit ("val " ^ constructor ^ "': " 
+            then emit ("val " ^ bigName constructor ^ "': " ^ name)
+            else emit ("val " ^ bigName constructor ^ "': " 
                        ^ String.concatWith " * " args ^ " -> " ^ name)
          end
    in
@@ -202,24 +180,23 @@ fun emitInjSig x =
 
 fun emitInj x = 
    let
-      val Name = embiggen (nameOfType x)
       fun emitSingle constructor = 
          let 
             val args = map nameOfType (#1 (valOf (ConTab.lookup constructor)))
-            val constructor = embiggen (Symbol.name constructor) 
          in
             if null args 
-            then emit ("val " ^ constructor ^ "' = " 
-                       ^ "inj" ^ Name ^ " " ^ constructor)
-            else emit ("val " ^ constructor ^ "' = "
-                       ^ "inj" ^ Name ^ " o " ^ constructor)
+            then emit ("val " ^ bigName constructor ^ "' = " 
+                       ^ "inj" ^ bigName x ^ " " ^ bigName constructor)
+            else emit ("val " ^ bigName constructor ^ "' = "
+                       ^ "inj" ^ bigName x ^ " o " ^ bigName constructor)
          end
    in
-      app emitSingle (TypeConTab.lookup x)
+      app emitSingle (rev (TypeConTab.lookup x))
    end
 
 
-(* Emit the toString function *)
+(* The toString function *)
+
 fun emitStr x = 
    let 
       val name = nameOfType x
@@ -244,21 +221,19 @@ fun emitStr x =
             ; decr ()
          end handle Brk => ()
 
-      fun emitCases [] = (emit ("   x => abort" ^ Name ^ " x"))
-        | emitCases [ constructor ] = emitCase "   " constructor
-        | emitCases (constructor :: constructors) = 
-          (emitCases constructors; emitCase " | " constructor)
-           
    in
       emit ""
       ; emit ("and str" ^ Name ^ " x_ = ")
       ; incr ()
       ; emit ("case prj" ^ Name ^ " x_ of")
-      ; emitCases (rev (TypeConTab.lookup x))
+      ; appFirst (fn () => emit ("   x => abort" ^ Name ^ " x")) emitCase
+           ("   ", " | ") (rev (TypeConTab.lookup x))
       ; decr ()
    end
 
-(* Emit the unzip/sub functions *)
+
+(* The unzip/sub functions *)
+
 fun emitMapHeader kind = 
    let in
       emit ""
@@ -267,6 +242,7 @@ fun emitMapHeader kind =
       ; emit ("fun " ^ kind ^ "Nat x_ = DiscMap." ^ kind ^ "II x_\n")
       ; emit ("fun " ^ kind ^ "String x_ = DiscMap." ^ kind ^ "S x_\n")
    end
+
 
 fun emitMapHelper kind x = 
    let
@@ -306,7 +282,9 @@ fun emitMapHelper kind x =
       ; emit ""
    end
 
+
 (* Use the unzip/sub functions to implement maps *)
+
 fun emitMap x = 
    let
       val name = nameOfType x
@@ -320,7 +298,9 @@ fun emitMap x =
       ; emit ("end)\n")
    end
 
-(* Emit the equality function (relies on the fact that we've got data) *)
+
+(* Emit the equality function (warning: calling polyequal) *)
+
 fun emitEq x = 
    let 
       val name = nameOfType x
@@ -329,7 +309,9 @@ fun emitEq x =
       emit ("fun eq" ^ Name ^ " (x: " ^ name ^ ") (y: " ^ name ^ ") = x = y")
    end
 
+
 (* Emit the signature parts associated with a type *)
+
 fun emitSig x = 
    let
       val name = nameOfType x
@@ -349,6 +331,9 @@ fun emitSig x =
               ^ ": ORD_MAP where type Key.ord_key = " ^ name) *)
    end
 
+
+(* SIGNATURE FOO_TERMS *)
+
 fun termsSig () = 
    let
       val types = TypeTab.list ()
@@ -367,6 +352,9 @@ fun termsSig () =
       ; decr ()
       ; emit "end"
    end
+
+
+(* SIGNATURE FooTerms *)
 
 fun terms () = 
    let

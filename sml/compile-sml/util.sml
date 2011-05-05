@@ -56,6 +56,7 @@ structure SMLCompileUtil:> sig
       -> unit 
    val mapi: 'a list -> (int * 'a) list (* Annotate a list with ints *)
    val repeat: int * char -> string     (* Length n string of chars  *)
+   val bigName: Symbol.symbol -> string (* embiggen o Symbol.name    *)
 
 end = 
 struct
@@ -92,6 +93,9 @@ fun embiggen s =
                        ^ "first character '" ^ str fst ^ "'")
       else str (Char.toUpper fst) ^ rest
    end
+
+val bigName = embiggen o Symbol.name
+
 
 fun setPrefix str = 
    if List.all Char.isAlphaNum (explode str)
