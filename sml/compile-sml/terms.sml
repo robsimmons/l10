@@ -61,9 +61,9 @@ fun buildTerm term =
     | Ast.StrConst s => "\"" ^ String.toCString s ^ "\""
     | Ast.Structured (f, terms) => 
       if f = ConTab.plus 
-      then buildTerm (hd terms) ^ " + " ^ buildTerm (hd (tl terms))
-      else embiggen (Symbol.name f)  ^ "' "
-           ^ "(" ^ String.concatWith ", " (map buildTerm terms) ^ ")"
+      then "(" ^ buildTerm (hd terms) ^ " + " ^ buildTerm (hd (tl terms)) ^ ")"
+      else 
+        "(" ^ embiggen (Symbol.name f)  ^ "'" ^ optTuple buildTerm terms ^ ")"
     | Ast.Var NONE => raise Fail "Building term with unknown part"
     | Ast.Var (SOME x) => Symbol.name x
 

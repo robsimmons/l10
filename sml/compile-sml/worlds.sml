@@ -12,6 +12,8 @@ open SMLCompileUtil
 open SMLCompileTypes
 open SMLCompileTerms
 
+(* Emit the correct seek functions *) 
+
 fun emitWorldSig world = 
    let
       val Name = embiggen (Symbol.name world)
@@ -32,9 +34,7 @@ fun emitWorldSig world =
 fun seekWorld (world, args) =
    let 
       val Name = embiggen (Symbol.name world)
-      val strargs = 
-          if null args then ""
-          else " (" ^ String.concatWith ", " (map buildTerm args) ^ ")"
+      val strargs = optTuple buildTerm args
    in "seek" ^ Name ^ strargs end
 
 type pathConstructorVar = (Symbol.symbol * Coverage.pathtree list) pathvar
