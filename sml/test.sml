@@ -3,10 +3,11 @@ CM.make "sml/elton.cm";
 fun smlfile name = "/tmp/" ^ SMLCompileUtil.getPrefix false "." ^ name ^ ".sml";
 
 fun test (prefix, files) = 
-  (ResetElton.reset ()
+  (CompilerState.reset ()
    ; SMLCompileUtil.setPrefix prefix
    ; Read.files files
-   ; Indexing.index ()
+   ; CompilerState.load ()
+   (* ; Indexing.index () *)
    (* ; SMLCompileTerms.termsSig () *)
    ; SMLCompileUtil.write (smlfile "terms-sig") SMLCompileTerms.termsSig
    ; SMLCompileUtil.write (smlfile "terms") SMLCompileTerms.terms
