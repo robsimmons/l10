@@ -2,9 +2,8 @@
 
 structure SMLCompileTerms:> sig
 
-   (* Effects *)
-   val termsSig: unit -> unit
-   val terms: unit -> unit
+   val termsSig: unit -> unit (* signature FOO_TERMS *)
+   val terms: unit -> unit    (* structure FooTerms *) 
 
    (* Give a constructing-ready SML term corresponding to an AST term *)
    val buildTerm: Ast.term -> string
@@ -354,7 +353,7 @@ fun termsSig () =
    end
 
 
-(* SIGNATURE FooTerms *)
+(* Structure FooTerms *)
 
 fun terms () = 
    let

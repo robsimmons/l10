@@ -10,28 +10,28 @@ fun test (prefix, files) =
    (* ; SMLCompileTerms.termsSig () *)
    ; SMLCompileUtil.write (smlfile "terms-sig") SMLCompileTerms.termsSig
    ; SMLCompileUtil.write (smlfile "terms") SMLCompileTerms.terms
-   ; SMLCompileUtil.write (smlfile "deduce") SMLCompileDeduce.deduce
+   ; SMLCompileUtil.write (smlfile "tables") SMLCompileTables.tables
    ; SMLCompileUtil.write (smlfile "worlds-sig") SMLCompileWorlds.worldsSig
    ; SMLCompileUtil.write (smlfile "worlds") SMLCompileWorlds.worlds);
 
 test ("b3", [ "examples/Back3.l10" ]);
 use (smlfile "terms-sig");
 use (smlfile "terms");
-use (smlfile "deduce");
+use (smlfile "tables");
 use (smlfile "worlds-sig");
 use (smlfile "worlds");
 
 test ("plus", [ "examples/Plus.l10" ]);
 use (smlfile "terms-sig");
 use (smlfile "terms");
-use (smlfile "deduce");
+use (smlfile "tables");
 use (smlfile "worlds-sig");
 use (smlfile "worlds");
 
 test ("l10", [ "examples/self/ast.l10" ]);
 use (smlfile "terms-sig");
 use (smlfile "terms");
-use (smlfile "deduce");
+use (smlfile "tables");
 use (smlfile "worlds-sig");
 use (smlfile "worlds");
 
@@ -41,7 +41,7 @@ use (smlfile "worlds");
               "examples/RegexpNot2.l10" ]);
 use (smlfile "terms-sig");
 use (smlfile "terms");
-use (smlfile "deduce");
+use (smlfile "tables");
 use (smlfile "worlds-sig");
 use (smlfile "worlds");
 
@@ -52,21 +52,21 @@ test ("pa", [ "examples/ProgAnalysisA.l10",
               "examples/ProgAnalysisE.l10" ]);
 use (smlfile "terms-sig");
 use (smlfile "terms");
-use (smlfile "deduce");
+use (smlfile "tables");
 use (smlfile "worlds-sig");
 use (smlfile "worlds");
 
 test ("wr", [ "regression/worldrule.l10" ]);
 use (smlfile "terms-sig");
 use (smlfile "terms");
-use (smlfile "deduce");
+use (smlfile "tables");
 use (smlfile "worlds-sig");
 use (smlfile "worlds");
 
 test ("t", [ "regression/tree.l10" ]);
 use (smlfile "terms-sig");
 use (smlfile "terms");
-use (smlfile "deduce");
+use (smlfile "tables");
 use (smlfile "worlds-sig");
 use (smlfile "worlds"); 
 open TTerms;

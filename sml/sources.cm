@@ -48,5 +48,5 @@ Group is
    compile-sml/util.sml
    compile-sml/types.sml
    compile-sml/terms.sml 
+   compile-sml/tables.sml
    compile-sml/worlds.sml
-   compile-sml/deduce.sml

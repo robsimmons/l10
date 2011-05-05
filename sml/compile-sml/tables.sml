@@ -1,10 +1,11 @@
 (* Robert J. Simmons *)
 
-structure SMLCompileDeduce:> sig
+structure SMLCompileTables:> sig
 
-   val deduce: unit -> unit
+   (* structure FooTables *)
+   val tables: unit -> unit
+
    val nameIndex: Symbol.symbol * int -> string
-   val nameSaturate: Symbol.symbol * int * int -> string
 
 end = 
 struct
@@ -12,11 +13,6 @@ struct
 open SMLCompileUtil
 open SMLCompileTypes
 open SMLCompileTerms
-
-fun nameSaturate (w, rule, point) = 
-   "saturate" ^ embiggen (Symbol.name w) 
-   ^ "_" ^ Int.toString rule
-   ^ (if point = 0 then "" else ("_" ^ Int.toString point))
 
 fun nameIndex (a, n) = Symbol.name a ^ "_" ^ Int.toString n
 
@@ -126,21 +122,16 @@ fun emitMatches (a, shapes) [] =
        val constructors = TypeConTab.lookup typ
     in 
        emit ("(case " ^ nameOfPrj typ ^ varPath path ^ " of")
-       ; emitMatchCases "   " shape path typ subtrees pathtree constructors
+       ; appFirst 
+          (fn () => emit ("   Void_" ^ embiggen (Symbol.name typ) 
+                          ^ " x = abort" ^ embiggen (Symbol.name typ) ^ " x"))
+          (emitMatchesCase shape path subtrees pathtree)
+          ("   ", " | ") constructors
        ; emit ")"
     end
   | emitMatches shape _ = raise Fail "Unimplemented form of splitting"
 
-and emitMatchCases prefix shape path typ subtrees pathtree [] = 
-    emit (prefix ^ "Void_" ^ embiggen (Symbol.name typ) 
-          ^ " x = abort" ^ embiggen (Symbol.name typ) ^ " x")
-  | emitMatchCases prefix shape path typ subtrees pathtree [ c ] = 
-    emitMatchCase prefix shape path subtrees pathtree c
-  | emitMatchCases prefix shape path typ subtrees pathtree (c :: cs) =
-    (emitMatchCases prefix shape path typ subtrees pathtree cs
-     ; emitMatchCase " | " shape path subtrees pathtree c)
-
-and emitMatchCase prefix shape (path: int list) subtrees pathtree constructor = 
+and emitMatchesCase shape path subtrees pathtree prefix constructor = 
    let 
       val (a, shapes) = shape
       val typs = #1 (valOf (ConTab.lookup constructor))
@@ -161,7 +152,11 @@ and emitMatchCase prefix shape (path: int list) subtrees pathtree constructor =
       ; decr ()
    end
 
-fun emitMatching a = 
+
+(* ASSERTION *)
+(* Checks for the presence of a fact, indexes it if it's new. *)
+
+fun emitAssertion a = 
    let
       val typs = map #2 (#1 (valOf (RelTab.lookup a)))
       val shape = (a, map (fn _ => Ast.Var NONE) typs)
@@ -190,6 +185,9 @@ fun emitMatching a =
       ; decr ()
    end 
 
+
+(* Helper function: looks up a shape in the signature by brute force *)
+
 fun nameOfShape (a, shape) = 
    let 
       val shapes = mapi (rev (map #terms (IndexTab.lookup a)))
@@ -202,6 +200,9 @@ fun nameOfShape (a, shape) =
       find (shape, shapes) 
    end
 
+
+(* *)
+
 fun emitSaturate w (rule, point, Compiled.Normal args) = 
    let
       val {knownBefore, 
@@ -210,7 +211,7 @@ fun emitSaturate w (rule, point, Compiled.Normal args) =
            outputPattern, 
            constraints, 
            knownAfterwards} = args
-      val funName = nameSaturate (w, rule, point)
+      val funName = nameOfExec (rule, point)
       val indexName = nameOfShape index
       fun aftermap (x, NONE) = Symbol.name x
         | aftermap (x, SOME path) = varPath path
@@ -228,7 +229,7 @@ fun emitSaturate w (rule, point, Compiled.Normal args) =
               ^ " " ^ tuple varPath outputPattern ^ " =")
       ; incr ()
       ; if length constraints = 0 
-        then emit (nameSaturate (w, rule, point+1) 
+        then emit (nameOfExec (rule, point+1) 
                    ^ optTuple aftermap knownAfterwards ^ " ()")
         else emit "() (* NEED TO DO CONSTRAINTS *)"
       ; decr ()
@@ -237,7 +238,7 @@ fun emitSaturate w (rule, point, Compiled.Normal args) =
     let 
     in
        emit ""
-       ; emit ("and " ^ nameSaturate (w, rule, point)
+       ; emit ("and " ^ nameOfExec (rule, point)
              ^ optTuple Symbol.name knownBefore ^ " () = (()")
        ; incr ()
        ; app (fn (a, terms) => 
@@ -250,13 +251,14 @@ fun emitSaturate w (rule, point, Compiled.Normal args) =
 
   | emitSaturate w (rule, point, _) = ()
 
-fun emitSaturates w = app (emitSaturate w) (rev (InterTab.lookup w))
 
-fun deduce () = 
+(* STRUCTURE FooTables *)
+
+fun tables () = 
    let 
       val worlds = WorldTab.list ()
    in 
-      emit ("structure " ^ getPrefix true "" ^ "Deduce =")
+      emit ("structure " ^ getPrefix true "" ^ "Tables =")
       ; emit "struct"
       ; incr ()
       ; emit ("open " ^ getPrefix true "" ^ "Terms\n") 
@@ -265,10 +267,10 @@ fun deduce () =
       ; app emitIndexTypes (IndexTab.list ())
       ; emit "(* Term matching *)\n"
       ; emit "exception Brk\n"
-      ; app emitMatching (RelTab.list ())
+      ; app emitAssertion (RelTab.list ())
       ; emit "(* Eager run-saturation functions for the McAllester loop *)\n"
       ; emit "fun fake () = ()"
-      ; app emitSaturates worlds
+      ; app (fn w => app (emitSaturate w) (rev (InterTab.lookup w))) worlds
       ; decr ()
       ; emit "end"
    end

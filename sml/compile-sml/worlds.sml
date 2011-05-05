@@ -127,7 +127,7 @@ fun emitInitialInters (w, terms) =
       val typs = valOf (WorldTab.lookup w)
 
       fun handleSubst' prefix postfix (w, n, subst) = 
-         emit (prefix ^ SMLCompileDeduce.nameSaturate (w, n, 0) 
+         emit (prefix ^ nameOfExec (n, 0) 
                ^ optTuple buildTerm (MapX.listItems subst) ^ " ::")
 
       fun handleRule prefix (n, (w, pat), _) =
@@ -315,7 +315,7 @@ fun worlds () =
       ; emit "struct"
       ; incr ()
       ; emit ("open " ^ getPrefix true "" ^ "Terms")
-      ; emit ("open " ^ getPrefix true "" ^ "Deduce\n")
+      ; emit ("open " ^ getPrefix true "" ^ "Tables\n")
 
       ; emit ("fun loop fs = if !cnt = (app (fn f => f ()) fs; !cnt) " 
               ^ "then () else loop fs")

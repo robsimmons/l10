@@ -57,6 +57,7 @@ structure SMLCompileUtil:> sig
    val mapi: 'a list -> (int * 'a) list (* Annotate a list with ints *)
    val repeat: int * char -> string     (* Length n string of chars  *)
    val bigName: Symbol.symbol -> string (* embiggen o Symbol.name    *)
+   val nameOfExec: int * int -> string
 
 end = 
 struct
@@ -173,5 +174,9 @@ fun genTerm (shape, term) =
 
 and genTerms shapes terms = 
    List.all genTerm (ListPair.zipEq (shapes, terms))
+
+
+fun nameOfExec (n, 0) = "exec" ^ Int.toString n
+  | nameOfExec (n, m) = "exec" ^ Int.toString n ^ "_" ^ Int.toString m
 
 end
