@@ -276,12 +276,13 @@ fun emitWorld world =
       ; emit ("val () = if isSome (MapWorld.find (worldmap, w))")
       ; emit ("         then raise Revisit else ()")
       ; emit ("val worldmap = MapWorld.insert (worldmap, w, ())" )
-      ; emit ("val (child_searches, inters0) = ")
+      ; emit ("val (child_searches, rulefns) = ")
       ; incr ()
       ; emitCase (world, startingTerms) (filterUnsplit pathTreeVars)
       ; decr ()
       ; emit ("val worldmap' = child_searches worldmap")
       ; reportworld ()
+      ; emit ("val () = loop rulefns")
       ; decr ()
       ; emit ("in")
       ; incr ()
@@ -315,6 +316,10 @@ fun worlds () =
       ; incr ()
       ; emit ("open " ^ getPrefix true "" ^ "Terms")
       ; emit ("open " ^ getPrefix true "" ^ "Deduce\n")
+
+      ; emit ("fun loop fs = if !cnt = (app (fn f => f ()) fs; !cnt) " 
+              ^ "then () else loop fs")
+
       ; emit ("exception Revisit\n")
       ; emit "fun fake () = ()\n"
       ; app emitWorld worlds
