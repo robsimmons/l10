@@ -98,75 +98,32 @@ fun emitIndexType a (n, {terms, input, output}) =
 fun emitIndexTypes a = app (emitIndexType a) (mapi (rev (IndexTab.lookup a)))
 
 
-
-(* MATCHES *)
-(* Deep matching relations to create the indexing structure *)
-
-fun emitMatches (a, shapes) [] = 
-    let
-       fun filter (n, {terms, input, output}) = Path.genTerms shapes terms
-       fun emitOne (n, {terms, input, output}) = 
-          emit (" ; " ^ Symbol.name a ^ "_" ^ Int.toString n ^ " := "
-                ^ Symbol.name a ^ "_" ^ Int.toString n ^ "_insert (!"
-                ^ Symbol.name a ^ "_" ^ Int.toString n ^ ", "
-                ^ tuple Path.var (MapP.listKeys input) ^ ", " 
-                ^ tuple Path.var (MapP.listKeys output) ^ ") ")
-    in
-       emit "(cnt := !cnt + 1"
-       ; app emitOne (List.filter filter (mapi (rev (IndexTab.lookup a))))
-       ; emit ")"
-    end
-  | emitMatches shape ((path, Path.Unsplit _) :: pathtree) =
-    emitMatches shape pathtree
-  | emitMatches shape ((path, Path.Split (typ, subtrees)) :: pathtree) =
-    let val constructors = TypeConTab.lookup typ
-    in 
-       emit ("(case " ^ nameOfPrj typ ^ Path.var path ^ " of")
-       ; appFirst 
-          (fn () => emit ("   Void_" ^ NameOfType typ 
-                          ^ " x = abort" ^ NameOfType typ ^ " x"))
-          (emitMatchesCase shape path subtrees pathtree)
-          ("   ", " | ") constructors
-       ; emit ")"
-    end
-  | emitMatches shape _ = raise Fail "Unimplemented form of splitting"
-
-and emitMatchesCase shape path subtrees pathtree prefix constructor = 
-   let 
-      val (a, shapes) = shape
-      val typs = #1 (ConTab.lookup constructor)
-      val shape = 
-         if null typs then Ast.Const constructor
-         else Ast.Structured (constructor, map (fn _ => Ast.Var NONE) typs)
-      val shapes = Path.substs (path, shapes, shape)
-      val new_pathtree = 
-         map (fn (i, pathtree) => (path @ [ i ], pathtree))
-            (mapi (MapX.lookup (subtrees, constructor)))
-   in
-      emit (prefix ^ embiggen (Symbol.name constructor) 
-            ^ (if null new_pathtree then ""
-               else (" " ^ tuple (Path.var o #1) new_pathtree))
-            ^ " => ")
-      ; incr ()
-      ; emitMatches (a, shapes) (new_pathtree @ pathtree)
-      ; decr ()
-   end
-
-
 (* ASSERTION *)
 (* Checks for the presence of a fact, indexes it if it's new. *)
 
 fun emitAssertion a = 
    let
+     fun populateIndexes shapes = 
+        let
+           fun filter (n, {terms, input, output}) = Path.genTerms shapes terms
+           fun emitOne (n, {terms, input, output}) = 
+              emit (" ; " ^ Symbol.name a ^ "_" ^ Int.toString n ^ " := "
+                    ^ Symbol.name a ^ "_" ^ Int.toString n ^ "_insert (!"
+                    ^ Symbol.name a ^ "_" ^ Int.toString n ^ ", "
+                    ^ tuple Path.var (MapP.listKeys input) ^ ", " 
+                    ^ tuple Path.var (MapP.listKeys output) ^ ") ")
+        in
+           emit "(cnt := !cnt + 1"
+           ; app emitOne (List.filter filter (mapi (rev (IndexTab.lookup a))))
+           ; emit ")"
+        end
+
       val typs = map #2 (#1 (RelTab.lookup a))
-      val shape = (a, map (fn _ => Ast.Var NONE) typs)
-      val pathtrees = 
-         map (fn (i, pathtree) => ([ i ], pathtree)) 
-            (mapi (RelMatchTab.lookup a))
+      val pathtrees = valOf (RelMatchTab.find a)
           handle Option => []
+      val tuple = tuple (fn (i, _) => Path.var [ i ]) (mapi pathtrees)
    in
-      emit ("fun assert" ^ embiggen (Symbol.name a) 
-            ^ " " ^ tuple (Path.var o #1) pathtrees ^ " =")
+      emit ("fun assert" ^ embiggen (Symbol.name a) ^ " " ^ tuple ^ " =")
       ; incr ()
       ; emit ("let"); incr ()
 
@@ -174,13 +131,12 @@ fun emitAssertion a =
       ; emit ("val () = ")
       ; incr ()
       ; emit ("if null (" ^ Symbol.name a ^ "_0_lookup (!"
-              ^ Symbol.name a ^ "_0, "
-              ^ tuple (Path.var o #1) pathtrees ^ "))")
+              ^ Symbol.name a ^ "_0, " ^ tuple ^ "))")
       ; emit ("then () else raise Brk")
       ; decr ()
 
       ; decr (); emit ("in"); incr ()
-      ; emitMatches shape pathtrees
+      ; caseConstructor populateIndexes pathtrees
       ; decr (); emit ("end handle Brk => () (* Duplicate assertion *)\n")
       ; decr ()
    end 

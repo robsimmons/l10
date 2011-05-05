@@ -23,6 +23,12 @@ structure SMLCompileTypes:> sig
    val nameOfEq: Symbol.symbol * string * string -> string
    val nameOfMap: string -> Symbol.symbol -> string
 
+   (* Utility for doing arbitrary-depth matching over pathtrees *)
+   val caseConstructor: 
+      (Ast.shapeTerm list -> unit)      (* Act, given a general shape *)
+      -> Path.tree list                 (* Initial list of pathtrees *)
+      -> unit
+
 end = 
 struct
 
@@ -86,5 +92,47 @@ fun nameOfMap thing x =
    else if x = TypeTab.nat then ("MapII." ^ thing)
    else if x = TypeTab.string then ("MapS." ^ thing)
    else ("Map" ^ embiggen (Symbol.name x) ^ "." ^ thing)
+
+fun caseConstructor f pathtree = 
+   let 
+      fun emitSplits shapes pathtree = 
+         case pathtree of 
+            [] => f shapes
+          | (path, Path.Unsplit _) :: pathtree => emitSplits shapes pathtree
+          | (path, Path.Split (typ, subtrees)) :: pathtree => 
+            let val constructors = TypeConTab.lookup typ in
+               emit ("(case " ^ nameOfPrj typ ^ Path.var path ^ " of")
+               ; appFirst 
+                  (fn () => emit ("   Void_" ^ NameOfType typ 
+                                  ^ " x = abort" ^ NameOfType typ ^ " x"))
+                  (emitCases shapes path subtrees pathtree)
+                  ("   ", " | ") constructors
+               ; emit ")"
+            end
+          | _ => raise Fail "Unimplemented form of splitting"
+
+      and emitCases shapes path subtrees pathtree prefix constructor = 
+         let
+            val typs = #1 (ConTab.lookup constructor)
+            val shape =
+               if null typs then Ast.Const constructor
+               else Ast.Structured (constructor, map (fn _ => Ast.Var ()) typs)
+            val new_shapes = Path.substs (path, shapes, shape)
+            val new_pathtree = 
+               map (fn (i, a) => (path @ [ i ], a))
+                  (mapi (MapX.lookup (subtrees, constructor)))
+         in
+            emit (prefix ^ embiggen (Symbol.name constructor) 
+                  ^ optTuple (Path.var o #1) new_pathtree ^ " => ")
+            ; incr ()
+            ; emitSplits new_shapes (new_pathtree @ pathtree)
+            ; decr ()
+         end
+   in 
+      emitSplits 
+         (map (fn _ => Ast.Var ()) pathtree)
+         (map (fn (i, a) => ([ i ], a)) (mapi pathtree))
+   end
+
 
 end
