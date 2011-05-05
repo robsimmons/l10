@@ -9,13 +9,12 @@ Group is
    util/multitab.sml
    util/sets-maps.sml
 
-   core/basicterm.sml
-   core/ast-sig.sml
-   core/ast.sml
-
-   parse/l10.lex
-   parse/l10.grm
-   parse/parse.sml
+   syntax/basicterm.sml
+   syntax/ast-sig.sml
+   syntax/ast.sml
+   syntax/l10.lex
+   syntax/l10.grm
+   syntax/parse.sml
 
    check/tabs.sml
    check/types.sml
