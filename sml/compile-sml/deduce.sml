@@ -12,12 +12,8 @@ fun nameSaturate (w, rule, point) =
 
 fun nameIndex (a, n) = Symbol.name a ^ "_" ^ Int.toString n
 
-fun inputPattern [] = "()"
-  | inputPattern [ path ] = varPath path
-  | inputPattern paths = 
-    "(" ^ String.concatWith ", " (map varPath paths) ^ ")"
 
-
+(* INDEX TYPE *)
 (* Given an index, declares type, creates reference, writes helper functions *)
 
 fun emitIndexType a (n, {terms, input, output}) = 
@@ -43,7 +39,7 @@ fun emitIndexType a (n, {terms, input, output}) =
 
       fun emitLookup () = 
         (emit ("fun " ^ name ^ "_lookup (x: " ^ name ^ ", " 
-               ^ inputPattern (rev (map #1 input)) ^ ") = ")
+               ^ tuple (varPath o #1) (rev input) ^ ") = ")
          ; incr ()
          ; emitLookupCases (0, rev input)
          ; decr ())
@@ -61,7 +57,7 @@ fun emitIndexType a (n, {terms, input, output}) =
            ; emitInsertLets (n+1, pathtyps))
 
       fun emitInsertInserts (n, []) = 
-          emit (inputPattern (map #1 output)
+          emit (tuple (varPath o #1) output
                 ^ " :: y_" ^ Int.toString n
                 ^ repeat (n, #")"))
         | emitInsertInserts (n, (path, typ) :: pathtyps) = 
@@ -71,8 +67,8 @@ fun emitIndexType a (n, {terms, input, output}) =
 
       fun emitInsert () = 
         (emit ("fun " ^ name ^ "_insert (y_0: " ^ name ^ ", "
-               ^ inputPattern (rev (map #1 input)) ^ ", "
-               ^ inputPattern (map #1 output) ^ ") = ")
+               ^ tuple (varPath o #1) (rev input) ^ ", "
+               ^ tuple (varPath o #1) output ^ ") = ")
          ; incr ()
          ; emit "let"
          ; incr ()
@@ -96,35 +92,9 @@ fun emitIndexType a (n, {terms, input, output}) =
 
 fun emitIndexTypes a = app (emitIndexType a) (mapi (rev (IndexTab.lookup a)))
 
-fun substPath ([], Ast.Var NONE, term) = term 
-  | substPath (path, Ast.Structured (f, terms), term) = 
-    Ast.Structured (f, substPaths (path, terms, term))
-  | substPath _ = raise Fail "substPath invariant"
 
-and substPaths (i :: path, terms, term) = 
-    List.take (terms, i) 
-    @ [ substPath (path, List.nth (terms, i), term) ]
-    @ tl (List.drop (terms, i))
-  | substPaths _ = raise Fail "substPaths invariant"
 
-(* Checking to see if a moded term fits a particular shape *)
-
-fun genTerm (shape, term) = 
-   case (shape, term) of
-      (_, ModedTerm.Var _) => true
-    | (Ast.Var _, _) => raise Fail "Shape not sufficiently general"
-    | (Ast.Const _, ModedTerm.Structured _) => false
-    | (Ast.Structured _, ModedTerm.Const _) => false
-    | (Ast.Const c, ModedTerm.Const c') => c = c'
-    | (Ast.Structured (f, terms), ModedTerm.Structured (f', terms')) =>
-      f = f' andalso genTerms terms terms'
-    | (Ast.NatConst i, ModedTerm.NatConst i') => i = i'
-    | (Ast.StrConst s, ModedTerm.StrConst s') => s = s'
-    | _ => raise Fail "Typing invariant in shape"
-
-and genTerms shapes terms = 
-   List.all genTerm (ListPair.zipEq (shapes, terms))
-
+(* MATCHES *)
 (* Deep matching relations to create the indexing structure *)
 
 fun emitMatches (a, shapes) [] = 
@@ -134,8 +104,8 @@ fun emitMatches (a, shapes) [] =
           emit (" ; " ^ Symbol.name a ^ "_" ^ Int.toString n ^ " := "
                 ^ Symbol.name a ^ "_" ^ Int.toString n ^ "_insert (!"
                 ^ Symbol.name a ^ "_" ^ Int.toString n ^ ", "
-                ^ inputPattern (MapP.listKeys input) ^ ", " 
-                ^ inputPattern (MapP.listKeys output) ^ ") ")
+                ^ tuple varPath (MapP.listKeys input) ^ ", " 
+                ^ tuple varPath (MapP.listKeys output) ^ ") ")
     in
        emit "(cnt := !cnt + 1"
        ; app emitOne (List.filter filter (mapi (rev (IndexTab.lookup a))))
@@ -176,7 +146,7 @@ and emitMatchCase prefix shape (path: int list) subtrees pathtree constructor =
    in
       emit (prefix ^ embiggen (Symbol.name constructor) 
             ^ (if null new_pathtree then ""
-               else (" " ^ inputPattern (map #1 new_pathtree)))
+               else (" " ^ tuple (varPath o #1) new_pathtree))
             ^ " => ")
       ; incr ()
       ; emitMatches (a, shapes) (new_pathtree @ pathtree)
@@ -193,7 +163,7 @@ fun emitMatching a =
           handle Option => []
    in
       emit ("fun assert" ^ embiggen (Symbol.name a) 
-            ^ " " ^ inputPattern (map #1 pathtrees) ^ " =")
+            ^ " " ^ tuple (varPath o #1) pathtrees ^ " =")
       ; incr ()
       ; emit ("let"); incr ()
 
@@ -202,7 +172,7 @@ fun emitMatching a =
       ; incr ()
       ; emit ("if null (" ^ Symbol.name a ^ "_0_lookup (!"
               ^ Symbol.name a ^ "_0, "
-              ^ inputPattern (map #1 pathtrees) ^ "))")
+              ^ tuple (varPath o #1) pathtrees ^ "))")
       ; emit ("then () else raise Brk")
       ; decr ()
 
