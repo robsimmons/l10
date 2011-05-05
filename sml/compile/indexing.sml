@@ -18,6 +18,11 @@ fun mapi xs = mapi' 0 xs
 
 fun fail _ = raise Fail "Invariant"
 
+      fun makeConstraints (typ, []) = []
+        | makeConstraints (typ, [ _ ]) = []
+        | makeConstraints (typ, a :: b :: c) = 
+          (typ, a, b) :: makeConstraints (typ, b :: c)
+
 fun unionP ms = MapP.unionWith fail ms
 
 fun union ms = MapX.unionWith #1 ms
@@ -125,10 +130,6 @@ fun indexPat (known, pat) =
       then indexPat (#1 (MapX.remove (known, x)), pat)
       else indexPat (known, pat)
 
-fun makeConstraints (typ, []) = []
-  | makeConstraints (typ, [ _ ]) = []
-  | makeConstraints (typ, a :: b :: c) = 
-    (typ, a, b) :: makeConstraints (typ, b :: c)
 
 fun indexRule' (w, rule_n, point, known, prems, concs) = 
    case prems of 

@@ -5,6 +5,7 @@ Group is
    util/disctree.sml
 
    compile/fv.sml
+   compile/indexing'.sml
    compile/coverage'.sml
    compile/rule.sml
 

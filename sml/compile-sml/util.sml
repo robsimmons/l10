@@ -37,7 +37,7 @@ structure SMLCompileUtil:> sig
    val optTuple: ('a -> string) -> 'a list -> string
       
    (* Utilities for dealing with deep pattern matching *)
-   type path = int list (* Paths uniquely identify positions in terms *)
+   type path = int list 
    val substPath: path * 'a Ast.term' * 'a Ast.term' -> 'a Ast.term' 
    val substPaths: path * 'a Ast.term' list * 'a Ast.term' -> 'a Ast.term' list
    val genTerm: 'a Ast.term' * 'b Ast.term' -> bool
