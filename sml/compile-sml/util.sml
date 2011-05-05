@@ -32,12 +32,18 @@ structure SMLCompileUtil:> sig
    (* Capitalizes the first character in a string; must be lower case *)
    val embiggen: string -> string
 
-   (* Fiddly utility functions *)
-   val mapi: 'a list -> (int * 'a) list 
-   val repeat: int * char -> string
+   (* Create a tuple: optTuple emits nothing on unit *)
    val tuple: ('a -> string) -> 'a list -> string
    val optTuple: ('a -> string) -> 'a list -> string
       
+   (* Turn paths (which uniquely identify positions in terms) into strings *)
+   val strPath: int list -> string (* strPath [ 1, 2, 5 ] = 1_2_5 *)
+   val varPath: int list -> string (* varPath [ 1, 2, 5 ] = x_1_2_5 *)
+
+   (* Fiddly utility functions *)
+   val mapi: 'a list -> (int * 'a) list (* Annotate a list with ints *)
+   val repeat: int * char -> string     (* Length n string of chars  *)
+
 end = 
 struct
 
@@ -113,5 +119,9 @@ fun tuple f [ x ] = f x
 
 fun optTuple f [] = ""
   | optTuple f xs = " " ^ tuple f xs
+
+fun strPath path = String.concatWith "_" (map Int.toString path)
+
+fun varPath path = "x_" ^ strPath path
 
 end

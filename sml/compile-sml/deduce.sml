@@ -12,12 +12,13 @@ fun nameSaturate (w, rule, point) =
 
 fun nameIndex (a, n) = Symbol.name a ^ "_" ^ Int.toString n
 
-fun pathStr path = "x_" ^ String.concatWith "_" (map Int.toString path)
-
 fun inputPattern [] = "()"
-  | inputPattern [ path ] = pathStr path
+  | inputPattern [ path ] = varPath path
   | inputPattern paths = 
-    "(" ^ String.concatWith ", " (map pathStr paths) ^ ")"
+    "(" ^ String.concatWith ", " (map varPath paths) ^ ")"
+
+
+(* Given an index, declares type, creates reference, writes helper functions *)
 
 fun emitIndexType a (n, {terms, input, output}) = 
    let
@@ -33,7 +34,7 @@ fun emitIndexType a (n, {terms, input, output}) =
       fun emitLookupCases (n, []) = emit ("x" ^ repeat (n, #")"))
         | emitLookupCases (n, (path, typ) :: pathtyps) = 
           (emit ("(case " ^ nameOfMap "find" typ 
-                 ^ " (x, " ^ pathStr path ^ ") of") 
+                 ^ " (x, " ^ varPath path ^ ") of") 
            ; emit ("   NONE => []")
            ; emit (" | SOME x => ")
            ; incr ()
@@ -54,7 +55,7 @@ fun emitIndexType a (n, {terms, input, output}) =
         | emitInsertLets (n, (path, typ) :: pathtyps) = 
           (emit ("val y_" ^ Int.toString n ^ " = ")
            ; emit ("   case " ^ nameOfMap "find" typ ^ " (y_" 
-                   ^ Int.toString (n-1) ^ ", " ^ pathStr path ^ ") of")
+                   ^ Int.toString (n-1) ^ ", " ^ varPath path ^ ") of")
            ; emit ("      NONE => " ^ next pathtyps)
            ; emit ("    | SOME y => y")
            ; emitInsertLets (n+1, pathtyps))
@@ -65,7 +66,7 @@ fun emitIndexType a (n, {terms, input, output}) =
                 ^ repeat (n, #")"))
         | emitInsertInserts (n, (path, typ) :: pathtyps) = 
           (emit (nameOfMap "insert" typ ^ " (y_" ^ Int.toString n ^ ", "
-                 ^ pathStr path ^ ",")
+                 ^ varPath path ^ ",")
            ; emitInsertInserts (n+1, pathtyps))
 
       fun emitInsert () = 
@@ -146,7 +147,7 @@ fun emitMatches (a, shapes) [] =
     let
        val constructors = TypeConTab.lookup typ
     in 
-       emit ("(case " ^ nameOfPrj typ ^ pathStr path ^ " of")
+       emit ("(case " ^ nameOfPrj typ ^ varPath path ^ " of")
        ; emitMatchCases "   " shape path typ subtrees pathtree constructors
        ; emit ")"
     end
@@ -234,7 +235,7 @@ fun emitSaturate w (rule, point, Compiled.Normal args) =
       val funName = nameSaturate (w, rule, point)
       val indexName = nameOfShape index
       fun aftermap (x, NONE) = Symbol.name x
-        | aftermap (x, SOME path) = pathStr path
+        | aftermap (x, SOME path) = varPath path
       val knownBefore = optTuple Symbol.name knownBefore
    in
       emit ""
@@ -246,7 +247,7 @@ fun emitSaturate w (rule, point, Compiled.Normal args) =
       ; decr ()
 
       ; emit ("and " ^ funName ^ "_app" ^ knownBefore 
-              ^ " " ^ tuple pathStr outputPattern ^ " =")
+              ^ " " ^ tuple varPath outputPattern ^ " =")
       ; incr ()
       ; if length constraints = 0 
         then emit (nameSaturate (w, rule, point+1) 
