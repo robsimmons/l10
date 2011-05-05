@@ -10,6 +10,7 @@ end =
 struct
 
 open Ast
+structure CD = CompiledData
 
 fun mapi' n [] = []
   | mapi' n (x :: xs) = (n, x) :: mapi' (n+1) xs
@@ -125,8 +126,6 @@ fun indexPat (known, pat) =
       then indexPat (#1 (MapX.remove (known, x)), pat)
       else indexPat (known, pat)
 
-open Compiled
-
 fun makeConstraints (typ, []) = []
   | makeConstraints (typ, [ _ ]) = []
   | makeConstraints (typ, a :: b :: c) = 
@@ -135,9 +134,9 @@ fun makeConstraints (typ, []) = []
 fun indexRule' (w, rule_n, point, known, prems, concs) = 
    case prems of 
       [] => 
-      let val compiled = Conclusion {knownBefore = MapX.listKeys known,
-                                     facts = concs}
-      in InterTab.bind (w, (rule_n, point, compiled)) end
+      let val compiled = CD.Conclusion {knownBefore = MapX.listKeys known,
+                                        facts = concs}
+      in CompiledPremTab.bind (rule_n, point, compiled) end
 
     | Ast.Normal pat :: prems =>
       let
@@ -152,24 +151,24 @@ fun indexRule' (w, rule_n, point, known, prems, concs) =
          val { index, outputs, paths } = indexPat (known, pat)
 
          val compiled = 
-            Normal { knownBefore = MapX.listKeys known,
-                     index = index,
-                     inputPattern =
-                     MapP.listItemsi (MapP.mapPartial (fn x => x) paths),
-                     outputPattern =
-                     MapP.listKeys (MapP.filter (not o Option.isSome) paths),
-                     constraints =
-                     MapX.foldl (fn (x, y) => makeConstraints x @ y) [] outputs,
-                     knownAfterwards = 
-                     MapX.listItemsi
-                       (MapX.mapi (fn (x, _) =>
-                                      (case MapX.find (outputs, x) of 
-                                         SOME paths => SOME (hd (#2 paths))
-                                       | NONE => NONE)) needed) } 
+            { knownBefore = MapX.listKeys known,
+              index = index,
+              inputPattern =
+              MapP.listItemsi (MapP.mapPartial (fn x => x) paths),
+              outputPattern =
+              MapP.listKeys (MapP.filter (not o Option.isSome) paths),
+              constraints =
+              MapX.foldl (fn (x, y) => makeConstraints x @ y) [] outputs,
+              knownAfterwards = 
+              MapX.listItemsi
+                  (MapX.mapi (fn (x, _) =>
+                                 (case MapX.find (outputs, x) of 
+                                    SOME paths => SOME (hd (#2 paths))
+                                  | NONE => NONE)) needed) } 
       in
          print ("   - learned: " ^ list learned ^ "\n")
          ; print ("   - still needed: " ^ list needed ^ "\n")
-         ; InterTab.bind (w, (rule_n, point, compiled))
+         ; CompiledPremTab.bind (rule_n, point, CD.Normal compiled)
          ; indexRule' (w, rule_n, point+1, newknown, prems, concs)
       end      
 
@@ -181,7 +180,7 @@ fun indexRule' (w, rule_n, point, known, prems, concs) =
          print (" - Negated point #" ^ Int.toString point ^ "\n")
          ; indexPat (known, pat)
          ; print ("   - still needed: " ^ list needed ^ "\n")
-         ; InterTab.bind (w, (rule_n, point, Placeholder))
+         ; CompiledPremTab.bind (rule_n, point, CD.Placeholder)
          ; indexRule' (w, rule_n, point+1, needed, prems, concs)
       end
 
@@ -196,7 +195,7 @@ fun indexRule' (w, rule_n, point, known, prems, concs) =
       in
          print (" - Comparison point #" ^ Int.toString point ^ "\n")
          ; print ("   - still needed: " ^ list needed ^ "\n")
-         ; InterTab.bind (w, (rule_n, point, Placeholder))
+         ; CompiledPremTab.bind (rule_n, point, CD.Placeholder)
          ; indexRule' (w, rule_n, point+1, needed, prems, concs)
       end
       
@@ -238,7 +237,7 @@ fun createPathtree a =
    in
       print (Int.toString (length indexes) ^ " index(es) for relation " 
              ^ Symbol.name a ^ "\n")
-      ; MatchTab.bind (a, newPathtree)
+      ; RelMatchTab.bind (a, newPathtree)
    end
 
 fun index () = 

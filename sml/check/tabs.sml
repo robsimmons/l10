@@ -5,9 +5,10 @@
  * and reset with the master Reset.reset () *)
 
 (* Type table
- * Term types are either extensible (the type "t") or not. 
- * TypeTab.lookup "t" = SOME true, 
- * TypeTab.lookup tp = SOME false for other valid types. *)
+ * TypeTab.lookup (Symbol.name "t") = CONSTANTS,
+ * TypeTab.lookup (Symbol.name "nat") = SPECIAL,
+ * TypeTab.lookup tp = NO ("not extensible") for other valid types. *)
+(* XXX change "NO" to "NORMAL," probably -RJS 5/5/11 *)
 structure TypeTab = 
 struct
    datatype extensible = YES | NO | CONSTANTS | SPECIAL 
@@ -32,12 +33,12 @@ end
 
 (* World constant table
  * For a world constant w : tp1 -> ... -> tpn -> world.
- * WorldTab.lookup w = SOME ([ tp1, ..., tpn ]) *)
+ * WorldTab.lookup w = [ tp1, ..., tpn ] *)
 structure WorldTab = Symtab(type entrytp = Ast.typ list val name = "WorldTab")
 
 (* Relation constant table
  * For a relation constant r : tp1 -> ... -> {Tn: tpn} -> rel @ W,
- * RelTab.lookup r = SOME ([ (NONE, tp1), ..., (SOME Tn, tpn) ], W) *)
+ * RelTab.lookup r = ([ (NONE, tp1), ..., (SOME Tn, tpn) ], W) *)
 structure RelTab = Symtab(type entrytp = Ast.arg list * Ast.world
 val name = "RelTab")
 
@@ -48,7 +49,7 @@ structure TypeConTab = Multitab(type entrytp = Symbol.symbol)
 
 (* Term constant table
  * For a term constant a : tp1 -> ... -> tpn -> tp, 
- * ConTab.lookup a = SOME ([ tp1, ..., tpn ], tp) *)
+ * ConTab.lookup a = ([ tp1, ..., tpn ], tp) *)
 structure ConTab = 
 struct
    structure S = Symtab(type entrytp = Ast.typ list * Ast.typ 

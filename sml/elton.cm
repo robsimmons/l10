@@ -5,9 +5,10 @@ Group is
    util/disctree.sml
 
    compile/fv.sml
-   compile/tabs.sml
    compile/coverage.sml
    compile/coverage'.sml
+   compile/compileddata.sml
+   compile/tabs.sml
    compile/indexing.sml
 
    compile-sml/util.sml

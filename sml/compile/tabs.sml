@@ -1,64 +1,50 @@
-structure Compiled = struct
+(* Persistant data used in compilation *)
+(* Robert J. Simmons *)
 
-datatype compiledPrem = 
-   Normal of { knownBefore: Symbol.symbol list,
-
-               (* This premise needs to call to this index *)
-               index: (Symbol.symbol * Ast.modedTerm list),
-
-               (* The call uses some symbols *)
-               inputPattern: (int list * Symbol.symbol) list,
-
-               (* And returns other symbols *)
-               outputPattern: (int list) list,
-
-               (* Which must be checked for some equational constraints *)
-               constraints: (Ast.typ * int list * int list) list,
-
-               (* The following call needs the symbols in this map defined *)
-               knownAfterwards: (Symbol.symbol * int list option) list }
-
- | Negated of { knownBefore: Symbol.symbol list,
-
-                (* The premise needs to call this index *)
-                index: (Symbol.symbol * Ast.modedTerm list),
-
-                (* The call uses some symbols *)
-                inputPattern: (int list * Symbol.symbol) list,
-
-                (* And returns other symbols *)
-                outputPattern: (int list) list,
-
-                (* The premise fails should any symbols meet the equational 
-                 * constraints *)
-                constraints: (Ast.typ * int list * int list) list,
-               
-                (* The following call needs the symbols in this map defined *)
-                knownAfterwards: Symbol.symbol list }
-
- | Placeholder
-
- | Conclusion of { knownBefore: Symbol.symbol list,
-                   facts: Ast.atomic list }
-end
-
-structure InterTab = 
-Multitab (type entrytp = int * int * Compiled.compiledPrem)
-
-(* Desciribes all the modes (indxes) over a given relation *)
+(* Index table 
+ * For a relation r, IndexTab.lookup r = SOME {terms, input, output}
+ * terms - A moded term (true = index on this term, false = return this term)
+ * input - A map of all the input variable positions
+ * output - A map of all the output variable positions *)
 structure IndexTab = 
    Multitab (type entrytp = {terms: Ast.modedTerm list,
                              input: Ast.typ MapP.map,
                              output: Ast.typ MapP.map})
-   
-structure MatchTab = Symtab (type entrytp = Coverage'.pathtree list
+
+(* Relation Match Table
+ * For every relation r: tp1 -> .. -> tpn -> rel @ W, 
+ * MatchTab r = [ pathtree1, ..., pathtreeN ], which describes all the ways
+ * a declared atomic proposition (r t1 ... tn) may need to be matched against
+ * a premise. *)
+structure RelMatchTab = Symtab (type entrytp = Coverage'.pathtree list
 val name = "MatchTab")
+
+(* Compiled Premise Table 
+ * Stores instructions for running each premise in isolation. *)
+structure CompiledPremTab:> sig
+   type entry = int * int * CompiledData.prem
+   val reset: unit -> unit
+   val bind: entry -> unit
+   val lookup: unit -> entry list
+end = struct
+
+   type entry = int * int * CompiledData.prem
+
+   val db: entry list ref = ref []
+
+   fun reset () = db := []
+
+   fun bind entry = db := entry :: !db
+
+   fun lookup () = !db
+                            
+end
 
 (* Reset all tables *)
 structure ResetElton = struct
    fun reset () = 
       (Reset.reset ()
        ; IndexTab.reset ()
-       ; InterTab.reset ()
-       ; MatchTab.reset ())
+       ; CompiledPremTab.reset ()
+       ; RelMatchTab.reset ())
 end

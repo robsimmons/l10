@@ -3,10 +3,10 @@
 
 functor Multitab (type entrytp) :> sig
    type entry = entrytp
-   val reset : unit -> unit
-   val bind : Symbol.symbol * entry -> unit
-   val lookup : Symbol.symbol -> entry list
-   val list : unit -> Symbol.symbol list
+   val reset: unit -> unit
+   val bind: Symbol.symbol * entry -> unit
+   val list: unit -> Symbol.symbol list
+   val lookup: Symbol.symbol -> entry list
 end = 
 struct
 

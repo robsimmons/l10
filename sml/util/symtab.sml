@@ -3,11 +3,11 @@
 
 functor Symtab (type entrytp val name: string) :> sig
    type entry = entrytp
-   val reset : unit -> unit
-   val bind : Symbol.symbol * entry -> unit
-   val find : Symbol.symbol -> entry option
-   val lookup : Symbol.symbol -> entry 
-   val list : unit -> Symbol.symbol list
+   val reset: unit -> unit
+   val bind: Symbol.symbol * entry -> unit
+   val find: Symbol.symbol -> entry option
+   val list: unit -> Symbol.symbol list
+   val lookup: Symbol.symbol -> entry 
 end = 
 struct
 

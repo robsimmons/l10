@@ -13,6 +13,7 @@ struct
 open SMLCompileUtil
 open SMLCompileTypes
 open SMLCompileTerms
+structure CD = CompiledData
 
 fun nameIndex (a, n) = Symbol.name a ^ "_" ^ Int.toString n
 
@@ -162,7 +163,7 @@ fun emitAssertion a =
       val shape = (a, map (fn _ => Ast.Var NONE) typs)
       val pathtrees = 
          map (fn (i, pathtree) => ([ i ], pathtree)) 
-            (mapi (MatchTab.lookup a))
+            (mapi (RelMatchTab.lookup a))
           handle Option => []
    in
       emit ("fun assert" ^ embiggen (Symbol.name a) 
@@ -203,7 +204,7 @@ fun nameOfShape (a, shape) =
 
 (* *)
 
-fun emitSaturate w (rule, point, Compiled.Normal args) = 
+fun emitSaturate (rule, point, CD.Normal args) = 
    let
       val {knownBefore, 
            index, 
@@ -234,7 +235,7 @@ fun emitSaturate w (rule, point, Compiled.Normal args) =
         else emit "() (* NEED TO DO CONSTRAINTS *)"
       ; decr ()
    end
-  | emitSaturate w (rule, point, Compiled.Conclusion {knownBefore, facts}) = 
+  | emitSaturate (rule, point, CD.Conclusion {knownBefore, facts}) = 
     let 
     in
        emit ""
@@ -249,7 +250,7 @@ fun emitSaturate w (rule, point, Compiled.Normal args) =
        ; decr ()
     end
 
-  | emitSaturate w (rule, point, _) = ()
+  | emitSaturate (rule, point, _) = ()
 
 
 (* STRUCTURE FooTables *)
@@ -270,7 +271,7 @@ fun tables () =
       ; app emitAssertion (RelTab.list ())
       ; emit "(* Eager run-saturation functions for the McAllester loop *)\n"
       ; emit "fun fake () = ()"
-      ; app (fn w => app (emitSaturate w) (rev (InterTab.lookup w))) worlds
+      ; app emitSaturate (rev (CompiledPremTab.lookup ()))
       ; decr ()
       ; emit "end"
    end

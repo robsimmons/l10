@@ -5,7 +5,7 @@ fun smlfile name = "/tmp/" ^ SMLCompileUtil.getPrefix false "." ^ name ^ ".sml";
 fun test (prefix, files) = 
   (ResetElton.reset ()
    ; SMLCompileUtil.setPrefix prefix
-   ; Go.readfiles files
+   ; Read.files files
    ; Indexing.index ()
    (* ; SMLCompileTerms.termsSig () *)
    ; SMLCompileUtil.write (smlfile "terms-sig") SMLCompileTerms.termsSig
