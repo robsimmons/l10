@@ -57,6 +57,7 @@ datatype pattern =
  | One
 val fvPattern: pattern -> SetX.set
 val fvPatterns: pattern list -> SetX.set
+val strPattern: pattern -> string
 
 datatype binrel = Eq | Neq | Gt | Geq 
 val strBinrel: binrel -> string 

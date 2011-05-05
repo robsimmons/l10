@@ -103,10 +103,13 @@ fun strTerm' str term =
     | NatConst i => IntInf.toString i
     | StrConst s => "\"" ^ s ^ "\""
     | Structured (f, terms) => 
-      "(" 
-      ^ Symbol.name f 
-      ^ String.concat (map (fn term => " " ^ strTerm' str term) terms)
-      ^ ")"
+      if f = Symbol.symbol "_plus" andalso length terms = 2
+      then ("(" ^ strTerm' str (hd terms) 
+            ^ " + " ^ strTerm' str (hd (tl terms)) ^ ")")
+      else ("(" 
+            ^ Symbol.name f 
+            ^ String.concat (map (fn term => " " ^ strTerm' str term) terms)
+            ^ ")")
     | Var x => str x
 val strTerm = strTerm' (fn NONE => "_" | SOME x => Symbol.name x)
 val strModedTerm = strTerm' (fn (true, _:Symbol.symbol) => "++" | (false, _) => "--")

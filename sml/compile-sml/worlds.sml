@@ -77,8 +77,6 @@ fun strprj (pathvar as (_, (typ, _))) = nameOfPrj typ ^ nameOfVar pathvar
 fun filterUnsplit (pathTreeVars: pathTreeVar list) = 
    List.filter (not o Coverage.isUnsplit o #2 o #2) pathTreeVars
 
-fun strEq (typ, x, y) = nameOfEq typ (Symbol.name x) (Symbol.name y)
-
 fun emitChildSearches (w, terms) = 
    let
       val typs = WorldTab.lookup w
@@ -101,11 +99,13 @@ fun emitChildSearches (w, terms) =
          let 
             val pattyp = ListPair.zipEq (pat, typs)
             val (terms, subst, eqs) = pathTerms pattyp
+            val eqs =
+               map (fn (a, b, c) => (a, Symbol.name b, Symbol.name c)) eqs
          in
             if null eqs 
             then (handleArgs prefix subst args)
             else (emit (prefix ^ "(if " 
-                        ^ String.concatWith " andalso " (map strEq eqs))
+                        ^ String.concatWith " andalso " (map nameOfEq eqs))
                   ; incr ()
                   ; handleArgsIf subst args
                   ; emit ") else (fn x => x))"
@@ -134,11 +134,13 @@ fun emitInitialInters (w, terms) =
          let
             val pattyp = ListPair.zipEq (pat, typs)
             val (terms, subst, eqs) = pathTerms pattyp
+            val eqs =
+               map (fn (a, b, c) => (a, Symbol.name b, Symbol.name c)) eqs
          in
             if null eqs
             then handleSubst' prefix "::" (w, n, subst)
             else (emit (prefix ^ "(if "
-                        ^ String.concatWith " andalso " (map strEq eqs))
+                        ^ String.concatWith " andalso " (map nameOfEq eqs))
                   ; handleSubst' "   then [ " " ] else []) @" (w, n, subst))
          end
 

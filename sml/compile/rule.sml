@@ -32,19 +32,23 @@ structure Rule:> sig
                     * constraints *)
                    constraints: (Ast.typ * int list * int list) list,
                
-                   (* Next call call expects these arguments *)
+                   (* Next call expects these arguments *)
                    knownAfterwards: Symbol.symbol list }
 
-    | Binrel of { binrel: Ast.binrel,
+    | Binrel of { (* Which binary relation? *)
+                  binrel: Ast.binrel,
+
+                  (* Terms being compared *)
                   term1: Ast.term,
                   term2: Ast.term,
+
+                  (* Next call expects these arguments *)
                   knownAfterwards: Symbol.symbol list }
 
     | Conclusion of { facts: Ast.atomic list }
 
-    | Placeholder
-
-  val compile: Ast.world * Ast.rule -> (Symbol.symbol list * compiledPrem) list
+  val compile: Ast.world * Ast.rule
+     -> (Symbol.symbol list * compiledPrem * string) list
 
 end = 
 struct
@@ -70,8 +74,6 @@ datatype compiledPrem =
                knownAfterwards: Symbol.symbol list }
              
  | Conclusion of { facts: Ast.atomic list }
-
- | Placeholder
 
 fun compile' (known, prems, concs) = 
    let 
@@ -106,7 +108,9 @@ fun compile' (known, prems, concs) =
                              | NONE => NONE)) needed)
    in
       case prems of 
-         [] => [ (args, Conclusion {facts = concs}) ]
+         [] => [ (args, 
+                  Conclusion {facts = concs},
+                  String.concatWith ", " (map Ast.strAtomic concs)) ]
 
        | Ast.Normal pat :: prems => 
          let 
@@ -121,7 +125,8 @@ fun compile' (known, prems, concs) =
                  constraints = constraints outputs,
                  knownAfterwards = knownAfterwards (needed, paths, outputs) }
          in
-            (args, Normal prem) :: compile' (needed, prems, concs)
+            (args, Normal prem, Ast.strPattern pat)
+            :: compile' (needed, prems, concs)
          end
 
        | Ast.Negated pat :: prems =>
@@ -135,7 +140,8 @@ fun compile' (known, prems, concs) =
                  constraints = constraints outputs,
                  knownAfterwards = MapX.listKeys needed }
          in
-            (args, Negated prem) :: compile' (needed, prems, concs)
+            (args, Negated prem, "not " ^ Ast.strPattern pat) 
+            :: compile' (needed, prems, concs)
          end
 
        | Ast.Count _ :: _ => 
@@ -153,7 +159,10 @@ fun compile' (known, prems, concs) =
                  term2 = term2,
                  knownAfterwards = MapX.listKeys needed }
          in
-            (args, Binrel prem) :: compile' (needed, prems, concs)
+            (args, Binrel prem, 
+             Ast.strTerm term1 
+             ^ " " ^ Ast.strBinrel binrel
+             ^ " " ^ Ast.strTerm term2) :: compile' (needed, prems, concs)
          end
    end
 

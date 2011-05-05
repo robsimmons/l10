@@ -1,3 +1,4 @@
+(* Tables, indexes, and forward chaining search *)
 (* Robert J. Simmons *)
 
 structure SMLCompileTables:> sig
@@ -201,60 +202,104 @@ fun nameOfShape (a, shape) =
    end
 
 
-(* *)
+(* Emit execution that eagerly pounds through an individual rule *)
 
-fun emitSaturate (rule, point, known, Rule.Normal args) = 
+fun emitExec (rule, point, known, prem, annotation) = 
    let
-      val {index, 
-           inputPattern, 
-           outputPattern, 
-           constraints, 
-           knownAfterwards} = args
       val funName = nameOfExec (rule, point)
-      val indexName = nameOfShape index
-      fun aftermap (x, NONE) = Symbol.name x
-        | aftermap (x, SOME path) = Path.var path
       val knownBefore = optTuple Symbol.name known
+
+      val () = emit ""
+      val () = emit ("(* " ^ annotation ^ " *)")
+      val () = emit ("and " ^ funName ^ knownBefore ^ " () =")
    in
-      emit ""
-      ; emit ("and " ^ funName ^ knownBefore ^ " () =")
-      ; incr ()
-      ; emit ("app (" ^ funName ^ "_app" ^ knownBefore ^ ")")
-      ; emit ("   (" ^ indexName ^ "_lookup (!" ^ indexName ^ ", "
-              ^ tuple (Symbol.name o #2) inputPattern ^ "))\n")
-      ; decr ()
+      case prem of 
+         Rule.Normal args =>
+         let
+            val {index, 
+                 inputPattern, 
+                 outputPattern, 
+                 constraints, 
+                 knownAfterwards} = args
+            val funName = nameOfExec (rule, point)
+            val indexName = nameOfShape index
+            fun aftermap (x, NONE) = Symbol.name x
+              | aftermap (x, SOME path) = Path.var path
+            val eqs =
+               map (fn (a, b, c) => (a, Path.var b, Path.var c)) constraints
+         in
+           incr ()
+           ; emit ("app (" ^ funName ^ "_app" ^ knownBefore ^ ")")
+           ; emit ("   (" ^ indexName ^ "_lookup (!" ^ indexName ^ ", "
+                   ^ tuple (Symbol.name o #2) inputPattern ^ "))\n")
+           ; decr ()
+           
+           ; emit ("and " ^ funName ^ "_app" ^ knownBefore 
+                   ^ " " ^ tuple Path.var outputPattern ^ " =")
+           ; incr ()
+           ; if length constraints = 0 
+             then emit (nameOfExec (rule, point+1) 
+                        ^ optTuple aftermap knownAfterwards ^ " ()")
+             else (emit ("if " 
+                         ^ String.concatWith " andalso " (map nameOfEq eqs))
+                   ; emit ("then " ^ nameOfExec (rule, point+1) 
+                           ^ optTuple aftermap knownAfterwards ^ " ()")
+                   ; emit ("else ()"))
+           ; decr ()
+         end
+         
+       | Rule.Negated args => 
+         let
+            val {index,
+                 inputPattern, 
+                 outputPattern,
+                 constraints, 
+                 knownAfterwards} = args
+            val funName = nameOfExec (rule, point)
+            val indexName = nameOfShape index
+            val knownBefore = optTuple Symbol.name known
+            val eqs = 
+               map (fn (a, b, c) => (a, Path.var b, Path.var c)) constraints
+         in
+            incr (); emit "let"; incr ()
+            ; emit ("val res = " ^ indexName ^ "_lookup (!" ^ indexName ^ ", "
+                    ^ tuple (Symbol.name o #2) inputPattern ^ ")")
+            ; if null eqs then ()
+              else emit ("val res = List.filter " ^ funName ^ "_filter res")
+            ; decr (); emit "in"; incr ()
+            ; emit ("if null res then " ^ nameOfExec (rule, point+1) 
+                    ^ optTuple Symbol.name knownAfterwards ^ " () else ()")
+            ; decr (); emit "end"; decr ()
+            ; if null eqs then ()
+              else (emit ""
+                    ; emit ("and " ^ funName ^ "_filter _ = "
+                            ^ "raise Fail \"Unimplemented\"\n"))
+         end 
 
-      ; emit ("and " ^ funName ^ "_app" ^ knownBefore 
-              ^ " " ^ tuple Path.var outputPattern ^ " =")
-      ; incr ()
-      ; if length constraints = 0 
-        then emit (nameOfExec (rule, point+1) 
-                   ^ optTuple aftermap knownAfterwards ^ " ()")
-        else emit "() (* NEED TO DO CONSTRAINTS *)"
-      ; decr ()
-   end
-  | emitSaturate (rule, point, known, Rule.Conclusion {facts}) = 
-    let 
-    in
-       emit ""
-       ; emit ("and " ^ nameOfExec (rule, point)
-               ^ optTuple Symbol.name known ^ " () = (()")
-       ; incr ()
-       ; app (fn (a, terms) => 
-                emit ("; assert" ^ embiggen (Symbol.name a) 
-                      ^ " " ^ tuple buildTerm terms))
-             facts
-       ; emit ")"
-       ; decr ()
-    end
+       | Rule.Conclusion {facts} =>
+         let in
+            appFirst (fn _ => emit "   ()")
+               (fn prefix =>
+                fn (a, terms) => 
+                   emit (prefix ^ "assert" ^ embiggen (Symbol.name a) 
+                         ^ " " ^ tuple buildTerm terms))
+               ("  (", "   ; ") facts
+            ; emit "  )"
+         end
 
-  | emitSaturate (rule, point, known, _) = 
-    let
-    in
-       emit ""
-       ; emit ("and " ^ nameOfExec (rule, point)
-               ^ optTuple Symbol.name known ^ "  () =")
-       ; emit "   raise Fail \"Unimplemented\""
+       | Rule.Binrel {binrel, term1, term2, knownAfterwards} =>
+         let
+            val binstr = 
+               if binrel = Ast.Neq
+               then " <> " else (" " ^ Ast.strBinrel binrel ^ " ")
+         in 
+            incr ()
+            ; emit ("if " ^ buildTerm term1 ^ binstr ^ buildTerm term2)
+            ; emit ("then " ^ nameOfExec (rule, point+1) 
+                    ^ optTuple Symbol.name knownAfterwards ^ " ()")
+            ; emit ("else ()")
+            ; decr ()
+         end
     end
 
 
@@ -276,7 +321,7 @@ fun tables () =
       ; app emitAssertion (RelTab.list ())
       ; emit "(* Eager run-saturation functions for the McAllester loop *)\n"
       ; emit "fun fake () = ()"
-      ; app emitSaturate (rev (CompiledPremTab.lookup ()))
+      ; app emitExec (rev (CompiledPremTab.lookup ()))
       ; decr ()
       ; emit "end"
    end

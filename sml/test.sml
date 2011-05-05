@@ -71,6 +71,13 @@ use (smlfile "tables");
 use (smlfile "worlds-sig");
 use (smlfile "worlds"); 
 
+test ("constr", [ "regression/constraints.l10" ]);
+use (smlfile "terms-sig");
+use (smlfile "terms");
+use (smlfile "tables");
+use (smlfile "worlds-sig");
+use (smlfile "worlds"); 
+
 open TTerms;
 val map1 = MapTree.singleton (Leaf', 1);
 val map2 = MapTree.insert (map1, Node' (Node' (Leaf', Leaf'), Leaf'), 2);

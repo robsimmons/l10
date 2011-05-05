@@ -23,13 +23,13 @@ val name = "MatchTab")
 (* Compiled Premise Table 
  * Stores instructions for running each premise in isolation. *)
 structure CompiledPremTab:> sig
-   type entry = int * int * Symbol.symbol list * Rule.compiledPrem
+   type entry = int * int * Symbol.symbol list * Rule.compiledPrem * string
    val reset: unit -> unit
    val bind: entry -> unit
    val lookup: unit -> entry list
 end = struct
 
-   type entry = int * int * Symbol.symbol list * Rule.compiledPrem
+   type entry = int * int * Symbol.symbol list * Rule.compiledPrem * string
 
    val db: entry list ref = ref []
 
@@ -98,7 +98,7 @@ struct
        | Rule.Negated {index, ...} => SOME index
        | _ => NONE
                                       
-   fun loadIndex ((rule_n, place, args, prem), (i, indexes)) = 
+   fun loadIndex (prem, (i, indexes)) = 
       case Option.mapPartial (knownIndex indexes) (getPremIndex prem) of
          NONE => (i, indexes)
        | SOME (index as (a, terms)) => 
@@ -133,7 +133,7 @@ struct
    fun compileRule (rule_n, world, rule) = 
       let in
          print ("Compiling rule " ^ Int.toString rule_n ^ "\n")
-         ; map (fn (a, (b, c)) => (rule_n, a, b, c)) 
+         ; map (fn (a, (b, c, d)) => (rule_n, a, b, c, d)) 
               (mapi (Rule.compile (world, rule)))
       end
 
@@ -143,7 +143,8 @@ struct
          val rules = List.concat (map compileRule (RuleTab.list ()))
       in
          app CompiledPremTab.bind rules
-         ; foldl loadIndex (0 (* XXX *), map loadDefaultIndex rels) rules
+         ; foldl loadIndex (0 (* XXX *), map loadDefaultIndex rels) 
+             (map #4 rules)
          ; app loadPathtree rels
       end
 end
