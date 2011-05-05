@@ -4,12 +4,14 @@
 structure Ast :> AST = 
 struct
 
-datatype term = 
+datatype 'a term' = 
    Const of Symbol.symbol
  | NatConst of IntInf.int
  | StrConst of string
- | Structured of Symbol.symbol * term list
- | Var of Symbol.symbol option
+ | Structured of Symbol.symbol * 'a term' list
+ | Var of 'a
+
+type term = Symbol.symbol option term'
 
 (* Partial substitution *)
 fun subTerm' (term', x) term = 
