@@ -33,8 +33,8 @@ structure Path:> sig
    val extendpaths: 
       ('a -> Ast.typ) -> 'a Ast.term' list * tree list -> tree list
 
-   (* Pathtrees can be used to create split-enough terms *)
-   (* Given a shape that is split-enough with respect to the term, genTerm
+   (* Pathtrees are primarily used to create split-enough terms.
+    * Given a shape that is split-enough with respect to the term, genTerm
     * returns true if the term generalizes the shape. genTerm treats both
     * the shape and the term as if all variable occurances were linear.
     *
