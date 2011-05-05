@@ -17,7 +17,7 @@ fun to_string yytext =
 %full
 %s STRING COMMENT COMMENT_LINE PRAGMA;
 
-lcid = [a-z][A-Za-z0-9_]*;
+lcid = [a-z][A-Za-z0-9_\']*;
 ucid = [A-Z][A-Za-z0-9_\']*;
 string = \"[A-Za-z0-9_ \'!@#$%^&*]*\";
 decnum = (0|[1-9][0-9]*);

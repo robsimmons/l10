@@ -17,12 +17,31 @@ end = struct
 structure A = Ast
 open Symbol
 
-(* tc_newvar (syntax, x, lookup_result) 
- * Utility function used with table look up to make sure syntax isn't bound *)
-fun tc_newvar (syntax, x, lookup_result) = 
-   case lookup_result of 
-      NONE => ()
-    | _ => raise Fail (syntax ^ " " ^ name x ^ " is already declared.")
+(* tc_namespace (syntax, x, lookup_result) 
+ * Utility function used with table look up to avoid double-definition *)
+fun tc_namespace (syntax, x) = 
+   if isSome (TypeTab.find x)
+   then raise Fail (syntax ^ " " ^ name x ^ " already declared as a type")
+   else if isSome (WorldTab.find x)
+   then raise Fail (syntax ^ " " ^ name x ^ " already declared as a world")
+   else if isSome (RelTab.find x)
+   then raise Fail (syntax ^ " " ^ name x ^ " already delcared as a relation")
+   else if isSome (ConTab.find x)
+   then raise Fail (syntax ^ " " ^ name x 
+                    ^ " already declared as a term constructor")
+   else if String.isSubstring "_" (name x)
+   then raise Fail (syntax ^ " identifier \"" ^ name x 
+                    ^ "\": contains underscore")
+   else if String.isSubstring "'" (name x)
+   then raise Fail (syntax 
+                    ^ " identifier \"" ^ name x 
+                    ^ "\": contains single-quote")
+   else ()
+
+fun tc_database x = 
+   if isSome (DbTab.find x)
+   then raise Fail ("Database " ^ name x ^ " already defined")
+   else ()
 
 (* tc_type typ - asserts that a symbol is a type *)
 fun tc_typ typ = 
@@ -209,18 +228,20 @@ fun checkDecl decl =
    case decl of 
       (* Types are well-formed 
        * if they haven't been declared already *)
-      A.DeclType typ => tc_newvar ("Type", typ, TypeTab.find typ)
+      A.DeclType typ => tc_namespace ("Type", typ)
 
       (* Worlds are well-formed 
        * if they haven't been declared already
        * and if all their indices are valid types *)
-    | A.DeclWorld (w, args) => ignore (tc_args args)
+    | A.DeclWorld (w, args) => 
+      (tc_namespace ("World", w)
+       ; ignore (tc_args args))
 
       (* Constant declarations are well-formed 
        * if they haven't been declared already
        * and if their indices are valid types *)
     | A.DeclConst (c, args, typ) => 
-      (tc_newvar ("Constant", c, ConTab.find c)
+      (tc_namespace ("Constant", c)
        ; ignore (tc_args args) 
        ; tc_typ typ)
 
@@ -230,7 +251,7 @@ fun checkDecl decl =
        * if the associated world is valid under (only) the named indices *)
     | A.DeclRelation (r, args, world) =>
       let
-         val () = tc_newvar ("Relation", r, RelTab.find r)
+         val () = tc_namespace ("Relation", r)
          val env = tc_args args 
          val env' = tc_world env world
          val newenv = 
@@ -259,7 +280,10 @@ fun checkDecl decl =
        * If their world includes no free variables and are well formed
        * If the premises include no free variables and are well formed *)
     | A.DeclDatabase (db, prems, world) => 
-      let val env = tc_atomics (tc_world MapX.empty world) prems in
+      let 
+         val () = tc_database db
+         val env = tc_atomics (tc_world MapX.empty world) prems 
+      in
          case MapX.firsti env of
             NONE => ()
           | SOME (x, _) =>

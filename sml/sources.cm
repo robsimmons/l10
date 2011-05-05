@@ -19,6 +19,5 @@ Group is
    check/types.sml
    check/mode.sml
    check/load.sml
-   (* check/check.sml *)
 
    frontend/go.sml

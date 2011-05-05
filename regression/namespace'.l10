@@ -1,8 +1,0 @@
-// Is okay: while constructors cannot have single-quotes at the end, it's
-// fine for types to have single-quotes at the end.
-foo: type.
-foo': type.
-fooView: type.
-bar: type.
-voidFoo: bar.
-voidFooView: var.

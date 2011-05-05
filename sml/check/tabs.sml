@@ -35,9 +35,15 @@ end
  * WorldTab.lookup w = SOME ([ tp1, ..., tpn ]) *)
 structure WorldTab = Symtab(type entrytp = Ast.typ list val name = "WorldTab")
 
+(* Relation constant table
+ * For a relation constant r : tp1 -> ... -> {Tn: tpn} -> rel @ W,
+ * RelTab.lookup r = SOME ([ (NONE, tp1), ..., (SOME Tn, tpn) ], W) *)
+structure RelTab = Symtab(type entrytp = Ast.arg list * Ast.world
+val name = "RelTab")
+
 (* TypeCon table
  * Reverse lookup - lists all the constructors that can be used to make 
- * a term of a particular type *)
+ * a term of a particular type. *)
 structure TypeConTab = Multitab(type entrytp = Symbol.symbol)
 
 (* Term constant table
@@ -66,12 +72,6 @@ struct
 
    val () = reset ()
 end
-
-(* Relation constant table
- * For a relation constant r : tp1 -> ... -> {Tn: tpn} -> rel @ W,
- * RelTab.lookup r = SOME ([ (NONE, tp1), ..., (SOME Tn, tpn) ], W) *)
-structure RelTab = Symtab(type entrytp = Ast.arg list * Ast.world
-val name = "RelTab")
 
 (* World dependency table
  * For a world dependency w t1...tn <- w1, ..., wm,
