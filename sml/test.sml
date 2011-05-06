@@ -99,7 +99,7 @@ val x8 = MapList.find (map3, Cons' (4, (Cons' (12, End'))))
 open PlusTerms;
 val five = S' (S' (S' (S' (S' Z'))));
 val three =  S' (S' (S' Z'));
-val map4 = PlusSearch.seekW (five, three) MapWorld.empty;
+val map4 = PlusSearch.saturateW (five, three) MapWorld.empty;
 val res1 = app (fn x => print ("5+3 = " ^ strN x ^ "\n")) 
            (PlusTables.plus_1_lookup(!PlusTables.plus_1, (five, three)));
 

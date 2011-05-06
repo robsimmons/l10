@@ -106,7 +106,7 @@ struct
       case Option.mapPartial (knownIndex indexes) (getPremIndex prem) of
          NONE => (i, indexes)
        | SOME (index as (a, terms)) => 
-         (print ("   * New index recorded: " ^ Symbol.name a ^ " " 
+         (print ("New index recorded: " ^ Symbol.name a ^ " " 
                  ^ String.concatWith " " (map Ast.strModedTerm terms) ^ "\n")
           ; IndexTab.bind 
                (a, {(* id = i, *)

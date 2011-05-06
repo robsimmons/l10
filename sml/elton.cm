@@ -10,10 +10,8 @@ Group is
    compile/indexing.sml
    compile/state.sml
 
-   compile/coverage.sml
-
    compile-sml/util.sml
    compile-sml/types.sml
    compile-sml/terms.sml 
    compile-sml/tables.sml
-   compile-sml/worlds.sml
+   compile-sml/search.sml

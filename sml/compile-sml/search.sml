@@ -12,6 +12,7 @@ open SMLCompileUtil
 open SMLCompileTypes
 open SMLCompileTerms
 
+
 (* Emit the correct seek functions for a world in the signature *) 
 
 fun emitWorldSig world = 
@@ -26,32 +27,23 @@ fun emitWorldSig world =
       val maptyp = "unit " ^ getPrefix true "" ^ "Terms.MapWorld.map"
    in    
       if null args
-      then emit ("val seek" ^ Name ^ ": " ^ maptyp ^ " -> " ^ maptyp) 
-      else emit ("val seek" ^ Name ^ ": " ^ strargs ^ " -> "
+      then emit ("val saturate" ^ Name ^ ": " ^ maptyp ^ " -> " ^ maptyp) 
+      else emit ("val saturate" ^ Name ^ ": " ^ strargs ^ " -> "
                  ^ maptyp ^ " -> " ^ maptyp) 
    end
 
 
-(* Tabled backwards search *)
+(* Ensure that dependent worlds are searched first *)
 
-fun emitChildSearches w terms = 
+fun emitDependencies w terms = 
    let
       val typs = WorldTab.lookup w
-      fun handleArg prefix subst (w, terms) = 
+
+      fun handleArg subst prefix (w, terms) = 
          let val terms' = valOf (Ast.subTerms (subst, terms)) in  
-            emit (prefix ^ "seek" ^ embiggen (Symbol.name w) 
+            emit (prefix ^ "saturate" ^ embiggen (Symbol.name w) 
                   ^ optTuple buildTerm terms') 
          end
-
-      fun handleArgs prefix subst [] = emit (prefix ^ "(fn x => x)")
-        | handleArgs prefix subst [ arg ] = handleArg prefix subst arg
-        | handleArgs prefix subst (arg :: args) = 
-          (handleArgs prefix subst args; handleArg " o " subst arg)
-
-      fun handleArgsIf subst [] = emit "then (fn x => x"
-        | handleArgsIf subst [ arg ] = handleArg "then (" subst arg
-        | handleArgsIf subst (arg :: args) = 
-          (handleArgsIf subst args; handleArg "      o " subst arg)
 
       fun handlePat prefix (pat, args) = 
          let 
@@ -61,26 +53,26 @@ fun emitChildSearches w terms =
                map (fn (a, b, c) => (a, Symbol.name b, Symbol.name c)) eqs
          in
             if null eqs 
-            then (handleArgs prefix subst args)
+            then appFirst (fn () => emit (prefix ^ "(fn x => x)")) 
+                    (handleArg subst) (prefix, " o ") (rev args)
             else (emit (prefix ^ "(if " 
                         ^ String.concatWith " andalso " (map nameOfEq eqs))
                   ; incr ()
-                  ; handleArgsIf subst args
+                  ; appFirst (fn () => emit "then (fn x => x")
+                       (handleArg subst) ("then (", "      o ") (rev args)
                   ; emit ") else (fn x => x))"
                   ; decr ())
          end
        
-      fun handlePats [] = emit "((fn x => x)"
-        | handlePats [ (pat, args) ] = handlePat "(" (pat, args)
-        | handlePats ((pat, args) :: pats) = 
-          (handlePats pats; handlePat " o " (pat, args))
-
       val pats = List.filter (Path.genTerms terms o #1) (SearchTab.lookup w)
    in
-      handlePats pats
+      appFirst (fn () => emit "((fn x => x)") handlePat ("(", " o ") (rev pats)
    end
 
-fun emitInitialInters w terms = 
+
+(* Return a list of functions that begin saturation at the current world *)
+
+fun emitStartingPoints w terms = 
    let
       val typs = WorldTab.lookup w
 
@@ -114,6 +106,9 @@ fun emitInitialInters w terms =
       else emit ", [])"
    end  
 
+
+(* Emit the saturation fuction for a given world *)
+
 fun emitWorld w =
    let 
       val name = Symbol.name w
@@ -121,29 +116,8 @@ fun emitWorld w =
       val typs = WorldTab.lookup w
       val pathtree = WorldMatchTab.lookup w
       val tuple = optTuple (fn (i, _) => Path.var [ i ]) (mapi pathtree)
-(*
-      val pathTreeVars = makePaths world args
-      fun makeStartingTerm pathTreeVar = 
-         Ast.Var (SOME (Symbol.symbol (nameOfVar pathTreeVar)))
-      val startingTerms = map makeStartingTerm pathTreeVars
-      val startingWorld = if null pathTreeVars 
-                          then Ast.Const world
-                          else Ast.Structured (world, startingTerms)
-      (* Outputs code for saying "I am here" *)
-      fun reportworld () = 
-        (if null args 
-         then emit ("val () = print (\"Visiting " ^ name ^ "\\n\")")
-         else emit ("val () = print (\"Visiting (" ^ name ^ "\"")
-         ; incr ()
-         ; app (fn (i, typ) => 
-                emit ("^ \" \" ^ " ^ nameOfStr typ ^ " x_" ^ Int.toString i)) 
-              args
-         ; if null args then () else emit "^ \")\\n\")"
-         ; decr ())
-*)
-
    in
-      emit ("and seek" ^ Name ^ tuple ^ " worldmap =")
+      emit ("and saturate" ^ Name ^ tuple ^ " worldmap =")
       ; incr (); emit ("let"); incr ()
 
       ; emit ("val w = " ^ embiggen (Symbol.name w) ^ "'" ^ tuple)
@@ -154,7 +128,7 @@ fun emitWorld w =
       ; incr ()
       ; caseConstructor 
            (fn shapes => 
-              (emitChildSearches w shapes; emitInitialInters w shapes))
+              (emitDependencies w shapes; emitStartingPoints w shapes))
            pathtree
       ; decr ()
       ; emit ("val worldmap' = child_searches worldmap")
@@ -169,6 +143,9 @@ fun emitWorld w =
       ; decr ()
    end
 
+
+(* SIGNATURE FOO_SEARCH *)
+
 fun worldsSig () = 
    let 
       val worlds = WorldTab.list ()
@@ -181,6 +158,9 @@ fun worldsSig () =
       ; decr ()
       ; emit "end"
    end
+
+
+(* STRUCTURE FooSearch *)
 
 fun worlds () = 
    let
