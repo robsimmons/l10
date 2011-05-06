@@ -18,7 +18,10 @@ structure IndexTab =
  * a declared atomic proposition (r t1 ... tn) may need to be matched against
  * a premise. *)
 structure RelMatchTab = Symtab (type entrytp = Path.tree list
-val name = "MatchTab")
+val name = "RelMatchTab")
+
+structure WorldMatchTab = Symtab (type entrytp = Path.tree list
+val name = "WorldMatchTab")
 
 (* Compiled Premise Table 
  * Stores instructions for running each premise in isolation. *)
@@ -52,7 +55,8 @@ struct
       (Reset.reset ()
        ; IndexTab.reset ()
        ; CompiledPremTab.reset ()
-       ; RelMatchTab.reset ())
+       ; RelMatchTab.reset ()
+       ; WorldMatchTab.reset ())
 
    fun mapi' n [] = []
      | mapi' n (x :: xs) = (n, x) :: mapi' (n+1) xs
@@ -114,7 +118,7 @@ struct
 
    (* Load path tree *)
 
-   fun loadPathtree a = 
+   fun loadRelPathtree a = 
       let 
          val pathtree = 
             map Path.Unsplit (map #2 (#1 (RelTab.lookup a)))
@@ -127,6 +131,32 @@ struct
          ; RelMatchTab.bind (a, newPathtree)
       end
 
+   fun mapTyp (term, typ) = 
+      case term of 
+         Ast.Var _ => Ast.Var typ
+       | Ast.Const c => Ast.Const c
+       | Ast.Structured (f, terms) => 
+         Ast.Structured (f, mapTyps (terms, #1 (ConTab.lookup f)))
+       | Ast.NatConst i => Ast.NatConst i
+       | Ast.StrConst s => Ast.StrConst s
+
+   and mapTyps (terms: 'a Ast.term' list, typs) = 
+      map mapTyp (ListPair.zipEq (terms, typs))
+
+   fun loadWorldPathtree w = 
+      let 
+         val typs = WorldTab.lookup w
+         fun entypen index = mapTyps (index, WorldTab.lookup w)
+         val pathtree = 
+            map Path.Unsplit (WorldTab.lookup w)
+         val indexes = map (entypen o #1) (SearchTab.lookup w)
+         val newPathtree = 
+            List.foldr (Path.extendpaths (fn x => x)) pathtree indexes
+      in
+         print (Int.toString (length indexes) ^ " index(es) for world " 
+                ^ Symbol.name w ^ "\n")
+         ; WorldMatchTab.bind (w, newPathtree)
+      end
  
    (* Compiling and loading *)
 
@@ -145,6 +175,7 @@ struct
          app CompiledPremTab.bind rules
          ; foldl loadIndex (0 (* XXX *), map loadDefaultIndex rels) 
              (map #4 rules)
-         ; app loadPathtree rels
+         ; app loadRelPathtree rels
+         ; app loadWorldPathtree (WorldTab.list ())
       end
 end

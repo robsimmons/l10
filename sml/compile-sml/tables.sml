@@ -119,7 +119,7 @@ fun emitAssertion a =
         end
 
       val typs = map #2 (#1 (RelTab.lookup a))
-      val pathtrees = valOf (RelMatchTab.find a)
+      val pathtrees = RelMatchTab.lookup a
           handle Option => []
       val tuple = tuple (fn (i, _) => Path.var [ i ]) (mapi pathtrees)
    in

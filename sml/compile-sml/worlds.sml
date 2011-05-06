@@ -32,50 +32,9 @@ fun emitWorldSig world =
    end
 
 
-(* *)
+(* Tabled backwards search *)
 
-
-type pathConstructorVar = (Symbol.symbol * Coverage.pathtree list) pathvar
-type pathTreeVar = Coverage.pathtree pathvar
-(* type pathvar = Coverage.pathtree pathvar *)
-
-(* Using SearchTab, come up with a sufficiently expanded set of pathtrees *)
-fun makePaths world args =
-   let 
-      val seed: pathTreeVar list = 
-         map (fn (n, typ) => ([ n ], (typ, Coverage.Unsplit))) args
-
-      fun mapper (term, (is, pathtree)) =
-         (is, Coverage.extendpaths (term, pathtree))
-      fun folder (terms, pathTreeVars) = 
-         map mapper (ListPair.zipEq (terms, pathTreeVars))
-   in
-      List.foldr folder seed (map #1 (SearchTab.lookup world))
-   end
-
-(* See if a term falls under a particular pattern *)
-fun genTerm (generalTerm, term) = 
-   case (generalTerm, term) of
-      (_, Ast.Var _) => true
-    | (Ast.Var _, _) => raise Fail "General term not sufficiently general"
-    | (Ast.Const _, Ast.Structured _) => false
-    | (Ast.Structured _, Ast.Const _) => false
-    | (Ast.Const c, Ast.Const c') => c = c'
-    | (Ast.Structured (f, terms), Ast.Structured (f', terms')) =>
-      f = f' andalso genTerms terms terms'
-    | (Ast.NatConst i, Ast.NatConst i') => i = i'
-    | (Ast.StrConst s, Ast.StrConst s') => s = s'
-    | _ => raise Fail "Typing invariant in general term"
-
-and genTerms generalTerms terms = 
-   List.all genTerm (ListPair.zipEq (generalTerms, terms))
-
-fun strprj (pathvar as (_, (typ, _))) = nameOfPrj typ ^ nameOfVar pathvar
-
-fun filterUnsplit (pathTreeVars: pathTreeVar list) = 
-   List.filter (not o Coverage.isUnsplit o #2 o #2) pathTreeVars
-
-fun emitChildSearches (w, terms) = 
+fun emitChildSearches w terms = 
    let
       val typs = WorldTab.lookup w
       fun handleArg prefix subst (w, terms) = 
@@ -116,12 +75,12 @@ fun emitChildSearches (w, terms) =
         | handlePats ((pat, args) :: pats) = 
           (handlePats pats; handlePat " o " (pat, args))
 
-      val pats = List.filter (genTerms terms o #1) (SearchTab.lookup w)
+      val pats = List.filter (Path.genTerms terms o #1) (SearchTab.lookup w)
    in
       handlePats pats
    end
 
-fun emitInitialInters (w, terms) = 
+fun emitInitialInters w terms = 
    let
       val typs = WorldTab.lookup w
 
@@ -137,7 +96,7 @@ fun emitInitialInters (w, terms) =
                map (fn (a, b, c) => (a, Symbol.name b, Symbol.name c)) eqs
          in
             if null eqs
-            then handleSubst' prefix "::" (w, n, subst)
+            then handleSubst' prefix " ::" (w, n, subst)
             else (emit (prefix ^ "(if "
                         ^ String.concatWith " andalso " (map nameOfEq eqs))
                   ; handleSubst' "   then [ " " ] else []) @" (w, n, subst))
@@ -148,100 +107,21 @@ fun emitInitialInters (w, terms) =
         | handleRules (rule :: rules) = 
           (handleRules rules before handleRule "  " rule)
 
-      val rules = List.filter (genTerms terms o #2 o #2) (RuleTab.lookup w)
+      val rules = List.filter (Path.genTerms terms o #2 o #2) (RuleTab.lookup w)
    in
       if handleRules rules
       then emit "  [])"
       else emit ", [])"
    end  
 
-(* Either emits the case if splitting is done or else splits some more *)
-fun emitCase world [] = 
-    let in 
-       emitChildSearches world; emitInitialInters world
-    end 
-    (* emit ("(" ^ String.concatWith ", " (map buildTerm terms) ^ ")") *)
-  | emitCase world (pathTreeVars: pathTreeVar list) = 
-    let in
-       emit ("(case " ^ tuple strprj pathTreeVars ^ " of")
-       ; emitMatches "   " world pathTreeVars [] 
-       ; emit ")"
-    end
-    
-(* Base case of emitMatches *)
-and emitMatch prefix (w, terms) (matches: pathConstructorVar list) = 
-    let 
-       fun constructorMap (is, (constructor, subpaths)) = 
-          constructorPattern 
-             (fn (n, _) => List.nth (subpaths, n)) 
-             (is, ()) constructor
-           
-       val (patterns, pathvars) = ListPair.unzip (map constructorMap matches)
-
-       fun constructorFold ((is, (constructor, subpaths)), terms) = 
-          let 
-             val symbOfVar = Symbol.symbol o nameOfVar
-
-             fun makeVar (i, _) = 
-                Ast.Var (SOME (symbOfVar (is @ [ i ], ())))
-
-             val term = 
-                if null subpaths then Ast.Const constructor
-                else Ast.Structured (constructor, map makeVar (mapi subpaths))
-          in map (Ast.subTerm' (term, symbOfVar (is, ()))) terms end
-
-       val terms = List.foldl constructorFold terms matches
-    in
-       emit (prefix ^ "(" ^ String.concatWith ", " patterns ^ ") => ")
-       ; incr ()
-       ; emitCase (w, terms) (filterUnsplit (List.concat pathvars))
-       ; decr ()
-    end
-
-(* Somewhat complex to avoid making an intermediate data structure. 
- * Given n treevars with O(m) constructors, calls emitMatch on the O(m*n) 
- * possible patterns. *)
-and emitMatches prefix world [] matches = emitMatch prefix world (rev matches)
-  | emitMatches prefix world (pathvar :: pathvars) matches =
-    let val (is, (typ, pathtree)) = pathvar in 
-       case pathtree of 
-          Coverage.Unsplit => raise Fail "Invariant"
-        | Coverage.Split subtrees => 
-          let val newmatches = MapX.listItemsi subtrees in
-             emitMatches prefix world pathvars ((is, hd newmatches) :: matches)
-             ; app (fn match =>
-                    emitMatches " | " world pathvars ((is, match) :: matches))
-                   (tl newmatches)
-          end
-        | Coverage.StringSplit _ => 
-          raise Fail "Splitting on strings unimplemented"
-        | Coverage.NatSplit _ => 
-          raise Fail "Splitting on naturals unimplemented"
-        | Coverage.SymbolSplit _ => 
-          raise Fail "Splitting on symbols unimplemented"
-    end
-val emitCase: 
-      Ast.world
-      -> pathTreeVar list 
-      -> unit = emitCase
-val emitMatch:
-      string 
-      -> Ast.world
-      -> pathConstructorVar list 
-      -> unit = emitMatch
-val emitMatches: 
-      string 
-      -> Ast.world
-      -> pathTreeVar list 
-      -> pathConstructorVar list 
-      -> unit = emitMatches
-
-fun emitWorld world =
+fun emitWorld w =
    let 
-      val name = Symbol.name world
-      val Name = embiggen (Symbol.name world)
-      val typs = WorldTab.lookup world
-      val args = mapi typs
+      val name = Symbol.name w
+      val Name = embiggen (Symbol.name w)
+      val typs = WorldTab.lookup w
+      val pathtree = WorldMatchTab.lookup w
+      val tuple = optTuple (fn (i, _) => Path.var [ i ]) (mapi pathtree)
+(*
       val pathTreeVars = makePaths world args
       fun makeStartingTerm pathTreeVar = 
          Ast.Var (SOME (Symbol.symbol (nameOfVar pathTreeVar)))
@@ -249,7 +129,6 @@ fun emitWorld world =
       val startingWorld = if null pathTreeVars 
                           then Ast.Const world
                           else Ast.Structured (world, startingTerms)
-
       (* Outputs code for saying "I am here" *)
       fun reportworld () = 
         (if null args 
@@ -261,26 +140,25 @@ fun emitWorld world =
               args
          ; if null args then () else emit "^ \")\\n\")"
          ; decr ())
+*)
+
    in
-      emit ("and seek" ^ Name ^ 
-            (if null pathTreeVars then "" 
-             else (" (" 
-                   ^ String.concatWith ", " (map nameOfVar pathTreeVars))
-                  ^ ")")
-            ^ " worldmap =")
-      ; incr ()
-      ; emit ("let")
-      ; incr ()
-      ; emit ("val w = " ^ buildTerm startingWorld)
+      emit ("and seek" ^ Name ^ tuple ^ " worldmap =")
+      ; incr (); emit ("let"); incr ()
+
+      ; emit ("val w = " ^ embiggen (Symbol.name w) ^ "'" ^ tuple)
       ; emit ("val () = if isSome (MapWorld.find (worldmap, w))")
       ; emit ("         then raise Revisit else ()")
       ; emit ("val worldmap = MapWorld.insert (worldmap, w, ())" )
       ; emit ("val (child_searches, rulefns) = ")
       ; incr ()
-      ; emitCase (world, startingTerms) (filterUnsplit pathTreeVars)
+      ; caseConstructor 
+           (fn shapes => 
+              (emitChildSearches w shapes; emitInitialInters w shapes))
+           pathtree
       ; decr ()
       ; emit ("val worldmap' = child_searches worldmap")
-      ; reportworld ()
+      ; emit ("val () = print (\"Visiting \" ^ strWorld w ^ \"\\n\")")
       ; emit ("val () = loop rulefns")
       ; decr ()
       ; emit ("in")
