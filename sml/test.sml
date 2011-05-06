@@ -7,34 +7,32 @@ fun test (prefix, files) =
    ; SMLCompileUtil.setPrefix prefix
    ; Read.files files
    ; CompilerState.load ()
-   (* ; Indexing.index () *)
-   (* ; SMLCompileTerms.termsSig () *)
    ; SMLCompileUtil.write (smlfile "terms-sig") SMLCompileTerms.termsSig
    ; SMLCompileUtil.write (smlfile "terms") SMLCompileTerms.terms
    ; SMLCompileUtil.write (smlfile "tables") SMLCompileTables.tables
-   ; SMLCompileUtil.write (smlfile "worlds-sig") SMLCompileWorlds.worldsSig
-   ; SMLCompileUtil.write (smlfile "worlds") SMLCompileWorlds.worlds);
+   ; SMLCompileUtil.write (smlfile "search-sig") SMLCompileSearch.searchSig
+   ; SMLCompileUtil.write (smlfile "search") SMLCompileSearch.search);
 
 test ("b3", [ "examples/Back3.l10" ]);
 use (smlfile "terms-sig");
 use (smlfile "terms");
 use (smlfile "tables");
-use (smlfile "worlds-sig");
-use (smlfile "worlds");
+use (smlfile "search-sig");
+use (smlfile "search");
 
 test ("plus", [ "examples/Plus.l10" ]);
 use (smlfile "terms-sig");
 use (smlfile "terms");
 use (smlfile "tables");
-use (smlfile "worlds-sig");
-use (smlfile "worlds");
+use (smlfile "search-sig");
+use (smlfile "search");
 
 test ("l10", [ "examples/self/ast.l10" ]);
 use (smlfile "terms-sig");
 use (smlfile "terms");
 use (smlfile "tables");
-use (smlfile "worlds-sig");
-use (smlfile "worlds");
+use (smlfile "search-sig");
+use (smlfile "search");
 
 test ("re", [ "examples/Regexp.l10", 
               "examples/RegexpQuery.l10", 
@@ -43,8 +41,8 @@ test ("re", [ "examples/Regexp.l10",
 use (smlfile "terms-sig");
 use (smlfile "terms");
 use (smlfile "tables");
-use (smlfile "worlds-sig");
-use (smlfile "worlds");
+use (smlfile "search-sig");
+use (smlfile "search");
 
 test ("pa", [ "examples/ProgAnalysisA.l10", 
               "examples/ProgAnalysisB.l10", 
@@ -54,29 +52,29 @@ test ("pa", [ "examples/ProgAnalysisA.l10",
 use (smlfile "terms-sig");
 use (smlfile "terms");
 use (smlfile "tables");
-use (smlfile "worlds-sig");
-use (smlfile "worlds");
+use (smlfile "search-sig");
+use (smlfile "search");
 
 test ("wr", [ "regression/worldrule.l10" ]);
 use (smlfile "terms-sig");
 use (smlfile "terms");
 use (smlfile "tables");
-use (smlfile "worlds-sig");
-use (smlfile "worlds");
+use (smlfile "search-sig");
+use (smlfile "search");
 
 test ("t", [ "regression/tree.l10" ]);
 use (smlfile "terms-sig");
 use (smlfile "terms");
 use (smlfile "tables");
-use (smlfile "worlds-sig");
-use (smlfile "worlds"); 
+use (smlfile "search-sig");
+use (smlfile "search"); 
 
 test ("constr", [ "regression/constraints.l10" ]);
 use (smlfile "terms-sig");
 use (smlfile "terms");
 use (smlfile "tables");
-use (smlfile "worlds-sig");
-use (smlfile "worlds"); 
+use (smlfile "search-sig");
+use (smlfile "search"); 
 
 open TTerms;
 val map1 = MapTree.singleton (Leaf', 1);

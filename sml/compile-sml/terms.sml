@@ -360,7 +360,8 @@ fun terms () =
       val types = TypeTab.list ()
       val encodedTypes = List.filter encoded types
    in
-      emit ("structure " ^ getPrefix true "" ^ "TermsImpl = ")
+      emit ("structure " ^ getPrefix true "" ^ "Terms:> " 
+              ^ String.map Char.toUpper (getPrefix true "_") ^ "TERMS =")
       ; emit "struct"
       ; incr ()
       ; emit "(* Datatype views *)\n"
@@ -397,9 +398,6 @@ fun terms () =
       ; app emitMap encodedTypes
       ; decr ()
       ; emit "end\n"
-      ; emit ("structure " ^ getPrefix true "" ^ "Terms:> " 
-              ^ String.map Char.toUpper (getPrefix true "_") ^ "TERMS = " 
-              ^ getPrefix true "" ^ "TermsImpl")
    end
 
 end

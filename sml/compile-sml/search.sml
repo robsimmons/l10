@@ -1,9 +1,9 @@
 (* Robert J. Simmons *)
 
-structure SMLCompileWorlds:> sig
+structure SMLCompileSearch:> sig
 
-   val worldsSig: unit -> unit 
-   val worlds: unit -> unit 
+   val searchSig: unit -> unit 
+   val search: unit -> unit 
 
 end = 
 struct
@@ -146,7 +146,7 @@ fun emitWorld w =
 
 (* SIGNATURE FOO_SEARCH *)
 
-fun worldsSig () = 
+fun searchSig () = 
    let 
       val worlds = WorldTab.list ()
    in
@@ -162,7 +162,7 @@ fun worldsSig () =
 
 (* STRUCTURE FooSearch *)
 
-fun worlds () = 
+fun search () = 
    let
       val worlds = WorldTab.list ()
    in
