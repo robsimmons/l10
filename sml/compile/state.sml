@@ -173,8 +173,8 @@ struct
          val rules = List.concat (map compileRule (RuleTab.list ()))
       in
          app CompiledPremTab.bind rules
-         ; foldl loadIndex (0 (* XXX *), map loadDefaultIndex rels) 
-             (map #4 rules)
+         ; ignore (foldl loadIndex (0 (* XXX *), map loadDefaultIndex rels) 
+             (map #4 rules))
          ; app loadRelPathtree rels
          ; app loadWorldPathtree (WorldTab.list ())
       end

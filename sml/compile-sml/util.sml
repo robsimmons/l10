@@ -108,7 +108,7 @@ fun incr () = ind := !ind + 3
 
 fun decr () = ind := !ind - 3
 
-fun write filename f = 
+fun write filename (f: unit -> unit) = 
    let val started = ref false in
       (outstream := TextIO.openOut filename
        ; started := true
