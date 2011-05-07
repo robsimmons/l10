@@ -1,7 +1,7 @@
 (* Discovering indexes from patterns *)
 (* Robert J. Simmons *)
 
-structure Indexing':> sig
+structure Indexing:> sig
 
    (* Given free variables and a pattern, determines the mode in which 
     * the relation needs to be queried and the resulting substitution and 

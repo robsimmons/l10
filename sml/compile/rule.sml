@@ -53,8 +53,6 @@ structure Rule:> sig
 end = 
 struct
 
-open Indexing'
-
 datatype compiledPrem = 
    Normal of { index: (Symbol.symbol * Ast.modedTerm list),
                inputPattern: (int list * Symbol.symbol) list,
@@ -114,7 +112,7 @@ fun compile' (known, prems, concs) =
 
        | Ast.Normal pat :: prems => 
          let 
-            val { index, outputs, paths } = indexPat (known, pat)
+            val { index, outputs, paths } = Indexing.indexPat (known, pat)
             val needed = 
                restrict (union (known, FV.fvPat pat),
                          Ast.fvRule (prems, concs))
@@ -131,7 +129,7 @@ fun compile' (known, prems, concs) =
 
        | Ast.Negated pat :: prems =>
          let
-            val { index, outputs, paths } = indexPat (known, pat)
+            val { index, outputs, paths } = Indexing.indexPat (known, pat)
             val needed = restrict (known, Ast.fvRule (prems, concs))
             val prem = 
                { index = index,

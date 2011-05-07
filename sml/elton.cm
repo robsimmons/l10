@@ -6,8 +6,8 @@ Group is
 
    compile/fv.sml
    compile/path.sml
-   compile/rule.sml
    compile/indexing.sml
+   compile/rule.sml
    compile/state.sml
 
    compile-sml/util.sml

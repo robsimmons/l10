@@ -1,30 +1,24 @@
-
 $(SML_LIB)/basis/basis.mlb
+$(SML_LIB)/basis/unsafe.mlb
 $(SML_LIB)/smlnj-lib/PP/pp-lib.mlb
 $(SML_LIB)/smlnj-lib/Util/smlnj-lib.mlb
 $(SML_LIB)/mlyacc-lib/mlyacc-lib.mlb
 
-util/heap-sig.sml
-util/heap.sml
 util/symbol.sml
+util/symtab.sml
+util/multitab.sml
+util/sets-maps.sml
 
-core/global.sml
-core/ast.sml
-core/symtab.sml
-
-parse/l10.grm.sig
-parse/l10.grm.sml
-parse/l10.lex.sml
-parse/parse.sml
-
-term/term.sml
-term/termmap.sml
-term/predmap.sml
-term/subst.sml
+syntax/ast-sig.sml
+syntax/ast.sml
+syntax/l10.grm.sig
+syntax/l10.grm.sml
+syntax/l10.lex.sml
+syntax/parse.sml
 
 check/tabs.sml
 check/types.sml
+check/mode.sml
 check/load.sml
-check/check.sml
 
-frontend/go.sml
+frontend/read.sml

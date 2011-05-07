@@ -120,7 +120,6 @@ fun emitAssertion a =
 
       val typs = map #2 (#1 (RelTab.lookup a))
       val pathtrees = RelMatchTab.lookup a
-          handle Option => []
       val tuple = tuple (fn (i, _) => Path.var [ i ]) (mapi pathtrees)
    in
       emit ("fun assert" ^ embiggen (Symbol.name a) ^ " " ^ tuple ^ " =")
