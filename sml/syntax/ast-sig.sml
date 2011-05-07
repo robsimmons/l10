@@ -8,7 +8,7 @@ type typ = Symbol.symbol
 val strTyps: typ list -> string
 
 datatype 'a term' = 
-   Const of Symbol.symbol
+   Const of Symbol.symbol (* TODO: Rename this "SymConst" - fp 5/6/11 *)
  | NatConst of IntInf.int
  | StrConst of string
  | Structured of Symbol.symbol * 'a term' list
@@ -32,7 +32,8 @@ type shapeTerm = unit term'
 type modedTerm = (bool * typ) term'
 val strModedTerm: modedTerm -> string
 
-type arg = Symbol.symbol option * typ
+(* (NONE, t) is "t ->", (SOME x, t) is {x:t} *)
+type arg = Symbol.symbol option * typ 
 val strArgs: arg list -> string
 
 type world = Symbol.symbol * term list
@@ -53,8 +54,8 @@ val uscoresInAtomic: atomic -> bool
 datatype pattern = 
    Atomic of atomic
  | Exists of Symbol.symbol * pattern
- | Conj of pattern * pattern
- | One
+ | Conj of pattern * pattern (* Not implemented *)
+ | One (* Not implemented *)
 val fvPattern: pattern -> SetX.set
 val fvPatterns: pattern list -> SetX.set
 val strPattern: pattern -> string
@@ -65,12 +66,12 @@ val strBinrel: binrel -> string
 datatype prem = 
    Normal of pattern
  | Negated of pattern
- | Count of pattern * term
+ | Count of pattern * term (* Not implemented *)
  | Binrel of binrel * term * term
 val strPrem: prem -> string
 
-type dependency = world * world list
-type rule = prem list * atomic list
+type dependency = world * world list  (* W <- W1, ..., Wn *)
+type rule = prem list * atomic list   (* P1, ..., Pn -> A1, ... An *)
 val fvRule: rule -> SetX.set
 
 datatype decl = 

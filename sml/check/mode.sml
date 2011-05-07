@@ -13,6 +13,15 @@ structure Mode:> sig
    (* Checks that a dependency is well-moded.
     * Returns the free variables grounded by the world *)
    val checkDependency: Ast.dependency -> SetX.set
+   (* TODO: if I have 
+    * w0: world.
+    * bar: nat -> rel @ w0.
+    * w1: nat -> world.
+    * foo: {N: nat} rel @ w1 N.
+    *
+    * foo N, bar M, N < M -> foo M.
+    * has the dependency w1 M <- w1 N, N < M: this fails dependency checking.
+    * Is that a bug? This is even more dramatic if the premise is N == M. *)
 
    (* Checks that a rule is well-moded given variables known to be ground.
     * Pulls one trick: swaps the order of equality judgments so that the first

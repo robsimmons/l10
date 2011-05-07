@@ -34,7 +34,8 @@ end
 (* World constant table
  * For a world constant w : tp1 -> ... -> tpn -> world.
  * WorldTab.lookup w = [ tp1, ..., tpn ] *)
-structure WorldTab = Symtab(type entrytp = Ast.typ list val name = "WorldTab")
+structure WorldTab = Symtab(type entrytp = Ast.typ list 
+val name = "WorldTab")
 
 (* Relation constant table
  * For a relation constant r : tp1 -> ... -> {Tn: tpn} -> rel @ W,
@@ -75,7 +76,8 @@ struct
 end
 
 (* World dependency table
- * For a world dependency w t1...tn <- w1, ..., wm,
+ * For a world dependency w t1...tn <- W1, ..., Wm,
+ * (where Wi = wi ti1 ... tik)
  * SearchTab.lookup w contains ([ t1, ..., tn ], [ w1, ..., wm ]) *)
 structure SearchTab = Multitab(type entrytp = Ast.term list * Ast.world list)
 

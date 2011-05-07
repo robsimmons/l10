@@ -61,7 +61,7 @@ fun loadDecl decl =
       in
          bindDependency (world, worlds)
          ; print (A.strWorld world ^ " <- "
-                ^ String.concatWith ", " (map A.strWorld worlds) ^ ".\n")
+                  ^ String.concatWith ", " (map A.strWorld worlds) ^ ".\n")
          ; print "\n"
       end
 

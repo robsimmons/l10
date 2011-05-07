@@ -3,6 +3,7 @@ Group is
    $/pp-lib.cm
    $/smlnj-lib.cm
    $/ml-yacc-lib.cm
+   $/hash-cons-lib.cm
 
    util/symbol.sml
    util/symtab.sml

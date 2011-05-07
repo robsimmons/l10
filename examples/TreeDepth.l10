@@ -1,0 +1,15 @@
+n: type.
+z: n.
+s: n -> n.
+
+tree: type.
+leaf: tree.
+node: tree -> tree -> tree.
+
+w: n -> world.
+
+trees: tree -> {N: n} rel @ w N. 
+trees leaf z.
+trees T N -> trees T (s N).
+trees T1 N, trees T2 N -> trees (node T1 T2) (s N).
+
