@@ -4,15 +4,19 @@ struct
 val name = CommandLine.name ()
 val args = CommandLine.arguments ()
 
-fun errfn p s = 
-  (print ("Error" ^ (if p = "" then "" else p ^ " ") ^ ": " ^ s ^ "\n")
+fun die p s = 
+  (print ((if p = "" then "" else p ^ ": ") ^ s ^ "\n")
    ; OS.Process.exit OS.Process.failure)
+
+val () = print ("Elton database generator 0.0.1\n")
+
 
 
 (* Options *)
 
 datatype options = 
    Verbose
+ | Help
  | Prefix of string
  | Sources of string
  | Directory of string
@@ -25,25 +29,35 @@ val options: options GetOpt.opt_descr list =
     {short = "p",
      long = [ "prefix" ],
      desc = GetOpt.ReqArg (Prefix, "prefix"),
-     help = "Prefix for PREFIX_TERMS, PrefixSearch, prefix.terms.sml, etc." },
+     help = "Prefix for signatures, structures, and files." },
     {short = "s",
-     long = [ "sources-file" ],
+     long = [ "sources" ],
      desc = GetOpt.ReqArg (Sources, "sources"),
-     help = "Name for the generated sources.cm and sources.mlb files"},
+     help = "Base name for the generated source files"},
     {short = "d",
      long = [ "directory" ],
-     desc = GetOpt.ReqArg (Directory, "output-directory"),
-     help = "Directory for file output (will be created if non-existant)"} ]
+     desc = GetOpt.ReqArg (Directory, "dir"),
+     help = "Directory for file output"},
+    {short = "h",
+     long = [ "help" ],
+     desc = GetOpt.NoArg (fn () => Help),
+     help = "Show this message and exit"} ]
+
+val usageinfo  = 
+   GetOpt.usageInfo 
+     {header = "Usage: " ^ name ^ " [options] file.l10 ...\nOptions:",
+      options = options} ^ "\n"
 
 val (opts, files) = 
    GetOpt.getOpt 
       {argOrder = GetOpt.Permute, 
        options = options, 
-       errFn = errfn "reading arguments"} args
+       errFn = (fn s => print ("Error: " ^ s ^ "\n" ^ usageinfo))} args
 
 fun processOpt (opt, (prefix, sources, dir)) =
    case opt of 
       Verbose => (* Cause effect *) (prefix, sources, dir)
+    | Help => (print usageinfo; die "" "Exiting...")
     | Prefix prefix' => (prefix', sources, dir)
     | Sources sources' => (prefix, sources', dir)
     | Directory dir' => (prefix, sources, dir')
@@ -51,6 +65,10 @@ fun processOpt (opt, (prefix, sources, dir)) =
 val (prefix, sources, dir) = 
    foldr processOpt ("l10", "sources", OS.FileSys.getDir ()) opts
 
+val () = 
+   if null files 
+   then die "Nothing to do" ("type \"" ^ name ^ " --help\" for options") 
+   else ()
 
 
 (* Load program *)
@@ -61,7 +79,7 @@ val () =
       ; SMLCompileUtil.setPrefix prefix
       ; Read.files files
       ; CompilerState.load ()
-   end handle Fail s => errfn "" s 
+   end handle Fail s => die "Error loading code" s 
 
 
 
@@ -83,6 +101,6 @@ val () =
       ; SMLCompileUtil.write (file "tables.sml") SMLCompileTables.tables
       ; SMLCompileUtil.write (file "search-sig.sml") SMLCompileSearch.searchSig
       ; SMLCompileUtil.write (file "search.sml") SMLCompileSearch.search
-   end handle Fail s => errfn "generating code" s   
+   end handle Fail s => die "Error generating code" s   
 
 end
