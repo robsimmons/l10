@@ -28,11 +28,11 @@ val options: options GetOpt.opt_descr list =
      help = "Print out signature and compiler messages." },
     {short = "p",
      long = [ "prefix" ],
-     desc = GetOpt.ReqArg (Prefix, "prefix"),
+     desc = GetOpt.ReqArg (Prefix, "l10"),
      help = "Prefix for signatures, structures, and files." },
     {short = "s",
      long = [ "sources" ],
-     desc = GetOpt.ReqArg (Sources, "sources"),
+     desc = GetOpt.ReqArg (Sources, "l10.sources"),
      help = "Base name for the generated source files"},
     {short = "d",
      long = [ "directory" ],
@@ -63,7 +63,7 @@ fun processOpt (opt, (prefix, sources, dir)) =
     | Directory dir' => (prefix, sources, dir')
 
 val (prefix, sources, dir) = 
-   foldr processOpt ("l10", "sources", OS.FileSys.getDir ()) opts
+   foldr processOpt ("l10", "l10.sources", OS.FileSys.getDir ()) opts
 
 val () = 
    if null files 
@@ -71,36 +71,20 @@ val () =
    else ()
 
 
-(* Load program *)
-
-val () = 
-   let in 
-      CompilerState.reset ()
-      ; SMLCompileUtil.setPrefix prefix
-      ; Read.files files
-      ; CompilerState.load ()
-   end handle Fail s => die "Error loading code" s 
-
-
-
-(* Output program *)
+(* Run program *)
 
 val dirUser = OS.FileSys.getDir ()
 val dirProg = OS.Path.mkAbsolute { path = name, relativeTo = dirUser }
 
 fun absoluteUser s = OS.Path.mkAbsolute { path = s, relativeTo = dirUser }
 fun absoluteProg s = OS.Path.mkAbsolute { path = s, relativeTo = dirProg }
-fun file s = 
-   OS.Path.joinDirFile 
-      {dir = absoluteUser dir, file = SMLCompileUtil.getPrefix false "." ^ s}
                 
-val () = 
-   let in
-      SMLCompileUtil.write (file "terms-sig.sml") SMLCompileTerms.termsSig
-      ; SMLCompileUtil.write (file "terms.sml") SMLCompileTerms.terms
-      ; SMLCompileUtil.write (file "tables.sml") SMLCompileTables.tables
-      ; SMLCompileUtil.write (file "search-sig.sml") SMLCompileSearch.searchSig
-      ; SMLCompileUtil.write (file "search.sml") SMLCompileSearch.search
-   end handle Fail s => die "Error generating code" s   
+val () = Elton.load files
+   handle Fail s => die "Error loading code" s
+
+val () = SMLCompileUtil.setPrefix sources
+
+val () = Elton.write (absoluteUser dir) files
+   handle Fail s => die "Error generating code" s   
 
 end

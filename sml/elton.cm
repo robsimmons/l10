@@ -15,3 +15,5 @@ Group is
    compile-sml/terms.sml 
    compile-sml/tables.sml
    compile-sml/search.sml
+
+   frontend/elton.sml

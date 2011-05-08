@@ -1,80 +1,43 @@
 CM.make "sml/elton.cm";
-
-fun smlfile name = "/tmp/" ^ SMLCompileUtil.getPrefix false "." ^ name ^ ".sml";
-
+open SMLCompileUtil
 fun test (prefix, files) = 
-  (CompilerState.reset ()
-   ; SMLCompileUtil.setPrefix prefix
-   ; Read.files files
-   ; CompilerState.load ()
-   ; SMLCompileUtil.write (smlfile "terms-sig") SMLCompileTerms.termsSig
-   ; SMLCompileUtil.write (smlfile "terms") SMLCompileTerms.terms
-   ; SMLCompileUtil.write (smlfile "tables") SMLCompileTables.tables
-   ; SMLCompileUtil.write (smlfile "search-sig") SMLCompileSearch.searchSig
-   ; SMLCompileUtil.write (smlfile "search") SMLCompileSearch.search);
+   let in
+      Elton.load files
+      ; setPrefix prefix
+      ; Elton.write "/tmp" "." prefix 
+           ("/tmp/" ^ getPrefix false "." ^ "sources")
+   end;
 
 test ("b3", [ "examples/Back3.l10" ]);
-use (smlfile "terms-sig");
-use (smlfile "terms");
-use (smlfile "tables");
-use (smlfile "search-sig");
-use (smlfile "search");
+CM.make "/tmp/b3.sources.cm";
 
 test ("plus", [ "examples/Plus.l10" ]);
-use (smlfile "terms-sig");
-use (smlfile "terms");
-use (smlfile "tables");
-use (smlfile "search-sig");
-use (smlfile "search");
+CM.make "/tmp/plus.sources.cm";
 
 test ("l10", [ "examples/self/ast.l10" ]);
-use (smlfile "terms-sig");
-use (smlfile "terms");
-use (smlfile "tables");
-use (smlfile "search-sig");
-use (smlfile "search");
+CM.make "/tmp/plus.sources.cm";
 
 test ("re", [ "examples/Regexp.l10", 
               "examples/RegexpQuery.l10", 
               "examples/RegexpNot.l10", 
               "examples/RegexpNot2.l10" ]);
-use (smlfile "terms-sig");
-use (smlfile "terms");
-use (smlfile "tables");
-use (smlfile "search-sig");
-use (smlfile "search");
+CM.make "/tmp/re.sources.cm";
 
 test ("pa", [ "examples/ProgAnalysisA.l10", 
               "examples/ProgAnalysisB.l10", 
               "examples/ProgAnalysisC.l10", 
               "examples/ProgAnalysisD.l10", 
               "examples/ProgAnalysisE.l10" ]);
-use (smlfile "terms-sig");
-use (smlfile "terms");
-use (smlfile "tables");
-use (smlfile "search-sig");
-use (smlfile "search");
+CM.make "/tmp/pa.sources.cm";
 
 test ("wr", [ "regression/worldrule.l10" ]);
-use (smlfile "terms-sig");
-use (smlfile "terms");
-use (smlfile "tables");
-use (smlfile "search-sig");
-use (smlfile "search");
+CM.make "/tmp/wr.sources.cm";
 
 test ("t", [ "regression/tree.l10" ]);
-use (smlfile "terms-sig");
-use (smlfile "terms");
-use (smlfile "tables");
-use (smlfile "search-sig");
-use (smlfile "search"); 
+CM.make "/tmp/t.sources.cm";
 
 test ("constr", [ "regression/constraints.l10" ]);
-use (smlfile "terms-sig");
-use (smlfile "terms");
-use (smlfile "tables");
-use (smlfile "search-sig");
-use (smlfile "search"); 
+CM.make "/tmp/constr.sources.cm";
 
 open TTerms;
 val map1 = MapTree.singleton (Leaf', 1);
@@ -100,12 +63,4 @@ val three =  S' (S' (S' Z'));
 val map4 = PlusSearch.saturateW (five, three) MapWorld.empty;
 val res1 = app (fn x => print ("5+3 = " ^ strN x ^ "\n")) 
            (PlusTables.plus_1_lookup(!PlusTables.plus_1, (five, three)));
-
-(*
-open L10Terms;
-val () = print "\n"
-val () = print (strEven (Succ2' (Succ1' (Succ2' (Succ1' Zero')))))
-val () = print "\n";
-*)
-
 
