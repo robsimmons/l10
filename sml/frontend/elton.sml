@@ -1,25 +1,72 @@
 structure Elton:> sig
+   (* Reset, load, and compile SML files *)
+   val load: {sourceFiles: string list} -> unit
 
-   val load: string list -> unit
-   val write: string -> string -> string -> string -> unit
+   (* Output the generated .sml files *)
+   val writeSML: {targetDir: string, prefix: string} -> unit
 
+   (* Load helper files from the directory where they live to the target dir *)
+   val writeHelpers: {sourceDir: string, targetDir: string} -> unit
+
+   (* Output the compiler manager files *)
+   (* Needs to be called after writeSML, which sets the prefix correctly *)
+   val writeCM: {targetDir: string, filename: string} -> unit
 end = 
 struct
 
+open OS.Path
 structure Util = SMLCompileUtil
 val emit = Util.emit
 
-fun load files = 
+fun load {sourceFiles} = 
    let in 
       CompilerState.reset ()
-      ; Read.files files
+      ; Read.files sourceFiles
       ; CompilerState.load ()
+   end
+
+fun writeSML {targetDir, prefix} =
+   let 
+      fun file s = 
+         joinDirFile {dir = targetDir, file = Util.getPrefix false "." ^ s}
+   in
+      Util.setPrefix prefix
+      ; print "one\n"
+      ; Util.write (file "terms-sig.sml") SMLCompileTerms.termsSig
+      ; Util.write (file "terms.sml") SMLCompileTerms.terms
+      ; Util.write (file "tables.sml") SMLCompileTables.tables
+      ; Util.write (file "search-sig.sml") SMLCompileSearch.searchSig
+      ; Util.write (file "search.sml") SMLCompileSearch.search
+      ; print "two\n"
+   end      
+
+fun writeHelpers {sourceDir, targetDir} =
+   let 
+      fun copy file = 
+         let 
+            val source = mkAbsolute {path = file, relativeTo = sourceDir}
+            val target = mkAbsolute {path = file, relativeTo = targetDir}
+            val file1 = TextIO.openIn source
+            val s     = TextIO.inputAll file1 
+            val ()    = TextIO.closeIn file1 
+            val file2 = TextIO.openOut target
+         in  
+            TextIO.output(file2, s) 
+            ; TextIO.closeOut file2 
+         end 
+   in 
+      print "three\n"
+      ; copy "disctree.sml"
+    ; print "four\n"
+      ; copy "symbol.sml"
+      ; copy "sets-maps.sml"
    end
 
 fun cm () = 
    let in 
       emit ("Library")
       ; Util.incr ()
+      ; emit ("structure Symbol")
       ; emit ("structure " ^ Util.getPrefix true "" ^ "Terms")
       ; emit ("structure " ^ Util.getPrefix true "" ^ "Tables")
       ; emit ("structure " ^ Util.getPrefix true "" ^ "Search")
@@ -43,17 +90,7 @@ fun cm () =
       ; print "Okay that's done\n"
    end
 
-fun write output_dir elton_dir prefix sources = 
-   let 
-      fun file s = OS.Path.joinDirFile 
-                       {dir = output_dir, file = Util.getPrefix false "." ^ s}
-   in
-      Util.write (file "terms-sig.sml") SMLCompileTerms.termsSig
-      ; Util.write (file "terms.sml") SMLCompileTerms.terms
-      ; Util.write (file "tables.sml") SMLCompileTables.tables
-      ; Util.write (file "search-sig.sml") SMLCompileSearch.searchSig
-      ; Util.write (file "search.sml") SMLCompileSearch.search
-      ; print ("Writing " ^ sources ^ ".cm\n")
-      ; Util.write (sources ^ ".cm") cm
-   end      
+fun writeCM {targetDir, filename} = 
+   Util.write (joinDirFile {dir = targetDir, file = filename ^ ".cm"}) cm
+
 end

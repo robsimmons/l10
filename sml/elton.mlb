@@ -1,7 +1,5 @@
 sources.mlb
 
-util/disctree.sml
-
 compile/fv.sml
 compile/path.sml
 compile/indexing.sml

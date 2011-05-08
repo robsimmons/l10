@@ -1,11 +1,15 @@
 CM.make "sml/elton.cm";
-open SMLCompileUtil
 fun test (prefix, files) = 
-   let in
-      Elton.load files
-      ; setPrefix prefix
-      ; Elton.write "/tmp" "." prefix 
-           ("/tmp/" ^ getPrefix false "." ^ "sources")
+   let 
+      val sourceDir = OS.Path.mkAbsolute {path = "sml/util", 
+                                          relativeTo = OS.FileSys.getDir ()}
+   in
+      Elton.load {sourceFiles = files}
+      ; Elton.writeSML {targetDir = "/tmp", prefix = prefix}
+      ; Elton.writeHelpers {sourceDir = sourceDir, targetDir = "/tmp"}
+      ; Elton.writeCM 
+          {targetDir = "/tmp", 
+           filename = SMLCompileUtil.getPrefix false "." ^ "sources"}
    end;
 
 test ("b3", [ "examples/Back3.l10" ]);

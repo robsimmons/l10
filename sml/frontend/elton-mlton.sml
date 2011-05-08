@@ -32,7 +32,7 @@ val options: options GetOpt.opt_descr list =
      help = "Prefix for signatures, structures, and files." },
     {short = "s",
      long = [ "sources" ],
-     desc = GetOpt.ReqArg (Sources, "l10.sources"),
+     desc = GetOpt.ReqArg (Sources, "sources"),
      help = "Base name for the generated source files"},
     {short = "d",
      long = [ "directory" ],
@@ -71,20 +71,30 @@ val () =
    else ()
 
 
-(* Run program *)
+
+(* File utilities *)
 
 val dirUser = OS.FileSys.getDir ()
-val dirProg = OS.Path.mkAbsolute { path = name, relativeTo = dirUser }
+fun absoluteUser s = OS.Path.mkAbsolute {path = s, relativeTo = dirUser}
+val dirProg = absoluteUser (OS.Path.dir name)
+val dirSource = 
+   OS.Path.mkAbsolute {path = "../sml/util", relativeTo = dirProg}
+val dirTarget = absoluteUser dir 
 
-fun absoluteUser s = OS.Path.mkAbsolute { path = s, relativeTo = dirUser }
-fun absoluteProg s = OS.Path.mkAbsolute { path = s, relativeTo = dirProg }
-                
-val () = Elton.load files
+
+
+(* Load L10 code, output SML code *)
+
+val () = Elton.load {sourceFiles = files}
    handle Fail s => die "Error loading code" s
 
-val () = SMLCompileUtil.setPrefix sources
+val () = Elton.writeSML {targetDir = "/tmp", prefix = prefix}
+   handle Fail s => die "Error generating code" s
 
-val () = Elton.write (absoluteUser dir) files
-   handle Fail s => die "Error generating code" s   
+val () = Elton.writeHelpers {sourceDir = dirSource, targetDir = dirTarget}
+   handle Fail s => die "Error copying helper functions" s
+
+val () = Elton.writeCM {targetDir = dirTarget, filename = sources}
+   handle Fail s => die "Error generating build files" s   
 
 end
