@@ -1,96 +1,96 @@
 structure Elton:> sig
-   (* Reset, load, and compile SML files *)
-   val load: {sourceFiles: string list} -> unit
-
-   (* Output the generated .sml files *)
-   val writeSML: {targetDir: string, prefix: string} -> unit
-
-   (* Load helper files from the directory where they live to the target dir *)
-   val writeHelpers: {sourceDir: string, targetDir: string} -> unit
-
-   (* Output the compiler manager files *)
-   (* Needs to be called after writeSML, which sets the prefix correctly *)
-   val writeCM: {targetDir: string, filename: string} -> unit
+   exception Die of OS.Process.status 
+   val go: string * string list -> unit
 end = 
 struct
 
-open OS.Path
-structure Util = SMLCompileUtil
-val emit = Util.emit
+(* Exceptional behavior *)
 
-fun load {sourceFiles} = 
-   let in 
-      CompilerState.reset ()
-      ; Read.files sourceFiles
-      ; CompilerState.load ()
-   end
+exception Die of OS.Process.status
 
-fun writeSML {targetDir, prefix} =
+fun die p s = 
+  (print ((if p = "" then "" else p ^ ": ") ^ s ^ "\n")
+   ; raise Die OS.Process.failure)
+
+
+(* Options *)
+
+datatype options = 
+   Verbose
+ | Help
+ | Prefix of string
+ | Sources of string
+ | Directory of string
+
+val options: options GetOpt.opt_descr list = 
+  [ {short = "vV", 
+     long = [ "verbose" ],
+     desc = GetOpt.NoArg (fn () => Verbose),
+     help = "Print out signature and compiler messages." },
+    {short = "p",
+     long = [ "prefix" ],
+     desc = GetOpt.ReqArg (Prefix, "l10"),
+     help = "Prefix for signatures, structures, and files." },
+    {short = "d",
+     long = [ "directory" ],
+     desc = GetOpt.ReqArg (Directory, "dir"),
+     help = "Directory for file output"},
+    {short = "h",
+     long = [ "help" ],
+     desc = GetOpt.NoArg (fn () => Help),
+     help = "Show this message and exit"} ]
+
+
+(* Run top level *)
+
+fun go (name, args) = 
    let 
-      fun file s = 
-         joinDirFile {dir = targetDir, file = Util.getPrefix false "." ^ s}
+      val () = print ("Elton database generator 0.0.1\n")
+
+      val usageinfo  = 
+         GetOpt.usageInfo 
+            {header = "Usage: " ^ name ^ " [options] file.l10 ...\nOptions:",
+             options = options} ^ "\n"
+
+      fun processOpt (opt, (prefix, sources, dir)) =
+         case opt of 
+            Verbose => (* Cause effect *) (prefix, sources, dir)
+          | Help => (print usageinfo; die "" "Exiting...")
+          | Prefix prefix' => (prefix', sources, dir)
+          | Sources sources' => (prefix, sources', dir)
+          | Directory dir' => (prefix, sources, dir')
+
+      fun errFn s = print ("Error: " ^ s ^ "\n" ^ usageinfo)
+
+      val (opts, files) = 
+         GetOpt.getOpt 
+            {argOrder = GetOpt.Permute, options = options, errFn = errFn}
+            args
+
+      val (prefix, sources, dir) = 
+         foldr processOpt ("l10", "l10.sources", OS.FileSys.getDir ()) opts
+
+
+      (* File utilities *)
+
+      val dirUser = OS.FileSys.getDir ()
+      fun absoluteUser s = OS.Path.mkAbsolute {path = s, relativeTo = dirUser}
+      val dirProg = absoluteUser (OS.Path.dir name)
+      val dirSource = 
+         OS.Path.mkAbsolute {path = "../sml/util", relativeTo = dirProg}
+      val dirTarget = absoluteUser dir 
    in
-      Util.setPrefix prefix
-      ; print "one\n"
-      ; Util.write (file "terms-sig.sml") SMLCompileTerms.termsSig
-      ; Util.write (file "terms.sml") SMLCompileTerms.terms
-      ; Util.write (file "tables.sml") SMLCompileTables.tables
-      ; Util.write (file "search-sig.sml") SMLCompileSearch.searchSig
-      ; Util.write (file "search.sml") SMLCompileSearch.search
-      ; print "two\n"
-   end      
-
-fun writeHelpers {sourceDir, targetDir} =
-   let 
-      fun copy file = 
-         let 
-            val source = mkAbsolute {path = file, relativeTo = sourceDir}
-            val target = mkAbsolute {path = file, relativeTo = targetDir}
-            val file1 = TextIO.openIn source
-            val s     = TextIO.inputAll file1 
-            val ()    = TextIO.closeIn file1 
-            val file2 = TextIO.openOut target
-         in  
-            TextIO.output(file2, s) 
-            ; TextIO.closeOut file2 
-         end 
-   in 
-      print "three\n"
-      ; copy "disctree.sml"
-    ; print "four\n"
-      ; copy "symbol.sml"
-      ; copy "sets-maps.sml"
+      if null files 
+      then die "Nothing to do" ("type \"" ^ name ^ " --help\" for options") 
+      else ()
+      ; EltonMain.load {sourceFiles = files} 
+        handle Fail s => die "Error loading code" s
+      ; EltonMain.writeSML {targetDir = "/tmp", prefix = prefix}
+        handle Fail s => die "Error generating code" s
+      ; EltonMain.writeHelpers {sourceDir = dirSource, targetDir = dirTarget}
+        handle Fail s => die "Error copying helper functions" s
+      ; EltonMain.writeCM {targetDir = dirTarget}
+        handle Fail s => die "Error generating build files" s   
    end
-
-fun cm () = 
-   let in 
-      emit ("Library")
-      ; Util.incr ()
-      ; emit ("structure Symbol")
-      ; emit ("structure " ^ Util.getPrefix true "" ^ "Terms")
-      ; emit ("structure " ^ Util.getPrefix true "" ^ "Tables")
-      ; emit ("structure " ^ Util.getPrefix true "" ^ "Search")
-      ; emit ("structure MapI")
-      ; emit ("structure MapII")
-      ; emit ("structure MapP")
-      ; emit ("structure MapS")
-      ; emit ("structure MapX")
-      ; Util.decr (); emit "is"; Util.incr ()
-      ; emit ("$/basis.cm")
-      ; emit ("$/smlnj-lib.cm")
-      ; emit ("disctree.sml")
-      ; emit ("symbol.sml")
-      ; emit ("sets-maps.sml")
-      ; emit (Util.getPrefix false "." ^ "terms-sig.sml")
-      ; emit (Util.getPrefix false "." ^ "terms.sml")
-      ; emit (Util.getPrefix false "." ^ "tables.sml")
-      ; emit (Util.getPrefix false "." ^ "search-sig.sml")
-      ; emit (Util.getPrefix false "." ^ "search.sml")
-      ; Util.decr ()
-      ; print "Okay that's done\n"
-   end
-
-fun writeCM {targetDir, filename} = 
-   Util.write (joinDirFile {dir = targetDir, file = filename ^ ".cm"}) cm
 
 end

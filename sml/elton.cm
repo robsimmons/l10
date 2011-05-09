@@ -14,4 +14,5 @@ Group is
    compile-sml/tables.sml
    compile-sml/search.sml
 
+   frontend/elton-main.sml
    frontend/elton.sml

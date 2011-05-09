@@ -12,5 +12,6 @@ compile-sml/terms.sml
 compile-sml/tables.sml
 compile-sml/search.sml
 
+frontend/elton-main.sml
 frontend/elton.sml
 frontend/elton-mlton.sml
