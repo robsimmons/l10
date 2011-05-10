@@ -1,0 +1,7 @@
+w: world.
+
+edge: nat -> nat -> rel @ w.
+path: nat -> nat -> rel @ w.
+
+edge X Y -> path X Y.
+path X Y, path Y Z -> path X Z.
