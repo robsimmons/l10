@@ -19,7 +19,7 @@ fun to_string yytext =
 
 lcid = [a-z][A-Za-z0-9_\']*;
 ucid = [A-Z][A-Za-z0-9_\']*;
-string = \"[A-Za-z0-9_ \'!@#$%^&*]*\";
+string = \"[A-Za-z0-9_ \'!@#$%^&*()]*\";
 decnum = (0|[1-9][0-9]*);
 ws = [\ \t\011\012\r];
 eol = ("\013\010"|"\010"|"\013");

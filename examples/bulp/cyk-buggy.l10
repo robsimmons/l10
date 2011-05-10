@@ -1,0 +1,23 @@
+// Adapted directly from Jakob's CKY Bulp example
+// https://bitbucket.org/robsimmons/bulp/src/tip/examples/cyk.sml
+
+w: world.
+
+term: string -> t -> rel @ w.       // T
+nonterm: t -> t -> t -> rel @ w.    // NT
+parse: t -> nat -> nat -> rel @ w.  // PROD
+tok: nat -> string -> rel @ w.      // IN
+
+// Generic rules of parsing
+
+term S T, tok I S -> parse T I I.
+nonterm X Y Z, parse Y I J, parse Z (J+1) K -> parse X I K.
+
+// Rules of parens grammar parsing
+
+// term "(" lParen.          // lParen → "("
+// term ")" rParen.          // rParen → ")"
+// nonterm s lParen rParen.  // s → lParen rParen
+// nonterm s lParen sPrime.  // s → lParen s'
+// nonterm s s s.            // s → s s
+// nonterm sPrime s rParen.  // s' → s rParen

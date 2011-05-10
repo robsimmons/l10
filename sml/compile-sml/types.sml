@@ -55,9 +55,11 @@ fun nameOfTypeExt x =
    (if encoded x then (getPrefix true "" ^ "Terms.") else "") ^ nameOfType x
 
 fun NameOfType x = 
-   if encoded x then embiggen (Symbol.name x) else raise Fail "Invariant"
+   if encoded x then embiggen (Symbol.name x) 
+   else raise Fail ("Invariant in NameOfType (" ^ Symbol.name x ^ ")")
 fun nameOfView x = 
-   if encoded x then Symbol.name x ^ "_view" else raise Fail "Invariant"
+   if encoded x then Symbol.name x ^ "_view" 
+   else raise Fail ("Invariant in nameOfView (" ^ Symbol.name x ^ ")")
 
 
 fun nameOfPrj x = 

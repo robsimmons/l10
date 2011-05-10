@@ -146,7 +146,7 @@ fun emitAssertion a =
 fun nameOfShape (a, shape) = 
    let 
       val shapes = mapi (rev (map #terms (IndexTab.lookup a)))
-      fun find (shape, []) = raise Fail "Invariant"
+      fun find (shape, []) = raise Fail "Invariant in nameOfShape"
         | find (shape, (i, shape') :: shapes) = 
           if shape = shape' 
           then (Symbol.name a ^ "_" ^ Int.toString i)
