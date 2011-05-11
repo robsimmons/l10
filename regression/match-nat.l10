@@ -1,0 +1,2 @@
+w: nat -> world.
+w (X+5) <- w X.
