@@ -7,7 +7,7 @@ to Standard ML and the X10 parallel programming language are in development.
 
 For information on L10 see the 
 [preliminary design document](http://robsimmons.bitbucket.org/l10/spec.html),
-or the [examples](robsimmons.bitbucket.org/l10/examples.html) page.
+or the [examples](robsimmons.bitbucket.org/l10/examples.html) page. 
 
 Running the SML Interpreter (smlten)
 ====================================
