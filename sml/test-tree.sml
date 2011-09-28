@@ -1,5 +1,5 @@
 CM.make "sml/elton.cm";
-
+ 
 fun smlfile name = "/tmp/" ^ SMLCompileUtil.getPrefix false "." ^ name ^ ".sml";
 
 fun test (prefix, files) = 
