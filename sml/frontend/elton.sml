@@ -85,7 +85,7 @@ fun go (name, args) =
       else ()
       ; EltonMain.load {sourceFiles = files} 
         handle Fail s => die "Error loading code" s
-      ; EltonMain.writeSML {targetDir = "/tmp", prefix = prefix}
+      ; EltonMain.writeSML {targetDir = dirTarget, prefix = prefix}
         handle Fail s => die "Error generating code" s
       ; EltonMain.writeHelpers {sourceDir = dirSource, targetDir = dirTarget}
         handle Fail s => die "Error copying helper functions" s

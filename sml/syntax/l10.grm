@@ -158,7 +158,7 @@ fun parse syn =
 
 %nonterm 
    anno of syn
- | decl of int
+ | decl of (A.decl * unit * unit)
  | syn of syn
  | simp of syn
  | sings of syn list
@@ -189,9 +189,7 @@ fun parse syn =
 
 %%
 
-decl : LCID (1)
-     | UCID (2)
-(* syn                        ((parse syn, synleft, synright))
+decl : syn                        ((parse syn, synleft, synright))
 
 anno  : UCID COLON syn            (Ascribe (UCID, syn))
 
@@ -225,4 +223,3 @@ simp  : LPAREN syn RPAREN         (syn)
 sings :                           ([])
       | simp sings                (simp :: sings)
       | LCID sings                (App (LCID, []) :: sings)
-*)

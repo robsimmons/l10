@@ -1,5 +1,8 @@
 MLTON = mlton -const "Exn.keepHistory true" -default-ann "redundantMatch error" -default-ann "sequenceNonUnit error" -output 
 
+bin:
+	mkdir bin
+
 .PHONY:lexyacc
 lexyacc:
 	mllex sml/syntax/l10.lex
@@ -10,7 +13,7 @@ smlten: lexyacc
 	$(MLTON) bin/smlten sml/sources.mlb
 
 .PHONY: elton
-elton: lexyacc
+elton: lexyacc bin
 	$(MLTON) bin/elton sml/elton.mlb
 
 frontend-basic: sml/*.sml sml/l10.lex sml/l10.grm

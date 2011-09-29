@@ -1,13 +1,13 @@
 (* Parser interface for generated L10 parser *)
 (* Robert J. Simmons *)
 
-structure Parse :> sig
+structure Parse (* :> sig
 
    type stream
    exception Parse of string
    val parse : string -> stream option * (stream -> Ast.decl * stream option)
 
-end = 
+end *) = 
 struct
 
 structure L10LrVals = L10LrValsFn (structure Token = LrParser.Token)
