@@ -11,3 +11,4 @@ bin/*
 *.grm.sml
 *.lex.sml
 .svn
+.cm
