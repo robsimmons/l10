@@ -6,6 +6,12 @@ z: n.
 s: n -> n.
 w: n -> n -> world.
 
+even: type.
+odd: type.
+ez: even.
+eos: even -> odd.
+oes: odd -> even.
+
 // We can define certain "backward chaining" functions just fine in l10 under
 // the static scheduling regime; all we have to do is make the inputs
 // indices of the world. Keep in mind that this is a terrible idea, because

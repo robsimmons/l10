@@ -132,7 +132,7 @@ fun emitWorld w =
            pathtree
       ; decr ()
       ; emit ("val worldmap' = child_searches worldmap")
-      ; emit ("val () = print (\"Visiting \" ^ strWorld w ^ \"\\n\")")
+      (* ; emit ("val () = print (\"Visiting \" ^ strWorld w ^ \"\\n\")") *)
       ; emit ("val () = loop rulefns")
       ; decr ()
       ; emit ("in")
