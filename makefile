@@ -14,7 +14,8 @@ smlten: lexyacc
 
 .PHONY: elton
 elton: lexyacc bin
-	$(MLTON) bin/elton sml/elton.mlb
+	$(MLTON) bin/elton.exe sml/elton.mlb
+	cat lib/run.sh > bin/elton
 
 frontend-basic: sml/*.sml sml/l10.lex sml/l10.grm
 	mlton -output bin/l10front sml/sources.mlb
