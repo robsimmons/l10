@@ -1,0 +1,73 @@
+/* L10 Lexer */
+
+name L10Lex
+alphabet 128
+
+set id = (| (range 'A 'Z 'a 'z '0 '9) '_ '\ '')
+set char = (| (range 'A 'Z 'a 'z '0 '9) 32 '' '! '@ '# '$ '% '^ '& '* '( '))
+set white = (| 32 9 10 13) /* space, tab, linefeed, carriage return */
+set pos = (range '1 '9)
+set digit = (range '0 '9)
+set az = (range 'a 'z)
+set AZ = (range 'A 'Z)
+
+regexp lcid = (seq az (* id))
+regexp ucid = (seq AZ (* id))
+regexp string = (seq '" (* char) '")
+regexp decnum = (| '0 (seq pos (* digit)))
+regexp eol = (| (seq 13 (? 10)) 10)
+
+function lexmain : tok = 
+   eos       => eof
+   (+ white) => space
+
+   '{        => lbrack
+   '}        => rbrack
+   '(        => lparen
+   ')        => rparen
+   "Ex"      => ex
+
+   '.        => period
+   ',        => comma
+   ':        => colon
+   '=        => eq
+   "->"      => rarrow
+   "<-"      => larrow
+   '@        => at
+   
+   "=="      => eqeq
+   "!="      => neq
+   '>        => gt
+   '<        => lt
+   ">="      => geq
+   "<="      => leq
+   '+        => plus
+   '-        => minus
+   
+   "world"   => world
+   "type"    => ty
+   "rel"     => rel
+   '_        => uscore
+   
+   ucid      => ucid
+   lcid      => lcid
+   decnum    => num
+   string    => str
+   
+   "--"      => linecomment
+   "{-"      => multicomment
+   "{-#"     => lanno
+   "#-}"     => ranno
+   epsilon   => error
+
+function linecomment : u = 
+   (| 10 13) => comment_close
+   any       => comment_skip
+   epsilon   => comment_error
+   
+function multicomment : u = 
+   "{-"      => comment_open
+   "-}"      => comment_close
+   any       => comment_skip
+   epsilon   => comment_error
+
