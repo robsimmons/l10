@@ -7,21 +7,21 @@ terminal RCURLY of pos
 terminal LPAREN of pos
 terminal RPAREN of pos
 terminal EX of pos
-
 terminal PERIOD of pos
-terminal COMMA of pos
-terminal COLON of pos
-terminal EQ of pos
-terminal RARROW of pos 
-terminal LARROW of pos 
-terminal AT of pos
 
-terminal EQEQ of pos
-terminal NEQ of pos 
-terminal GT of pos
-terminal LT of pos
-terminal GEQ of pos
-terminal LEQ of pos
+terminal COLON of pos   precl 20 /* nonassoc */
+terminal EQ of pos      precl 20 /* nonassoc */
+terminal LARROW of pos  precl 30
+terminal RARROW of pos  precr 40 
+terminal COMMA of pos   precl 50
+terminal AT of pos      precl 60 /* nonassoc */
+
+terminal EQEQ of pos    precl 70 /* nonassoc */
+terminal NEQ of pos     precl 70 /* nonassoc */
+terminal GT of pos      precl 70 /* nonassoc */
+terminal LT of pos      precl 70 /* nonassoc */
+terminal GEQ of pos     precl 70 /* nonassoc */
+terminal LEQ of pos     precl 70 /* nonassoc */
 
 terminal PLUS of pos
 terminal MINUS of pos
@@ -48,25 +48,25 @@ nonterminal Bind : ucid_bind =
    1:UCID COLON 2:Syn           => ascribe_ucid 
 
 nonterminal Syn : syn =
-   1:LCID COLON 2:Syn           => ascribe_lcid  precr 20 /**/
-   1:LCID EQ 2:Syn              => assign        precr 20 /**/
-   1:Syn LARROW 2:Syn           => larrow        precl 30
-   1:Syn RARROW 2:Syn           => rarrow        precr 40
-   1:Syn COMMA 2:Syn            => conj          precr 50
-   1:Syn AT 2:Syn               => at            precl 60 /**/
-   1:Syn EQEQ 2:Syn             => eqeq          precl 70 /**/
-   1:Syn NEQ 2:Syn              => neq           precl 70 /**/
-   1:Syn GT 2:Syn               => gt            precl 70 /**/
-   1:Syn LT 2:Syn               => lt            precl 70 /**/
-   1:Syn GEQ 2:Syn              => geq           precl 70 /**/
-   1:Syn LEQ 2:Syn              => leq           precl 70 /**/
-   1:Syn PLUS 2:Syn             => plus          precl 80
-   1:Syn MINUS 2:Syn            => minus         precl 80
+   1:LCID COLON 2:Syn           => ascribe_lcid
+   1:LCID EQ 2:Syn              => assign      
+   1:Syn LARROW 2:Syn           => larrow      
+   1:Syn RARROW 2:Syn           => rarrow      
+   1:Syn COMMA 2:Syn            => conj        
+   1:Syn AT 2:Syn               => at          
+   1:Syn EQEQ 2:Syn             => eqeq        
+   1:Syn NEQ 2:Syn              => neq         
+   1:Syn GT 2:Syn               => gt          
+   1:Syn LT 2:Syn               => lt          
+   1:Syn GEQ 2:Syn              => geq         
+   1:Syn LEQ 2:Syn              => leq         
+   1:Syn PLUS 2:Syn             => plus           precl 80
+   1:Syn MINUS 2:Syn            => minus          precl 80
 
    1:Simp                       => id
    1:LCID 2:Sings               => app
-   1:LCURLY 2:Bind RCURLY 3:Syn => pi
-   1:EX 2:UCID RCURLY 3:Syn     => ex 
+   1:LCURLY 2:Bind RCURLY 3:Syn => pi             precr 10
+   1:EX 2:UCID PERIOD 3:Syn     => ex             precr 10
    1:LANNO 2:Anno 3:RANNO       => annotation
 
 nonterminal Simp : syn =
