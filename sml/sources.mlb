@@ -1,3 +1,13 @@
+$(CMLIB)/lib/cmlib.mlb
+cmlib-defaults.sml
+
+ast-sig.sml
+ast.sml
+
+l10.cmlex.sml
+l10.cmyacc.sml
+
+(*
 $(SML_LIB)/basis/basis.mlb
 $(SML_LIB)/basis/unsafe.mlb
 $(SML_LIB)/smlnj-lib/PP/pp-lib.mlb
@@ -8,9 +18,10 @@ util/symbol.sml
 util/symtab.sml
 util/multitab.sml
 util/sets-maps.sml
+*)
 
-syntax/ast-sig.sml
-syntax/ast.sml
+
+(*
 syntax/l10.grm.sig
 syntax/l10.grm.sml
 syntax/l10.lex.sml
@@ -22,3 +33,4 @@ check/mode.sml
 check/load.sml
 
 frontend/read.sml
+*)

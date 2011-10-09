@@ -79,9 +79,9 @@ nonterminal Simp : syn =
    1:NUM                        => num
    1:STRING                     => string
 
-nonterminal Sings : syn =       => nil
-   1:Simp 2:Sings               => cons
-   1:LCID 2:Sings               => cons_lcid
+nonterminal Sings : syn =       => sings_end
+   1:Simp 2:Sings               => sings_cons
+   1:LCID 2:Sings               => sings_lcid
 
 
 

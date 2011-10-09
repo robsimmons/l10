@@ -8,7 +8,7 @@ type typ = Symbol.symbol
 val strTyps: typ list -> string
 
 datatype 'a term' = 
-   Const of Symbol.symbol (* TODO: Rename this "SymConst" - fp 5/6/11 *)
+   SymConst of Symbol.symbol 
  | NatConst of IntInf.int
  | StrConst of string
  | Structured of Symbol.symbol * 'a term' list
@@ -17,7 +17,7 @@ datatype 'a term' =
 val strTerm': ('a -> string) -> 'a term' -> string
 
 type term = Symbol.symbol option term'
-type subst = term MapX.map
+type subst = term DictX.dict
 val eqTerm:   term * term -> bool
 val fvTerm:   term -> SetX.set
 val fvTerms:  term list -> SetX.set
