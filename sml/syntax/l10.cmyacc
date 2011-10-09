@@ -23,8 +23,8 @@ terminal LT of pos      precl 70 /* nonassoc */
 terminal GEQ of pos     precl 70 /* nonassoc */
 terminal LEQ of pos     precl 70 /* nonassoc */
 
-terminal PLUS of pos
-terminal MINUS of pos
+terminal PLUS of pos    precl 80 
+terminal MINUS of pos   precl 80
 
 terminal WORLD of pos
 terminal TYPE of pos
@@ -60,8 +60,8 @@ nonterminal Syn : syn =
    1:Syn LT 2:Syn               => lt          
    1:Syn GEQ 2:Syn              => geq         
    1:Syn LEQ 2:Syn              => leq         
-   1:Syn PLUS 2:Syn             => plus           precl 80
-   1:Syn MINUS 2:Syn            => minus          precl 80
+   1:Syn PLUS 2:Syn             => plus
+   1:Syn MINUS 2:Syn            => minus
 
    1:Simp                       => id
    1:LCID 2:Sings               => app
