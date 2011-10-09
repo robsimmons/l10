@@ -1,0 +1,99 @@
+/* L10 Parser */
+
+name L10Parse 
+
+terminal LCURLY of pos
+terminal RCURLY of pos
+terminal LPAREN of pos
+terminal RPAREN of pos
+terminal EX of pos
+
+terminal PERIOD of pos
+terminal COMMA of pos
+terminal COLON of pos
+terminal EQ of pos
+terminal RARROW of pos 
+terminal LARROW of pos 
+terminal AT of pos
+
+terminal EQEQ of pos
+terminal NEQ of pos 
+terminal GT of pos
+terminal LT of pos
+terminal GEQ of pos
+terminal LEQ of pos
+
+terminal PLUS of pos
+terminal MINUS of pos
+
+terminal WORLD of pos
+terminal TYPE of pos
+terminal REL of pos
+terminal USCORE of pos
+
+terminal UCID of pos_str
+terminal LCID of pos_str
+terminal NUM of pos_int
+terminal STRING of pos_str
+
+terminal LANNO of pos
+terminal RANNO of pos
+
+start Decl
+
+nonterminal Decl : decl =
+   1:Syn 2:PERIOD               => full_decl
+
+nonterminal Bind : ucid_bind =
+   1:UCID COLON 2:Syn           => ascribe_ucid 
+
+nonterminal Syn : syn =
+   1:LCID COLON 2:Syn           => ascribe_lcid  precr 20 /**/
+   1:LCID EQ 2:Syn              => assign        precr 20 /**/
+   1:Syn LARROW 2:Syn           => larrow        precl 30
+   1:Syn RARROW 2:Syn           => rarrow        precr 40
+   1:Syn COMMA 2:Syn            => conj          precr 50
+   1:Syn AT 2:Syn               => at            precl 60 /**/
+   1:Syn EQEQ 2:Syn             => eqeq          precl 70 /**/
+   1:Syn NEQ 2:Syn              => neq           precl 70 /**/
+   1:Syn GT 2:Syn               => gt            precl 70 /**/
+   1:Syn LT 2:Syn               => lt            precl 70 /**/
+   1:Syn GEQ 2:Syn              => geq           precl 70 /**/
+   1:Syn LEQ 2:Syn              => leq           precl 70 /**/
+   1:Syn PLUS 2:Syn             => plus          precl 80
+   1:Syn MINUS 2:Syn            => minus         precl 80
+
+   1:Simp                       => id
+   1:LCID 2:Sings               => app
+   1:LCURLY 2:Bind RCURLY 3:Syn => pi
+   1:EX 2:UCID RCURLY 3:Syn     => ex 
+   1:LANNO 2:Anno 3:RANNO       => annotation
+
+nonterminal Simp : syn =
+   1:LPAREN 2:Syn 3:RPAREN      => id_simp
+   1:UCID                       => ucid
+   1:USCORE                     => underscore
+   1:WORLD                      => world
+   1:TYPE                       => ty
+   1:REL                        => rel
+   1:NUM                        => num
+   1:STRING                     => string
+
+nonterminal Sings : syn =       => nil
+   1:Simp 2:Sings               => cons
+   1:LCID 2:Sings               => cons_lcid
+
+
+
+/* Extensions for the annotation language */
+
+terminal ANNO_QUERY of pos
+
+nonterminal Anno : anno =
+   ANNO_QUERY 1:LCID 2:Modes    => anno_query
+
+nonterminal Modes : modes =     => mode_end
+   PLUS 1:Modes                 => mode_input
+   MINUS 1:Modes                => mode_output
+   USCORE 1: Modes              => mode_ignore
+
