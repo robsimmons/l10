@@ -1,9 +1,15 @@
 Group is
-   $/basis.cm
-   $/pp-lib.cm
-   $/smlnj-lib.cm
-   $/ml-yacc-lib.cm
+   ../../cmlib/lib/cmlib.cm
+   cmlib-defaults.sml
 
+   ast-sig.sml
+   ast.sml
+
+   l10.cmlex.sml
+   lexer.sml
+   l10.cmyacc.sml
+
+(*
    util/symbol.sml
    util/symtab.sml
    util/multitab.sml
@@ -21,3 +27,4 @@ Group is
    check/load.sml
 
    frontend/read.sml 
+*)

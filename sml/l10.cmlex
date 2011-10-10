@@ -5,7 +5,7 @@ alphabet 128
 
 set id = (| (range 'A 'Z 'a 'z '0 '9) '_ '\ '')
 set char = (| (range 'A 'Z 'a 'z '0 '9) 32 '' '! '@ '# '$ '% '^ '& '* '( '))
-set white = (| 32 9) 
+set white = (| 32 9 13 10) 
 set pos = (range '1 '9)
 set digit = (range '0 '9)
 set az = (range 'a 'z)
@@ -15,12 +15,10 @@ regexp lcid = (seq az (* id))
 regexp ucid = (seq AZ (* id))
 regexp string = (seq '" (* char) '")
 regexp decnum = (| '0 (seq pos (* digit)))
-regexp eol = (| (seq 13 (? 10)) 10) /* Three end-of-lines: \n\r, \n, and \r */
 
 function lexmain : tok = 
    eos       => eof
    (+ white) => space
-   eol       => newline
 
    '{        => lcurly
    '}        => rcurly
@@ -55,13 +53,13 @@ function lexmain : tok =
    string    => str
    
    "--"      => linecomment
+   "//"      => linecomment
    "{-"      => comment
    "{-#"     => anno_start
    epsilon   => error
 
 function anno : tok = 
    (+ white) => anno_space
-   eol       => anno_newline
 
    "QUERY"   => anno_query
 
@@ -76,14 +74,13 @@ function anno : tok =
    epsilon   => anno_error
 
 function linecomment : u = 
-   eol       => linecomment_close
+   (| 10 13) => linecomment_close
    any       => linecomment_skip
    epsilon   => linecomment_error
    
 function comment : u = 
    "{-"      => comment_open
    "-}"      => comment_close
-   eol       => comment_newline
    any       => comment_skip
    epsilon   => comment_error
 

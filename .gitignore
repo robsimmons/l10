@@ -1,0 +1,15 @@
+bin/*
+*.cc
+*.h
+*.struct_h
+*.inc
+*~
+*/.cm/*
+*.grm.desc
+*.grm.sig
+*.grm.sml
+*.lex.sml
+*.cmlex.sml
+*.cmyacc.sml
+.svn
+.cm
