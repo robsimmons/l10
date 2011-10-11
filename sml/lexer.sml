@@ -44,11 +44,14 @@ end
 
 structure Lexer:> 
 sig
+   exception LexError of Coord.t * string
    val lex: string -> char Stream.stream -> Token.t Stream.stream
 end = 
 struct
    open Token
    open Stream
+
+   exception LexError of Coord.t * string
 
    structure Arg = 
    struct
@@ -84,7 +87,14 @@ struct
          in
             Cons (token pos, lazy (fn () => (nextstate self) follow coord))
          end
- 
+
+      fun action nextstate f ({ follow, self, str, ...}: arg) left = 
+         let 
+            val (pos, coord, str') = extent str left
+         in
+            Cons (f (pos, str'), lazy (fn () => (nextstate self) follow coord))
+         end
+
       fun fastforward nextstate ({ follow, self, str, ...}: arg) left = 
          (nextstate self) follow (#2 (extent str left))
 
@@ -118,54 +128,62 @@ struct
       val rel = simple #lexmain REL
       val uscore = simple #lexmain USCORE
 
-      val ucid = fn _ => raise Match                 
-      val lcid = fn _ => raise Match                 
-      val num = fn _ => raise Match                 
-      val str = fn _ => raise Match                 
+      val ucid = action #lexmain UCID
+      val lcid = action #lexmain LCID
+      val num = action #lexmain 
+         (fn (pos, str) => 
+            (case IntInf.fromString str of 
+               NONE => raise LexError (Pos.left pos, "Bad integer constant")
+             | SOME i => NUM (pos, i)))
+      val str = action #lexmain
+         (fn (pos, str) => 
+            STRING (pos, String.substring (str, 1, size str - 2)))
 
-      val linecomment = fn _ => raise Match
-      val comment = fn _ => raise Match
+      fun linecomment ({ follow, self, str, ...}: arg) coord = 
+         let val (coord', follow') = 
+                (#linecomment self) follow (#2 (extent str coord))
+         in (#lexmain self) follow' coord' end
+      fun comment ({ follow, self, str, ...}: arg) coord = 
+         let val (coord', follow') = 
+                (#comment self) follow (#2 (extent str coord))
+         in (#lexmain self) follow' coord' end
       val anno_start = simple #anno LANNO
-      fun error _ coord = 
-         raise Fail ("Lex error at " ^ Coord.toString coord 
-                     ^ "\n(position " ^ Int.toString (Coord.abs coord) ^ ")")
+      fun error _ coord = raise LexError (coord, "Lex error")
 
       val anno_space = fastforward #anno
       val anno_query = simple #anno ANNO_QUERY
       val anno_plus = simple #anno PLUS
       val anno_minus = simple #anno MINUS
       val anno_uscore = simple #anno USCORE
-      val anno_lcid = fn _ => raise Match
+      val anno_lcid = action #lexmain LCID
 
       val anno_end = simple #lexmain RANNO
-      val anno_linecomment = fn _ => raise Match
-      val anno_comment = fn _ => raise Match
-      fun anno_error _ coord =
-         raise Fail ("Lex error in annotation at " ^ Coord.toString coord 
-                     ^ "\n(position " ^ Int.toString (Coord.abs coord) ^ ")")
+      fun anno_linecomment ({ follow, self, str, ...}: arg) coord = 
+         let val (coord', follow') = 
+                (#linecomment self) follow (#2 (extent str coord))
+         in (#anno self) follow' coord' end
+      fun anno_comment ({ follow, self, str, ...}: arg) coord = 
+         let val (coord', follow') = 
+                (#comment self) follow (#2 (extent str coord))
+         in (#anno self) follow' coord' end
+      fun anno_error _ coord = 
+         raise LexError (coord, "Lex error in annotation")
 
       fun linecomment_close ({ follow, self, str, ...}: arg) coord =
          (#2 (extent str coord), follow)
       val linecomment_skip = fastforward #linecomment
       fun linecomment_error _ coord =
-         raise Fail ("Unterminated line comment at end of file at " 
-                     ^ Coord.toString coord 
-                     ^ "\n(position " ^ Int.toString (Coord.abs coord) ^ ")")
+         raise LexError(coord, "Unterminated line comment at end of file")
 
       fun comment_open ({ follow, self, str, ...}: arg) coord = 
-         let 
-            val (coord', follow') = 
-               (#comment self) follow (#2 (extent str coord))
-         in
-            (#comment self) follow' coord'
-         end
+         let val (coord', follow') = 
+                (#comment self) follow (#2 (extent str coord))
+         in (#comment self) follow' coord' end
       val comment_skip = fastforward #comment
       fun comment_close ({ follow, self, str, ... }: arg) coord = 
          (#2 (extent str coord), follow)
       fun comment_error _ coord =
-         raise Fail ("Unclosed comment at end of file at " 
-                     ^ Coord.toString coord 
-                     ^ "\n(position " ^ Int.toString (Coord.abs coord) ^ ")")
+         raise LexError (coord, "Unclosed comment at end of file")
 
    end
 
