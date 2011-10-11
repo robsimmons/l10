@@ -33,13 +33,52 @@ struct
   
     | UCID of Pos.t * string
     | LCID of Pos.t * string
-    | NUM of Pos.t * IntInf.int
+    | NUM of Pos.t * int
     | STRING of Pos.t * string
 
     | LANNO of Pos.t
     | RANNO of Pos.t
     | ANNO_QUERY of Pos.t
   
+   fun pos tok = 
+      case tok of
+         LCURLY pos => pos
+       | RCURLY pos => pos
+       | LPAREN pos => pos
+       | RPAREN pos => pos
+       | EX pos => pos
+       | PERIOD pos => pos
+
+       | COLON pos => pos
+       | EQ pos => pos
+       | LARROW pos => pos
+       | RARROW pos => pos
+       | COMMA pos => pos
+       | AT pos => pos
+   
+       | EQEQ pos => pos
+       | NEQ pos => pos
+       | GT pos => pos
+       | LT pos => pos
+       | GEQ pos => pos
+       | LEQ pos => pos
+  
+       | PLUS pos => pos
+       | MINUS pos => pos
+
+       | WORLD pos => pos
+       | TYPE pos => pos
+       | REL pos => pos
+       | USCORE pos => pos
+  
+       | UCID (pos, _) => pos
+       | LCID (pos, _) => pos
+       | NUM (pos, _) => pos
+       | STRING (pos, _) => pos
+
+       | LANNO pos => pos
+       | RANNO pos => pos
+       | ANNO_QUERY pos => pos
 end
 
 structure Lexer:> 
@@ -132,7 +171,7 @@ struct
       val lcid = action #lexmain LCID
       val num = action #lexmain 
          (fn (pos, str) => 
-            (case IntInf.fromString str of 
+            (case Int.fromString str of 
                NONE => raise LexError (Pos.left pos, "Bad integer constant")
              | SOME i => NUM (pos, i)))
       val str = action #lexmain
@@ -152,6 +191,8 @@ struct
 
       val anno_space = fastforward #anno
       val anno_query = simple #anno ANNO_QUERY
+      val anno_lparen = simple #anno LPAREN
+      val anno_rparen = simple #anno RPAREN
       val anno_plus = simple #anno PLUS
       val anno_minus = simple #anno MINUS
       val anno_uscore = simple #anno USCORE
@@ -187,7 +228,7 @@ struct
 
    end
 
-   structure LexMain = 
+   structure Lex = 
       L10Lex
       (structure Streamable = StreamStreamable
        structure Arg = Arg)
@@ -196,7 +237,7 @@ struct
       let 
          val (coord, stream') = MarkCharStream.mark name stream
       in  
-         lazy (fn () => LexMain.lexmain stream' coord)
+         lazy (fn () => Lex.lexmain stream' coord)
       end
 
 end
