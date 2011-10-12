@@ -112,9 +112,37 @@ end = struct
          App ((_, t), []) => Symbol.fromValue t
        | _ => raise SyntaxError (SOME (getpos syn), "Expected a simple type")
 
+   (*[ val p_ground: syn -> Term.ground ]*)
+   fun p_ground syn = raise Match
 
-   (*[ val p_world: syn -> Atom.world ]*)
-   fun p_world _ = raise Match
+   (*[ val p_term: syn -> Term.term ]*)
+   fun p_term syn = raise Match
+
+   (*[ val p_world': syn -> SetX.set -> (Pos.t * Atom.world) option ]*)
+   fun p_world' syn worlds =
+      case syn of 
+         App ((_, id), syns) =>
+         let val w = Symbol.fromValue id in 
+            if SetX.member worlds w 
+            then SOME (getpos syn, (w, map p_term syns))
+            else NONE
+         end
+       | _ => NONE
+
+   (*[ val p_world: syn -> SetX.set -> (Pos.t * Atom.world) ]*)
+   fun p_world syn worlds = raise Match
+
+   (*[ val p_prop: syn -> SetX.set -> Atom.world ]*)
+   fun p_prop syn worlds = raise Match
+
+   (*[ val p_ground_world: syn -> SetX.set -> (Pos.t * Atom.ground_world) ]*)
+   fun p_ground_world syn worlds = raise Match
+
+   (*[ val p_ground_prop: syn -> SetX.set -> (Pos.t * Atom.ground_prop) ]*)
+   fun p_ground_prop syn worlds = raise Match
+
+   (*[ val p_rule: syn -> SetX.set -> Rule.rule ]*)
+   fun p_rule syn worlds = raise Match
 
    (*[ val p_decl: Pos.t -> syn -> SetX.set -> (Decl.decl * SetX.set) ]*)
    fun p_decl pos syn worlds = 
@@ -139,12 +167,12 @@ end = struct
                     | Decl.Type _ => 
                       raise SyntaxError 
                          (SOME pos,
-                          "Dependent types ({x:t} type) not allowed")
+                          "Dependent types `{...} type` not allowed")
                end
              | pi pos (syn, _) = 
                raise SyntaxError 
                   (SOME (getpos syn),
-                   "Pi-bindings {...} must be of the form {x:t}")
+                   "Pi-bindings `{...}` must be of the form `{x:t}`")
 
             (*[ val arrow: 
                    Pos.t
@@ -161,7 +189,7 @@ end = struct
                 | Decl.Type _ => 
                   raise SyntaxError 
                      (SOME pos,
-                      "Dependent types (t -> type) not allowed")
+                      "Dependent types `t -> type` not allowed")
 
             (*[ val class: syn -> Decl.class ]*)
             fun class syn =
@@ -175,11 +203,11 @@ end = struct
                 | World _ => 
                   Decl.World (pos, id, Class.World)
                 | At (Rel _, syn) => 
-                  Decl.Rel (pos, id, Class.Rel (p_world syn))
+                  Decl.Rel (pos, id, Class.Rel (p_world syn worlds))
                 | At (syn, _) => 
                   raise SyntaxError
                      (SOME (getpos syn), 
-                      "Non-'rel' to the left of @ in a classifier")
+                      "Non-`rel` to the left of `@` in a classifier")
                 | _ => 
                   raise SyntaxError
                      (SOME (getpos syn), 
@@ -194,20 +222,41 @@ end = struct
             (decl, worlds')
          end
 
-(*
-       | Assign (id, At (syn, w)) => 
-         let (* val () = print ("---\n" ^ string w ^ "---\n")  *) in
-            A.DeclDatabase (symbol id, p_atomics syn, p_atomic w)
+       | Assign ((_, id), At (syn1, syn2)) => 
+         let 
+            (*[ val p_props: syn -> (Pos.t * Atom.ground_prop) list ]*)
+            fun p_props (Conj (syn1, syn2)) = p_props syn1 @ p_props syn2
+              | p_props syn = [ p_ground_prop syn worlds ]
+         in 
+            (Decl.DB 
+                (pos, Symbol.fromValue id, 
+                 p_props syn1, 
+                 p_ground_world syn2 worlds),
+             worlds)
          end
-       | Arrow (prems, head) =>
-         (case p_worldhead head worlds of 
-             NONE => A.DeclRule (p_rule syn)
-           | SOME w => A.DeclDepends (w, p_atomics prems))
+
+       | Assign (id, syn) => 
+         raise SyntaxError  
+            (SOME (getpos syn),
+             "Database assignment not of the form (...) @ ...")
+
+       | Arrow (syn1, syn2) =>
+         (case p_world' syn2 worlds of
+             NONE => (Decl.Rule (pos, p_rule syn worlds), worlds)
+           | SOME (p, world) => 
+             let 
+                (*[ val p_worlds: syn -> (Pos.t * Atom.world) list ]*)
+                fun p_worlds (Conj (syn1, syn2)) = p_worlds syn1 @ p_worlds syn2
+                  | p_worlds syn = [ p_world syn worlds ]
+             in
+                (Decl.Depends (pos, (p, world), p_worlds syn1), worlds)
+             end)
+                    
        | App _ =>
-         (case p_worldhead syn worlds of 
-             NONE => A.DeclRule (p_rule syn)
-           | SOME w => A.DeclDepends (w, []))
-*)
+         (case p_world' syn worlds of 
+             NONE => (Decl.Rule (pos, p_rule syn worlds), worlds)
+           | SOME (p, world) => (Decl.Depends (pos, (p, world), []), worlds))
+
        | _ => raise SyntaxError (SOME pos, "Invalid toplevel statement")
 
    (*[ val parse': 

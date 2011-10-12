@@ -19,18 +19,18 @@ struct
     | Var of Symbol.symbol option
     | Mode of Mode.t * Symbol.symbol option
 (*[
-   datasort reg = 
+   datasort term = 
       SymConst of Symbol.symbol 
     | NatConst of int
     | StrConst of string
-    | Structured of Symbol.symbol * reg list
+    | Structured of Symbol.symbol * term list
     | Var of Symbol.symbol option
 
    datasort ground = 
       SymConst of Symbol.symbol 
     | NatConst of int
     | StrConst of string
-    | Structured of Symbol.symbol * reg list
+    | Structured of Symbol.symbol * ground list
   
    datasort 'a none = NONE
    datasort shape = 
@@ -95,11 +95,11 @@ struct
        | Var (SOME x) => Symbol.toValue x
        | Mode (m, _) => Mode.toString m
 
-   (*[ sortdef subst = reg DictX.dict ]*)
+   (*[ sortdef subst = term DictX.dict ]*)
    
    (* Total substitution *)
-   (*[ val subst: subst * reg -> reg option ]*)
-   (*[ val substs: subst * reg list -> reg list option ]*)
+   (*[ val subst: subst * term -> term option ]*)
+   (*[ val substs: subst * term list -> term list option ]*)
    fun subst (map, term) =
       case term of 
          SymConst c => SOME (SymConst c)
@@ -118,7 +118,7 @@ struct
         | _ => NONE
 
    (* Partial substition *)
-   (*[ val sub: (reg * Symbol.symbol) -> reg -> reg ]*)
+   (*[ val sub: (term * Symbol.symbol) -> term -> term ]*)
    fun sub (term', x) term = 
       case term of
          SymConst c => SymConst c
@@ -129,7 +129,7 @@ struct
        | Var NONE => Var NONE
        | Var (SOME y) => if Symbol.eq (x, y) then term' else Var (SOME y)
 
-   (*[ val hasUscore: reg -> bool ]*)
+   (*[ val hasUscore: term -> bool ]*)
    fun hasUscore term = 
       case term of 
          Var NONE => true  
@@ -139,8 +139,8 @@ end
 
 structure Atom = struct
    type t = Symbol.symbol * Term.t list
-   (*[ sortdef world = Symbol.symbol * Term.reg list ]*)
-   (*[ sortdef prop = Symbol.symbol * Term.reg list ]*) 
+   (*[ sortdef world = Symbol.symbol * Term.term list ]*)
+   (*[ sortdef prop = Symbol.symbol * Term.term list ]*) 
    (*[ sortdef ground_world = Symbol.symbol * Term.ground list ]*) 
    (*[ sortdef ground_prop = Symbol.symbol * Term.ground list ]*) 
    (*[ sortdef moded = Symbol.symbol * Term.moded list ]*) 
@@ -221,7 +221,7 @@ structure Prem = struct
    datasort prem = 
       Normal of Pat.pat
     | Negated of Pat.pat
-    | Binrel of Binrel.t * Term.reg * Term.reg
+    | Binrel of Binrel.t * Term.term * Term.term
 ]*)
 
    (*[ val fv: prem -> SetX.set ]*)
@@ -258,7 +258,7 @@ structure Class =
 struct
    datatype t = 
       Base of Symbol.symbol 
-    | Rel of Atom.t
+    | Rel of Pos.t * Atom.t
     | World
     | Type
     | Arrow of Symbol.symbol * t
@@ -273,7 +273,7 @@ struct
     | Arrow of Symbol.symbol * typ
 
    datasort rel = 
-      Rel of Atom.world
+      Rel of Pos.t * Atom.world
     | Arrow of Symbol.symbol * rel
     | Pi of Symbol.symbol * Symbol.symbol * rel
 
@@ -284,7 +284,7 @@ struct
    fun toString typ = 
       case typ of 
          Base t => Symbol.toValue t
-       | Rel world => "rel @ " ^ Atom.toString' false world
+       | Rel (_, world) => "rel @ " ^ Atom.toString' false world
        | World => "world"
        | Type => "type"
        | Arrow (t, typ) => Symbol.toValue t ^ " -> " ^ toString typ
