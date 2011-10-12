@@ -26,6 +26,7 @@ terminal LEQ of pos     precl 70 /* nonassoc */
 terminal PLUS of pos    precl 80 
 terminal MINUS of pos   precl 80
 
+terminal NOT of pos
 terminal WORLD of pos
 terminal TYPE of pos
 terminal REL of pos
@@ -65,6 +66,7 @@ nonterminal Syn : syn =
 
    1:Simp                         => id1
    1:LCID 2:Sings                 => App
+   1:NOT 2:Simp                   => Not
    1:LCURLY 2:Bind 3:RCURLY 4:Syn => Pi             precr 10
    1:EX 2:UCID PERIOD 3:Syn       => Ex             precr 10
 

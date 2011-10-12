@@ -41,7 +41,8 @@ function lexmain : tok =
    ">="      => geq
    "<="      => leq
    '+        => plus
-   
+
+   "not"     => not   
    "world"   => world
    "type"    => ty
    "rel"     => rel

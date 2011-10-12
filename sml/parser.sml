@@ -13,7 +13,7 @@ end = struct
    struct
       type pos = Pos.t
       type pos_str = Pos.t * string
-      type pos_int = Pos.t * int
+      type pos_int = Pos.t * IntInf.int
       type modes = Mode.t list
       datatype terminal = datatype Token.t
 
@@ -29,10 +29,11 @@ end = struct
        | Ex of Pos.t * (Pos.t * string) * syn
        | Var of Pos.t * string 
        | Uscore of Pos.t
+       | Not of Pos.t * syn
        | World of Pos.t
        | Type of Pos.t
        | Rel of Pos.t
-       | Num of Pos.t * int
+       | Num of Pos.t * IntInf.int
        | String of Pos.t * string
        | Pos of Pos.t * syn
 
@@ -50,6 +51,7 @@ end = struct
           | Ex (pos, (_, _), syn) => Pos.union pos (getpos syn)
           | Var (pos, _) => pos
           | Uscore pos => pos
+          | Not (pos, syn) => Pos.union pos (getpos syn)
           | World pos => pos
           | Type pos => pos
           | Rel pos => pos
@@ -103,8 +105,21 @@ end = struct
        structure Arg = Arg)
 
 
-   (* The "real" parser *)
+   (* The "real" parser. One of the invariants maintained by the real parser
+    * is that things parsed as Atom.world are always headed by a previously-
+    * declared world, whereas things parsed as Atom.prop a. *)
    open Arg
+   datatype psig = PS of { worlds: SetX.set, rels: SetX.set}
+   fun isWorld (PS {worlds, ...}) x = SetX.member worlds x
+   fun addWorld (PS {worlds, rels}) x = 
+      PS { worlds = SetX.insert worlds x, rels = rels} 
+
+   fun isRel (PS { rels, ...}) x = SetX.member rels x
+   fun addRel (PS {worlds, rels}) x = 
+      PS { worlds = SetX.insert worlds x, rels = rels} 
+
+   fun rels (PS {rels, ...}) = rels
+   val empty = PS { worlds = SetX.empty, rels = SetX.empty }
   
    (*[ val p_t: syn -> Symbol.symbol ]*)
    fun p_t syn = 
@@ -113,39 +128,141 @@ end = struct
        | _ => raise SyntaxError (SOME (getpos syn), "Expected a simple type")
 
    (*[ val p_ground: syn -> Term.ground ]*)
-   fun p_ground syn = raise Match
+   fun p_ground syn = 
+      case syn of 
+         App ((_, c), []) => Term.SymConst (Symbol.fromValue c)
+       | App ((_, c), syns) => 
+         Term.Structured (Symbol.fromValue c, map p_ground syns)
+       | Num (_, n) => Term.NatConst n
+       | String (_, s) => Term.StrConst s
+       | Var (pos, x) => 
+         raise SyntaxError (SOME pos, "Free variable in ground term")
+       | Uscore pos => 
+         raise SyntaxError (SOME pos, "Underscore in ground term")
+       | _ =>
+         raise SyntaxError (SOME (getpos syn), "Ill-formed term")
 
    (*[ val p_term: syn -> Term.term ]*)
-   fun p_term syn = raise Match
-
-   (*[ val p_world': syn -> SetX.set -> (Pos.t * Atom.world) option ]*)
-   fun p_world' syn worlds =
+   fun p_term syn = 
       case syn of 
-         App ((_, id), syns) =>
-         let val w = Symbol.fromValue id in 
-            if SetX.member worlds w 
+         App ((_, c), []) => Term.SymConst (Symbol.fromValue c)
+       | App ((_, c), syns) => 
+         Term.Structured (Symbol.fromValue c, map p_term syns)
+       | Num (_, n) => Term.NatConst n
+       | String (_, s) => Term.StrConst s
+       | Var (_, x) => Term.Var (SOME (Symbol.fromValue x))
+       | Uscore _ => Term.Var NONE
+       | _ => raise SyntaxError (SOME (getpos syn), "Ill-formed term")
+
+   (*[ val p_world': syn -> psig -> (Pos.t * Atom.world) option ]*)
+   fun p_world' syn psig =
+      case syn of 
+         App ((_, x), syns) =>
+         let val w = Symbol.fromValue x in 
+            if isWorld psig w
             then SOME (getpos syn, (w, map p_term syns))
             else NONE
          end
        | _ => NONE
 
-   (*[ val p_world: syn -> SetX.set -> (Pos.t * Atom.world) ]*)
-   fun p_world syn worlds = raise Match
 
-   (*[ val p_prop: syn -> SetX.set -> Atom.world ]*)
-   fun p_prop syn worlds = raise Match
+   (* XXX STYLE: Parsing worlds, props, ground worlds, and ground props with 
+    * refinement types ends up being a bit cut-paste-y. -rjs Oct 12 2011 *)
 
-   (*[ val p_ground_world: syn -> SetX.set -> (Pos.t * Atom.ground_world) ]*)
-   fun p_ground_world syn worlds = raise Match
+   (*[ val p_world: syn -> psig -> (Pos.t * Atom.world) ]*)
+   fun p_world syn psig = 
+      case syn of 
+         App ((pos, x), syns) =>
+         let val w = Symbol.fromValue x in 
+            if isWorld psig w
+            then (getpos syn, (w, map p_term syns))
+            else raise SyntaxError 
+               (SOME pos, 
+                "Not a declared world constant: '" ^ x ^ "'")
+         end
+       | _ => raise SyntaxError (SOME (getpos syn), "Not a valid world")
 
-   (*[ val p_ground_prop: syn -> SetX.set -> (Pos.t * Atom.ground_prop) ]*)
-   fun p_ground_prop syn worlds = raise Match
+   (*[ val p_prop: syn -> psig -> Atom.prop ]*)
+   fun p_prop syn psig = 
+      case syn of 
+         App ((pos, x), syns) =>
+         let val a = Symbol.fromValue x in 
+            if isRel psig a
+            then (a, map p_term syns)
+            else raise SyntaxError 
+               (SOME pos, 
+                "Not a declared relation constant: '" ^ x ^ "'")
+         end
+       | _ => raise SyntaxError (SOME (getpos syn), "Not a valid world")
 
-   (*[ val p_rule: syn -> SetX.set -> Rule.rule ]*)
-   fun p_rule syn worlds = raise Match
+   (*[ val p_ground_world: syn -> psig -> (Pos.t * Atom.ground_world) ]*)
+   fun p_ground_world syn psig =
+      case syn of 
+         App ((pos, x), syns) =>
+         let val w = Symbol.fromValue x in 
+            if isWorld psig w
+            then (getpos syn, (w, map p_ground syns))
+            else raise SyntaxError 
+               (SOME pos, 
+                "Not a declared world constant: '" ^ x ^ "'")
+         end
+       | _ => raise SyntaxError (SOME (getpos syn), "Not a valid world")
 
-   (*[ val p_decl: Pos.t -> syn -> SetX.set -> (Decl.decl * SetX.set) ]*)
-   fun p_decl pos syn worlds = 
+   (*[ val p_ground_prop: syn -> psig -> (Pos.t * Atom.ground_prop) ]*)
+   fun p_ground_prop syn psig = 
+      case syn of 
+         App ((pos, x), syns) =>
+         let val a = Symbol.fromValue x in 
+            if isRel psig a
+            then (getpos syn, (a, map p_ground syns))
+            else raise SyntaxError 
+               (SOME pos, 
+                "Not a declared relation constant: '" ^ x ^ "'")
+         end
+       | _ => raise SyntaxError (SOME (getpos syn), "Not a valid world")
+
+   (*[ val p_rule: syn -> psig -> Rule.rule ]*)
+   fun p_rule syn psig: Rule.t = 
+      let
+         (*[ p_pat: syn -> Pat.pat ]*)
+         fun p_pat syn = 
+            case syn of 
+               Ex (_, (_, x), syn) => 
+               Pat.Exists (Symbol.fromValue x, p_pat syn)
+             | Conj (syn1, syn2) => 
+               raise SyntaxError 
+                  (SOME (getpos syn),
+                   "Existential quantifiers cannot span conjunctions \ 
+                   \(unimplemented)") 
+             | syn => Pat.Atom (p_prop syn psig)
+
+         (*[ val p_prem: syn -> Prem.prem ]*)
+         fun p_prem syn = 
+            case syn of 
+               Not (_, syn) => Prem.Negated (p_pat syn)
+             | Binrel (br, syn1, syn2) => 
+               Prem.Binrel (br, p_term syn1, p_term syn2)
+             | syn => Prem.Normal (p_pat syn) 
+
+         (*[ val p_prems: syn -> (Pos.t * Prem.prem) list ]*)
+         fun p_prems syn = 
+            case syn of 
+               Conj (syn1, syn2) => p_prems syn1 @ p_prems syn2
+             | syn => [ (getpos syn, p_prem syn) ]
+
+         (*[ val p_concs: syn -> (Pos.t * Atom.prop) list ]*)
+         fun p_concs syn =
+            case syn of 
+               Conj (syn1, syn2) => p_concs syn1 @ p_concs syn2
+             | syn => [ (getpos syn, p_prop syn psig) ]
+      in
+         case syn of
+            Arrow (syn1, syn2) => (p_prems syn1, p_concs syn2)
+          | _ => ([], p_concs syn)
+      end
+
+   (*[ val p_decl: Pos.t -> syn -> psig -> (Decl.decl * psig) ]*)
+   fun p_decl pos syn psig = 
       case syn of 
          Ascribe ((_, id), syn) => 
          let      
@@ -203,7 +320,7 @@ end = struct
                 | World _ => 
                   Decl.World (pos, id, Class.World)
                 | At (Rel _, syn) => 
-                  Decl.Rel (pos, id, Class.Rel (p_world syn worlds))
+                  Decl.Rel (pos, id, Class.Rel (p_world syn psig))
                 | At (syn, _) => 
                   raise SyntaxError
                      (SOME (getpos syn), 
@@ -214,25 +331,26 @@ end = struct
                       "Not a valid classifier")
 
             val decl = class syn
-            val worlds' = 
+            val psig' = 
                case decl of 
-                  Decl.World (_, w, _) => SetX.insert worlds w
-                | _ => worlds
+                  Decl.World (_, w, _) => addWorld psig w
+                | Decl.Rel (_, a, _) => addRel psig a
+                | _ => psig
          in
-            (decl, worlds')
+            (decl, psig')
          end
 
        | Assign ((_, id), At (syn1, syn2)) => 
          let 
             (*[ val p_props: syn -> (Pos.t * Atom.ground_prop) list ]*)
             fun p_props (Conj (syn1, syn2)) = p_props syn1 @ p_props syn2
-              | p_props syn = [ p_ground_prop syn worlds ]
+              | p_props syn = [ p_ground_prop syn psig ]
          in 
             (Decl.DB 
                 (pos, Symbol.fromValue id, 
                  p_props syn1, 
-                 p_ground_world syn2 worlds),
-             worlds)
+                 p_ground_world syn2 psig),
+             psig)
          end
 
        | Assign (id, syn) => 
@@ -241,30 +359,27 @@ end = struct
              "Database assignment not of the form (...) @ ...")
 
        | Arrow (syn1, syn2) =>
-         (case p_world' syn2 worlds of
-             NONE => (Decl.Rule (pos, p_rule syn worlds), worlds)
+         (case p_world' syn2 psig of
+             NONE => (Decl.Rule (pos, p_rule syn psig), psig)
            | SOME (p, world) => 
              let 
                 (*[ val p_worlds: syn -> (Pos.t * Atom.world) list ]*)
                 fun p_worlds (Conj (syn1, syn2)) = p_worlds syn1 @ p_worlds syn2
-                  | p_worlds syn = [ p_world syn worlds ]
+                  | p_worlds syn = [ p_world syn psig ]
              in
-                (Decl.Depends (pos, (p, world), p_worlds syn1), worlds)
+                (Decl.Depends (pos, (p, world), p_worlds syn1), psig)
              end)
                     
        | App _ =>
-         (case p_world' syn worlds of 
-             NONE => (Decl.Rule (pos, p_rule syn worlds), worlds)
-           | SOME (p, world) => (Decl.Depends (pos, (p, world), []), worlds))
+         (case p_world' syn psig of 
+             NONE => (Decl.Rule (pos, p_rule syn psig), psig)
+           | SOME (p, world) => (Decl.Depends (pos, (p, world), []), psig))
 
        | _ => raise SyntaxError (SOME pos, "Invalid toplevel statement")
 
    (*[ val parse': 
-         Token.t Stream.stream 
-         -> SetX.set 
-         -> unit 
-         -> Decl.decl Stream.front ]*)
-   fun parse' stream worlds () = 
+         Token.t Stream.stream -> psig -> unit -> Decl.decl Stream.front ]*)
+   fun parse' stream psig () = 
       case Stream.front stream of 
          Stream.Nil => Stream.Nil
        | Stream.Cons _ => 
@@ -279,18 +394,18 @@ end = struct
                                map (fn mode => Term.Mode (mode, NONE)) modes)
                   val decl = Decl.Query (Pos.union left right, name, modes) 
                in 
-                  Stream.Cons (decl, Stream.lazy (parse' stream' worlds))
+                  Stream.Cons (decl, Stream.lazy (parse' stream' psig))
                end
              | Syn (syn, pos) => 
                let
                   val pos = Pos.union (getpos syn) pos
-                  val (decl, worlds') = p_decl pos syn worlds
+                  val (decl, psig') = p_decl pos syn psig
                in
-                  Stream.Cons (decl, Stream.lazy (parse' stream' worlds'))
+                  Stream.Cons (decl, Stream.lazy (parse' stream' psig'))
                end
          end
 
    (*[ val parse: Token.t Stream.stream -> Decl.decl Stream.stream ]*)
-   fun parse stream = Stream.lazy (parse' stream SetX.empty)
+   fun parse stream = Stream.lazy (parse' stream empty)
          
 end

@@ -26,6 +26,7 @@ struct
     | PLUS of Pos.t
     | MINUS of Pos.t
 
+    | NOT of Pos.t
     | WORLD of Pos.t
     | TYPE of Pos.t
     | REL of Pos.t
@@ -33,7 +34,7 @@ struct
   
     | UCID of Pos.t * string
     | LCID of Pos.t * string
-    | NUM of Pos.t * int
+    | NUM of Pos.t * IntInf.int
     | STRING of Pos.t * string
 
     | LANNO of Pos.t
@@ -66,6 +67,7 @@ struct
        | PLUS pos => pos
        | MINUS pos => pos
 
+       | NOT pos => pos
        | WORLD pos => pos
        | TYPE pos => pos
        | REL pos => pos
@@ -162,6 +164,7 @@ struct
       val leq = simple #lexmain LEQ
       val plus = simple #lexmain PLUS
 
+      val not = simple #lexmain NOT
       val world = simple #lexmain WORLD
       val ty = simple #lexmain TYPE
       val rel = simple #lexmain REL
@@ -171,7 +174,7 @@ struct
       val lcid = action #lexmain LCID
       val num = action #lexmain 
          (fn (pos, str) => 
-            (case Int.fromString str of 
+            (case IntInf.fromString str of 
                NONE => raise LexError (Pos.left pos, "Bad integer constant")
              | SOME i => NUM (pos, i)))
       val str = action #lexmain

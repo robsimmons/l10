@@ -8,6 +8,8 @@ Group is
    l10.cmyacc.sml
    parser.sml
 
+   check-tabs.sml
+
 (*
    util/symbol.sml
    util/symtab.sml

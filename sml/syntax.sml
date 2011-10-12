@@ -13,7 +13,7 @@ structure Term =
 struct
    datatype t = 
       SymConst of Symbol.symbol 
-    | NatConst of int
+    | NatConst of IntInf.int
     | StrConst of string
     | Structured of Symbol.symbol * t list
     | Var of Symbol.symbol option
@@ -21,28 +21,28 @@ struct
 (*[
    datasort term = 
       SymConst of Symbol.symbol 
-    | NatConst of int
+    | NatConst of IntInf.int
     | StrConst of string
     | Structured of Symbol.symbol * term list
     | Var of Symbol.symbol option
 
    datasort ground = 
       SymConst of Symbol.symbol 
-    | NatConst of int
+    | NatConst of IntInf.int
     | StrConst of string
     | Structured of Symbol.symbol * ground list
   
    datasort 'a none = NONE
    datasort shape = 
       SymConst of Symbol.symbol 
-    | NatConst of int
+    | NatConst of IntInf.int
     | StrConst of string
     | Structured of Symbol.symbol * shape list
     | Var of Symbol.symbol none 
 
    datasort moded = 
       SymConst of Symbol.symbol 
-    | NatConst of int
+    | NatConst of IntInf.int
     | StrConst of string
     | Structured of Symbol.symbol * moded list
     | Mode of Mode.t * Symbol.symbol none
@@ -50,7 +50,7 @@ struct
    datasort 'a some = NONE
    datasort modety = 
       SymConst of Symbol.symbol 
-    | NatConst of int
+    | NatConst of IntInf.int
     | StrConst of string
     | Structured of Symbol.symbol * moded list
     | Mode of Mode.t * Symbol.symbol some
@@ -81,7 +81,7 @@ struct
    fun toString term = 
       case term of 
          SymConst c => Symbol.toValue c
-       | NatConst i => Int.toString i
+       | NatConst i => IntInf.toString i
        | StrConst s => "\"" ^ s ^ "\""
        | Structured (f, terms) => 
          if Symbol.eq (f, Symbol.fromValue "_plus") andalso length terms = 2
@@ -172,20 +172,20 @@ end
 
 structure Pat = struct
    datatype t =
-      Atomic of Atom.t
+      Atom of Atom.t
     | Exists of Symbol.symbol * t
-    | Conj of t * t
-    | One
+    | Conj of t * t (* Should be implemented, difficult - rjs Oct 12 2011 *)
+    | One (* Could be implemented without much trouble *)
 (*[
    datasort pat = 
-      Atomic of Atom.prop
+      Atom of Atom.prop
     | Exists of Symbol.symbol * pat
 ]*)
 
    (*[ val fv: pat -> SetX.set ]*)
    fun fv pat = 
       case pat of 
-         Atomic atomic => Atom.fv atomic
+         Atom atomic => Atom.fv atomic
        | Exists (x, pat) => 
          let val vars = fv pat 
          in if SetX.member vars x then SetX.remove vars x else vars end
@@ -196,11 +196,11 @@ structure Pat = struct
 
    fun toString pat = 
       case pat of
-         Atomic atm => Atom.toString' false atm
+         Atom atm => Atom.toString' false atm
        | Exists (x, pat0) => 
          "(Ex " ^ Symbol.toValue x ^ ". " ^ toString pat0 ^ ")"
        | Conj (pat1, pat2) => toString pat1 ^ ", " ^ toString pat2
-       | One => "<<one>>"
+       | One => "1"
 end
 
 structure Binrel = struct
