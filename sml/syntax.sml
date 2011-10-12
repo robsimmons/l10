@@ -242,16 +242,16 @@ structure Prem = struct
 end
 
 structure Rule = struct
-   type t = Prem.t list * Atom.t list   
-   (*[ sortdef rule = Prem.prem list * Atom.prop list ]*)
+   type t = (Pos.t * Prem.t) list * (Pos.t * Atom.t) list   
+   (*[ sortdef rule = (Pos.t * Prem.prem) list * (Pos.t * Atom.prop) list ]*)
 
    (*[ val fv: rule -> SetX.set ]*)
-   fun fv (prems, concs) =
+   fun fv ((prems, concs): t) =
       SetX.union 
          (List.foldl (fn (x, y) => SetX.union x y)
-            SetX.empty (map Prem.fv prems))
+            SetX.empty (map (Prem.fv o #2) prems))
          (List.foldl (fn (x, y) => SetX.union x y) 
-            SetX.empty (map Atom.fv concs))   
+            SetX.empty (map (Atom.fv o #2) concs))   
 end
 
 structure Class = 
@@ -267,12 +267,10 @@ struct
    datasort world = 
       World
     | Arrow of Symbol.symbol * world
-    | Pi of Symbol.symbol * Symbol.symbol * world
 
    datasort typ =
       Base of Symbol.symbol
     | Arrow of Symbol.symbol * typ
-    | Pi of Symbol.symbol * Symbol.symbol * typ
 
    datasort rel = 
       Rel of Atom.world
@@ -296,24 +294,33 @@ end
 
 structure Decl = struct
    datatype t = 
-      World of Symbol.symbol * Class.t
-    | Const of Symbol.symbol * Class.t
-    | Rel of Symbol.symbol * Class.t
-    | Type of Symbol.symbol * Class.t
-    | Database of Symbol.symbol * Atom.t list * Atom.t
-    | Depends of Atom.t * Atom.t list
-    | Rule of Rule.t
-    | Query of Symbol.symbol * Atom.t
+      World of Pos.t * Symbol.symbol * Class.t
+    | Const of Pos.t * Symbol.symbol * Class.t
+    | Rel of Pos.t * Symbol.symbol * Class.t
+    | Type of Pos.t * Symbol.symbol * Class.t
+    | DB of Pos.t * Symbol.symbol * (Pos.t * Atom.t) list * (Pos.t * Atom.t)
+    | Depends of Pos.t * (Pos.t * Atom.t) * (Pos.t * Atom.t) list
+    | Rule of Pos.t * Rule.t
+    | Query of Pos.t * Symbol.symbol * Atom.t
 (*[
    datasort decl = 
-      World of Symbol.symbol * Class.world
-    | Const of Symbol.symbol * Class.typ
-    | Rel of Symbol.symbol * Class.rel
-    | Type of Symbol.symbol * Class.knd
-    | Database of Symbol.symbol * Atom.ground_prop list * Atom.ground_world
-    | Depends of Atom.world * Atom.world list
-    | Rule of Rule.rule
-    | Query of Symbol.symbol * Atom.moded
+      World of Pos.t * Symbol.symbol * Class.world
+    | Const of Pos.t * Symbol.symbol * Class.typ
+    | Rel of Pos.t * Symbol.symbol * Class.rel
+    | Type of Pos.t * Symbol.symbol * Class.knd
+    | DB of Pos.t 
+            * Symbol.symbol 
+            * (Pos.t * Atom.ground_prop) list 
+            * (Pos.t * Atom.ground_world)
+    | Depends of Pos.t * (Pos.t * Atom.world) * (Pos.t * Atom.world) list
+    | Rule of Pos.t * Rule.rule
+    | Query of Pos.t * Symbol.symbol * Atom.moded
+
+   datasort class = 
+      World of Pos.t * Symbol.symbol * Class.world
+    | Const of Pos.t * Symbol.symbol * Class.typ
+    | Rel of Pos.t * Symbol.symbol * Class.rel
+    | Type of Pos.t * Symbol.symbol * Class.knd
 ]*)
 
 end

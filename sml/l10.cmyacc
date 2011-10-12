@@ -42,45 +42,45 @@ terminal RANNO of pos
 start Decl
 
 nonterminal Decl : decl =
-   1:Syn 2:PERIOD               => full_decl
-   LANNO 1:Anno RANNO           => anno
+   1:Syn 2:PERIOD => full_decl
+   1:LANNO ANNO_QUERY 2:LCID COLON 3:LCID 4:Modes 5:RANNO => Query
 
 nonterminal Bind : syn =
-   1:UCID COLON 2:Syn           => ascribe_ucid 
+   1:UCID COLON 2:Syn             => ascribe_ucid 
 
 nonterminal Syn : syn =
-   1:LCID COLON 2:Syn           => Ascribe
-   1:LCID EQ 2:Syn              => Assign      
-   1:Syn LARROW 2:Syn           => Arrow      
-   1:Syn RARROW 2:Syn           => rarrow      
-   1:Syn COMMA 2:Syn            => Conj        
-   1:Syn AT 2:Syn               => At          
-   1:Syn EQEQ 2:Syn             => eqeq        
-   1:Syn NEQ 2:Syn              => neq         
-   1:Syn GT 2:Syn               => gt          
-   1:Syn LT 2:Syn               => lt          
-   1:Syn GEQ 2:Syn              => geq         
-   1:Syn LEQ 2:Syn              => leq         
-   1:Syn PLUS 2:Syn             => plus
+   1:LCID COLON 2:Syn             => Ascribe
+   1:LCID EQ 2:Syn                => Assign      
+   1:Syn LARROW 2:Syn             => Arrow      
+   1:Syn RARROW 2:Syn             => rarrow      
+   1:Syn COMMA 2:Syn              => Conj        
+   1:Syn AT 2:Syn                 => At          
+   1:Syn EQEQ 2:Syn               => eqeq        
+   1:Syn NEQ 2:Syn                => neq         
+   1:Syn GT 2:Syn                 => gt          
+   1:Syn LT 2:Syn                 => lt          
+   1:Syn GEQ 2:Syn                => geq         
+   1:Syn LEQ 2:Syn                => leq         
+   1:Syn PLUS 2:Syn               => plus
 
-   1:Simp                       => id1
-   1:LCID 2:Sings               => App
-   1:LCURLY 2:Bind RCURLY 3:Syn => Pi             precr 10
-   1:EX 2:UCID PERIOD 3:Syn     => Ex             precr 10
+   1:Simp                         => id1
+   1:LCID 2:Sings                 => App
+   1:LCURLY 2:Bind 3:RCURLY 4:Syn => Pi             precr 10
+   1:EX 2:UCID PERIOD 3:Syn       => Ex             precr 10
 
 nonterminal Simp : syn =
-   1:LPAREN 2:Syn 3:RPAREN      => id2
-   1:UCID                       => Var
-   1:USCORE                     => Uscore
-   1:WORLD                      => World
-   1:TYPE                       => Type
-   1:REL                        => Rel
-   1:NUM                        => Num
-   1:STRING                     => String
+   1:LPAREN 2:Syn 3:RPAREN        => id2
+   1:UCID                         => Var
+   1:USCORE                       => Uscore
+   1:WORLD                        => World
+   1:TYPE                         => Type
+   1:REL                          => Rel
+   1:NUM                          => Num
+   1:STRING                       => String
 
-nonterminal Sings : sings =     => sings_end
-   1:Simp 2:Sings               => sings_cons
-   1:LCID 2:Sings               => sings_lcid
+nonterminal Sings : sings =       => sings_end
+   1:Simp 2:Sings                 => sings_cons
+   1:LCID 2:Sings                 => sings_lcid
 
 
 
@@ -88,11 +88,8 @@ nonterminal Sings : sings =     => sings_end
 
 terminal ANNO_QUERY of pos
 
-nonterminal Modes : modes =     => mode_end
-   PLUS 1:Modes                 => mode_input
-   MINUS 1:Modes                => mode_output
-   USCORE 1: Modes              => mode_ignore
-
-nonterminal Anno : decl =
-   ANNO_QUERY 1:LCID COLON 2:LCID 3:Modes => anno_query
+nonterminal Modes : modes =       => mode_end
+   PLUS 1:Modes                   => mode_input
+   MINUS 1:Modes                  => mode_output
+   USCORE 1: Modes                => mode_ignore
 
