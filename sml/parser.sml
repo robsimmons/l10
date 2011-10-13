@@ -346,10 +346,10 @@ end = struct
             fun p_props (Conj (syn1, syn2)) = p_props syn1 @ p_props syn2
               | p_props syn = [ p_ground_prop syn psig ]
          in 
-            (Decl.DB 
-                (pos, Symbol.fromValue id, 
-                 p_props syn1, 
-                 p_ground_world syn2 psig),
+            (Decl.DB (pos, 
+                      (Symbol.fromValue id, 
+                       p_props syn1,
+                       p_ground_world syn2 psig)),
              psig)
          end
 
@@ -367,13 +367,13 @@ end = struct
                 fun p_worlds (Conj (syn1, syn2)) = p_worlds syn1 @ p_worlds syn2
                   | p_worlds syn = [ p_world syn psig ]
              in
-                (Decl.Depends (pos, (p, world), p_worlds syn1), psig)
+                (Decl.Depend (pos, ((p, world), p_worlds syn1)), psig)
              end)
                     
        | App _ =>
          (case p_world' syn psig of 
              NONE => (Decl.Rule (pos, p_rule syn psig), psig)
-           | SOME (p, world) => (Decl.Depends (pos, (p, world), []), psig))
+           | SOME (p, world) => (Decl.Depend (pos, ((p, world), [])), psig))
 
        | _ => raise SyntaxError (SOME pos, "Invalid toplevel statement")
 

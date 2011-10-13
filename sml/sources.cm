@@ -8,7 +8,7 @@ Group is
    l10.cmyacc.sml
    parser.sml
 
-   check-tabs.sml
+   tab.sml
 
 (*
    util/symbol.sml

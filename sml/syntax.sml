@@ -1,6 +1,15 @@
 (* Abstract syntax tree for L10 *)
 (* Robert J. Simmons *)
 
+structure Type = 
+struct
+   val t = Symbol.fromValue "t"
+   val nat = Symbol.fromValue "nat"
+   val string = Symbol.fromValue "string"
+   val world = Symbol.fromValue "world" (* Pseudo-type for world names *)
+   val rel = Symbol.fromValue "rel" (* Pseudo-type for predicates *)
+end
+
 structure Mode = 
 struct
    datatype t = Input | Output | Ignore
@@ -48,11 +57,11 @@ struct
     | Mode of Mode.t * Symbol.symbol none
 
    datasort 'a some = NONE
-   datasort modety = 
+   datasort moded_t = 
       SymConst of Symbol.symbol 
     | NatConst of IntInf.int
     | StrConst of string
-    | Structured of Symbol.symbol * moded list
+    | Structured of Symbol.symbol * moded_t list
     | Mode of Mode.t * Symbol.symbol some
 ]*)
 
@@ -144,6 +153,7 @@ structure Atom = struct
    (*[ sortdef ground_world = Symbol.symbol * Term.ground list ]*) 
    (*[ sortdef ground_prop = Symbol.symbol * Term.ground list ]*) 
    (*[ sortdef moded = Symbol.symbol * Term.moded list ]*) 
+   (*[ sortdef moded_t = Symbol.symbol * Term.moded_t list ]*) 
 
    (*[ val fv: (world & prop) -> SetX.set ]*)
    fun fv (_, terms) = Term.fvs terms
@@ -261,6 +271,8 @@ struct
     | Rel of Pos.t * Atom.t
     | World
     | Type
+    | Builtin
+    | Extensible
     | Arrow of Symbol.symbol * t
     | Pi of Symbol.symbol * Symbol.symbol * t
 (*[
@@ -279,7 +291,35 @@ struct
 
    datasort knd = 
       Type
+    | Builtin
+    | Extensible
 ]*)
+ 
+   (*[ val relToTyp: rel -> typ ]*)
+   fun relToTyp class = 
+      case class of
+         Rel _ => Base Type.rel
+       | Arrow (t, class) => Arrow (t, relToTyp class)
+       | Pi (x, t, class) => Arrow (t, relToTyp class)
+
+   (*[ val worldToTyp: world -> typ ]*)
+   fun worldToTyp class = 
+      case class of 
+         World => Base Type.world
+       | Arrow (t, class) => Arrow (t, worldToTyp class)
+
+   (*[ val base: typ -> Symbol.symbol ]*)
+   fun base class = 
+      case class of 
+          Arrow (_, class) => base class
+        | Base t => t
+
+   (*[ val rel: rel -> Atom.world ]*)
+   fun rel class = 
+      case class of
+         Arrow (_, class) => rel class
+       | Pi (_, _, class) => rel class
+       | Rel (_, world) => world
 
    fun toString typ = 
       case typ of 
@@ -287,19 +327,29 @@ struct
        | Rel (_, world) => "rel @ " ^ Atom.toString' false world
        | World => "world"
        | Type => "type"
+       | Builtin => "builtin"
+       | Extensible => "extensible"
        | Arrow (t, typ) => Symbol.toValue t ^ " -> " ^ toString typ
        | Pi (x, t, typ) => 
          "{" ^ Symbol.toValue x ^ ": " ^ Symbol.toValue t ^ "} " ^ toString typ
 end
 
 structure Decl = struct
+   (*[ sortdef db = 
+          Symbol.symbol 
+          * (Pos.t * Atom.ground_prop) list 
+          * (Pos.t * Atom.ground_world) ]*)
+
+   (*[ sortdef depend = 
+          (Pos.t * Atom.world) * (Pos.t * Atom.world) list ]*)
+
    datatype t = 
       World of Pos.t * Symbol.symbol * Class.t
     | Const of Pos.t * Symbol.symbol * Class.t
     | Rel of Pos.t * Symbol.symbol * Class.t
     | Type of Pos.t * Symbol.symbol * Class.t
-    | DB of Pos.t * Symbol.symbol * (Pos.t * Atom.t) list * (Pos.t * Atom.t)
-    | Depends of Pos.t * (Pos.t * Atom.t) * (Pos.t * Atom.t) list
+    | DB of Pos.t * (Symbol.symbol * (Pos.t * Atom.t) list * (Pos.t * Atom.t))
+    | Depend of Pos.t * ((Pos.t * Atom.t) * (Pos.t * Atom.t) list)
     | Rule of Pos.t * Rule.t
     | Query of Pos.t * Symbol.symbol * Atom.t
 (*[
@@ -308,13 +358,20 @@ structure Decl = struct
     | Const of Pos.t * Symbol.symbol * Class.typ
     | Rel of Pos.t * Symbol.symbol * Class.rel
     | Type of Pos.t * Symbol.symbol * Class.knd
-    | DB of Pos.t 
-            * Symbol.symbol 
-            * (Pos.t * Atom.ground_prop) list 
-            * (Pos.t * Atom.ground_world)
-    | Depends of Pos.t * (Pos.t * Atom.world) * (Pos.t * Atom.world) list
+    | DB of Pos.t * db
+    | Depend of Pos.t * depend
     | Rule of Pos.t * Rule.rule
     | Query of Pos.t * Symbol.symbol * Atom.moded
+
+   datasort decl_t = 
+      World of Pos.t * Symbol.symbol * Class.world
+    | Const of Pos.t * Symbol.symbol * Class.typ
+    | Rel of Pos.t * Symbol.symbol * Class.rel
+    | Type of Pos.t * Symbol.symbol * Class.knd
+    | DB of Pos.t * db
+    | Depend of Pos.t * depend
+    | Rule of Pos.t * Rule.rule
+    | Query of Pos.t * Symbol.symbol * Atom.moded_t
 
    datasort class = 
       World of Pos.t * Symbol.symbol * Class.world
