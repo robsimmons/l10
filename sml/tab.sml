@@ -20,7 +20,7 @@ struct
    (*[ val lookup: 'a tab -> Symbol.symbol -> 'a ]*)
    fun lookup tab x = HTabX.lookup tab x
 
-   (*[ val lookup_list: 'a tab -> Symbol.symbol -> 'a list ]*)
+   (*[ val lookup_list: 'a list tab -> Symbol.symbol -> 'a list ]*)
    fun lookup_list tab x =
       case HTabX.find tab x of
          NONE => []
@@ -41,10 +41,10 @@ struct
    (*[ val types: Class.knd tab ]*)
    val types: Class.t tab = HTabX.table 1
 
-   (*[ val worlds: Class.world table ]*)
+   (*[ val worlds: Class.world tab ]*)
    val worlds: Class.t tab = HTabX.table 1
 
-   (*[ val rels: Class.rel table ]*)
+   (*[ val rels: Class.rel tab ]*)
    val rels: Class.t tab = HTabX.table 1
 
    (*[ val cons: Class.typ tab ]*)

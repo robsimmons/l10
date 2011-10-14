@@ -55,12 +55,14 @@ R.refine_file "symbol.sig";
 R.refine_file "symbol.sml";
 
 OS.FileSys.chDir "../../l10/sml";
-R.refine_file "cmlib-defaults.sml";
-
 R.refine_file "bogus-intinf.sml";
+
+R.refine_file "cmlib-defaults.sml";
 
 R.refine_file "syntax.sml";
 R.refine_file "l10.cmlex.sml";
 R.refine_file "lexer.sml";
 R.refine_file "l10.cmyacc.sml";
 R.refine_file "parser.sml";
+
+R.refine_file "tab.sml";
