@@ -3,17 +3,42 @@
 
 structure Types :> sig
   
-   (* checkDecl decl
-    *
-    * Takes a raw parsed declarations, makes sure scope, arity,
+   exception TypeError of Pos.t * string
+
+   (*[ val checkDecl: Decl.decl -> unit ]*)
+   (* Takes a raw parsed declarations, makes sure scope, arity,
     * and simple types are all respected, and prevents duplicate definitions. 
-    *
-    * Exceptions: Fail
-    * Effects:    May add new constants of extensible type to ConTab. *)
-   val checkDecl : Ast.decl -> unit
+    * May add new constants of extensible type to ConTab. *)
+   val checkDecl : Decl.t -> unit
 
 end = struct
 
+(*[ val tc_namespace: Pos.t -> string -> Symbol.symbol -> unit ]*)
+(* Avoid double definition. *)
+fun tc_namespace pos syntax x = 
+   let 
+      fun doubledef s = 
+         syntax ^ " `" ^ Symbol.toValue x ^ "` already declared as a " ^ s
+      fun illegalId s = 
+         syntax ^ " identifier `" ^ Symbol.toValue x ^ "` contains " ^ s
+   in 
+      if Tab.member Tab.types x
+      then raise TypeError (pos, doubledef "type")
+      else if Tab.member Tab.worlds x
+      then raise TypeError (pos, doubledef "world")
+      else if Tab.member Tab.rels x
+      then raise TypeError (pos, doubledef "relation")
+      else if Tab.member Tab.cons x
+      then raise TypeError (pos, doubledef "term constructor")
+      else if String.isSubstring "_" (String.fromValue x)
+      then raise TypeError (pos, illegalId "underscore")
+      else if String.isSubstring "'" (String.fromValue x)
+      then raise TypeError (pos, illegalId "single-quote")
+      else ()
+   end
+
+
+(* 
 structure A = Ast
 open Symbol
 
@@ -290,5 +315,49 @@ fun checkDecl decl =
             raise Fail ("Free variables aren't allowed in database"
                         ^ " declarations, but " ^ name x ^ " was free.")
       end
+
+*)
+
+(*[ val checkDecl: Decl.decl -> Decl.decl_t ]*)
+fun checkDecl decl = 
+   case decl of 
+      Decl.Type (pos, typ, class) => 
+         ( tc_namespace ("Type", typ)
+         ; Decl.Type (pos, typ, class))
+
+      (* Worlds are well-formed 
+       * if they haven't been declared already
+       * and if all their indices are valid types *)
+    | A.DeclWorld (w, args) => 
+         ( tc_namespace ("World", w)
+         ; ignore (tc_args args))
+
+      (* Constant declarations are well-formed 
+       * if they haven't been declared already
+       * and if their indices are valid types *)
+    | A.DeclConst (c, args, typ) => 
+      (tc_namespace ("Constant", c)
+       ; ignore (tc_args args) 
+       ; tc_typ typ)
+
+      (* Relations declarations are well-formed
+       * if they haven't been declared already
+       * if their indices are valid types
+       * if the associated world is valid under (only) the named indices *)
+    | A.DeclRelation (r, args, world) =>
+      let
+         val () = tc_namespace ("Relation", r)
+         val env = tc_args args 
+         val env' = tc_world env world
+         val newenv = 
+            MapX.filteri (fn (x, _) => not (MapX.inDomain (env, x))) env'
+      in
+         case MapX.firsti newenv of
+            NONE => ()
+          | SOME (x, _) => 
+            raise Fail ("Variable " ^ name x 
+                        ^ " used in world but not bound." )
+      end
+
 
 end

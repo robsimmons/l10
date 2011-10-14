@@ -14,8 +14,14 @@ struct
 
    (* READING *)
 
+   (*[ val app: 'a tab -> (Symbol.symbol * 'a -> unit) -> unit ]*)
+   fun app tab f = HTabX.app f tab
+
    (*[ val find: 'a tab -> Symbol.symbol -> 'a option ]*)
    fun find tab x = HTabX.find tab x
+
+   (*[ val list: 'a tab -> (Symbol.symbol * 'a) list ]*)
+   fun list tab = HTabX.toList tab
 
    (*[ val lookup: 'a tab -> Symbol.symbol -> 'a ]*)
    fun lookup tab x = HTabX.lookup tab x
@@ -26,14 +32,11 @@ struct
          NONE => []
        | SOME values => values
 
-   (*[ val list: 'a tab -> (Symbol.symbol * 'a) list ]*)
-   fun list tab = HTabX.toList tab
+   (*[ val member: 'a tab -> Symbol.symbol -> bool ]*)
+   fun member tab x = HTabX.member tab x
 
    (*[ val range: 'a tab -> 'a list ]*)
    fun range tab = map #2 (HTabX.toList tab)
-
-   (*[ val app: 'a tab -> (Symbol.symbol * 'a -> unit) -> unit ]*)
-   fun app tab f = HTabX.app f tab
 
 
    (* SIGNATURE TABLES *)
@@ -104,7 +107,7 @@ struct
       val coord = Coord.init "?"
       val pos = Pos.pos coord coord
      
-      (*[ val plus: Decl.decl ]*) 
+      (*[ val plus: Decl.decl_t ]*) 
       val plus = 
          Decl.Const
             (pos, 

@@ -132,7 +132,7 @@ end = struct
       case syn of 
          App ((_, c), []) => Term.SymConst (Symbol.fromValue c)
        | App ((_, c), syns) => 
-         Term.Structured (Symbol.fromValue c, map p_ground syns)
+         Term.Structured (Symbol.fromValue c, R.map p_ground syns)
        | Num (_, n) => Term.NatConst n
        | String (_, s) => Term.StrConst s
        | Var (pos, x) => 
@@ -147,7 +147,7 @@ end = struct
       case syn of 
          App ((_, c), []) => Term.SymConst (Symbol.fromValue c)
        | App ((_, c), syns) => 
-         Term.Structured (Symbol.fromValue c, map p_term syns)
+         Term.Structured (Symbol.fromValue c, R.map p_term syns)
        | Num (_, n) => Term.NatConst n
        | String (_, s) => Term.StrConst s
        | Var (_, x) => Term.Var (SOME (Symbol.fromValue x))
@@ -178,7 +178,7 @@ end = struct
             then (getpos syn, (w, map p_term syns))
             else raise SyntaxError 
                (SOME pos, 
-                "Not a declared world constant: '" ^ x ^ "'")
+                "Not a declared world constant: `" ^ x ^ "`")
          end
        | _ => raise SyntaxError (SOME (getpos syn), "Not a valid world")
 
@@ -191,7 +191,7 @@ end = struct
             then (a, map p_term syns)
             else raise SyntaxError 
                (SOME pos, 
-                "Not a declared relation constant: '" ^ x ^ "'")
+                "Not a declared relation constant: `" ^ x ^ "`")
          end
        | _ => raise SyntaxError (SOME (getpos syn), "Not a valid world")
 
@@ -204,7 +204,7 @@ end = struct
             then (getpos syn, (w, map p_ground syns))
             else raise SyntaxError 
                (SOME pos, 
-                "Not a declared world constant: '" ^ x ^ "'")
+                "Not a declared world constant: `" ^ x ^ "`")
          end
        | _ => raise SyntaxError (SOME (getpos syn), "Not a valid world")
 
@@ -217,7 +217,7 @@ end = struct
             then (getpos syn, (a, map p_ground syns))
             else raise SyntaxError 
                (SOME pos, 
-                "Not a declared relation constant: '" ^ x ^ "'")
+                "Not a declared relation constant: `" ^ x ^ "`")
          end
        | _ => raise SyntaxError (SOME (getpos syn), "Not a valid world")
 

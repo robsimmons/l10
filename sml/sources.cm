@@ -9,6 +9,7 @@ Group is
    parser.sml
 
    tab.sml
+   (* check-types.sml *)
 
 (*
    util/symbol.sml

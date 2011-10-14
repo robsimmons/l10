@@ -1,6 +1,16 @@
 (* Abstract syntax tree for L10 *)
 (* Robert J. Simmons *)
 
+structure R = 
+struct
+   (*[ datasort 'a plist = op :: of 'a * 'a list ]*)
+
+   (*[ val map: ('a -> 'b) -> 'a list -> 'b list
+              & ('a -> 'b) -> 'a plist -> 'b plist ]*)
+   fun map f [] = []
+     | map f (x :: xs) = f x :: map f xs
+end
+
 structure Type = 
 struct
    val t = Symbol.fromValue "t"
@@ -28,40 +38,41 @@ struct
     | Var of Symbol.symbol option
     | Mode of Mode.t * Symbol.symbol option
 (*[
+   datasort 'a none = NONE
+   datasort 'a some = SOME of 'a
+
    datasort term = 
       SymConst of Symbol.symbol 
     | NatConst of IntInf.int
     | StrConst of string
-    | Structured of Symbol.symbol * term list
+    | Structured of Symbol.symbol * term R.plist
     | Var of Symbol.symbol option
 
    datasort ground = 
       SymConst of Symbol.symbol 
     | NatConst of IntInf.int
     | StrConst of string
-    | Structured of Symbol.symbol * ground list
+    | Structured of Symbol.symbol * ground R.plist
   
-   datasort 'a none = NONE
    datasort shape = 
       SymConst of Symbol.symbol 
     | NatConst of IntInf.int
     | StrConst of string
-    | Structured of Symbol.symbol * shape list
+    | Structured of Symbol.symbol * shape R.plist
     | Var of Symbol.symbol none 
 
    datasort moded = 
       SymConst of Symbol.symbol 
     | NatConst of IntInf.int
     | StrConst of string
-    | Structured of Symbol.symbol * moded list
+    | Structured of Symbol.symbol * moded R.plist
     | Mode of Mode.t * Symbol.symbol none
 
-   datasort 'a some = NONE
    datasort moded_t = 
       SymConst of Symbol.symbol 
     | NatConst of IntInf.int
     | StrConst of string
-    | Structured of Symbol.symbol * moded_t list
+    | Structured of Symbol.symbol * moded_t R.plist
     | Mode of Mode.t * Symbol.symbol some
 ]*)
 
@@ -105,10 +116,11 @@ struct
        | Mode (m, _) => Mode.toString m
 
    (*[ sortdef subst = term DictX.dict ]*)
-   
+  
    (* Total substitution *)
    (*[ val subst: subst * term -> term option ]*)
-   (*[ val substs: subst * term list -> term list option ]*)
+   (*[ val substs: subst * term list -> term list option
+                 & subst * term R.plist -> term R.plist option ]*)
    fun subst (map, term) =
       case term of 
          SymConst c => SOME (SymConst c)
@@ -134,7 +146,7 @@ struct
        | NatConst n => NatConst n
        | StrConst s => StrConst s
        | Structured (f, terms) => 
-         Structured (f, map (sub (term', x)) terms)
+         Structured (f, R.map (sub (term', x)) terms)
        | Var NONE => Var NONE
        | Var (SOME y) => if Symbol.eq (x, y) then term' else Var (SOME y)
 
@@ -175,7 +187,7 @@ structure Atom = struct
      | toString' parens (w, terms) =
        (if parens then "(" else "")
        ^ Symbol.toValue w 
-       ^ String.concat (map (fn term => " " ^ Term.toString term) terms)
+       ^ String.concat (R.map (fn term => " " ^ Term.toString term) terms)
        ^ (if parens then ")" else "")
    val toString = toString' false
 end
