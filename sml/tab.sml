@@ -47,7 +47,7 @@ struct
    (*[ val worlds: Class.world tab ]*)
    val worlds: Class.t tab = HTabX.table 1
 
-   (*[ val rels: Class.rel tab ]*)
+   (*[ val rels: Class.rel_t tab ]*)
    val rels: Class.t tab = HTabX.table 1
 
    (*[ val cons: Class.typ tab ]*)
@@ -63,12 +63,12 @@ struct
 
    (* Both dependencies and rules are indexed by the "head world" *)
 
-   (*[ val depends: (Pos.t * Decl.depend) list tab ]*)
+   (*[ val depends: (Pos.t * Decl.depend_t) list tab ]*)
    val depends: 
       (Pos.t * ((Pos.t * Atom.t) * (Pos.t * Atom.t) list)) list tab = 
       HTabX.table 1 
 
-   (*[ val rules: (Pos.t * Rule.rule) list tab ]*)
+   (*[ val rules: (Pos.t * Rule.rule_t) list tab ]*)
    val rules: (Pos.t * Rule.t) list tab = HTabX.table 1
 
    (*[ val queries: (Pos.t * Atom.moded_t) tab ]*)

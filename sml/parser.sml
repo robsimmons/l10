@@ -132,7 +132,7 @@ end = struct
       case syn of 
          App ((_, c), []) => Term.SymConst (Symbol.fromValue c)
        | App ((_, c), syns) => 
-         Term.Structured (Symbol.fromValue c, R.map p_ground syns)
+         Term.Root (Symbol.fromValue c, map p_ground syns)
        | Num (_, n) => Term.NatConst n
        | String (_, s) => Term.StrConst s
        | Var (pos, x) => 
@@ -147,11 +147,11 @@ end = struct
       case syn of 
          App ((_, c), []) => Term.SymConst (Symbol.fromValue c)
        | App ((_, c), syns) => 
-         Term.Structured (Symbol.fromValue c, R.map p_term syns)
+         Term.Root (Symbol.fromValue c, map p_term syns)
        | Num (_, n) => Term.NatConst n
        | String (_, s) => Term.StrConst s
-       | Var (_, x) => Term.Var (SOME (Symbol.fromValue x))
-       | Uscore _ => Term.Var NONE
+       | Var (_, x) => Term.Var (SOME (Symbol.fromValue x), NONE)
+       | Uscore _ => Term.Var (NONE, NONE)
        | _ => raise SyntaxError (SOME (getpos syn), "Ill-formed term")
 
    (*[ val p_world': syn -> psig -> (Pos.t * Atom.world) option ]*)
@@ -241,7 +241,7 @@ end = struct
             case syn of 
                Not (_, syn) => Prem.Negated (p_pat syn)
              | Binrel (br, syn1, syn2) => 
-               Prem.Binrel (br, p_term syn1, p_term syn2)
+               Prem.Binrel (br, p_term syn1, p_term syn2, NONE)
              | syn => Prem.Normal (p_pat syn) 
 
          (*[ val p_prems: syn -> (Pos.t * Prem.prem) list ]*)

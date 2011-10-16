@@ -337,7 +337,7 @@ struct
     | Extensible
 ]*)
  
-   (*[ val relToTyp: rel -> typ ]*)
+   (*[ val relToTyp: rel -> typ & rel_t -> typ ]*)
    fun relToTyp class = 
       case class of
          Rel _ => Base Type.rel
@@ -356,7 +356,7 @@ struct
           Arrow (_, class) => base class
         | Base t => t
 
-   (*[ val rel: rel -> Atom.world ]*)
+   (*[ val rel: rel -> Atom.world & rel_t -> Atom.world_t]*)
    fun rel class = 
       case class of
          Arrow (_, class) => rel class
