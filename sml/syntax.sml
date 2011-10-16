@@ -9,7 +9,12 @@ struct
               & ('a -> 'b) -> 'a plist -> 'b plist ]*)
    fun map f [] = []
      | map f (x :: xs) = f x :: map f xs
+
+   (*[ datasort 'a none = NONE ]*)
+   (*[ datasort 'a some = SOME of 'a ]*)
 end
+
+open R
 
 structure Type = 
 struct
@@ -34,46 +39,50 @@ struct
       SymConst of Symbol.symbol 
     | NatConst of IntInf.int
     | StrConst of string
-    | Structured of Symbol.symbol * t list
-    | Var of Symbol.symbol option
+    | Root of Symbol.symbol * t list
+    | Var of Symbol.symbol option * Symbol.symbol option
     | Mode of Mode.t * Symbol.symbol option
 (*[
-   datasort 'a none = NONE
-   datasort 'a some = SOME of 'a
-
    datasort term = 
       SymConst of Symbol.symbol 
     | NatConst of IntInf.int
     | StrConst of string
-    | Structured of Symbol.symbol * term R.plist
-    | Var of Symbol.symbol option
+    | Var of Symbol.symbol option * Symbol.symbol none
+    | Root of Symbol.symbol * term plist
+
+   datasort term_t = 
+      SymConst of Symbol.symbol 
+    | NatConst of IntInf.int
+    | StrConst of string
+    | Var of Symbol.symbol option * Symbol.symbol some
+    | Root of Symbol.symbol * term_t plist
 
    datasort ground = 
       SymConst of Symbol.symbol 
     | NatConst of IntInf.int
     | StrConst of string
-    | Structured of Symbol.symbol * ground R.plist
+    | Root of Symbol.symbol * ground plist
   
    datasort shape = 
       SymConst of Symbol.symbol 
     | NatConst of IntInf.int
     | StrConst of string
-    | Structured of Symbol.symbol * shape R.plist
-    | Var of Symbol.symbol none 
+    | Var of Symbol.symbol none * Symbol.symbol none
+    | Root of Symbol.symbol * shape plist
 
    datasort moded = 
       SymConst of Symbol.symbol 
     | NatConst of IntInf.int
     | StrConst of string
-    | Structured of Symbol.symbol * moded R.plist
     | Mode of Mode.t * Symbol.symbol none
+    | Root of Symbol.symbol * moded plist
 
    datasort moded_t = 
       SymConst of Symbol.symbol 
     | NatConst of IntInf.int
     | StrConst of string
-    | Structured of Symbol.symbol * moded_t R.plist
     | Mode of Mode.t * Symbol.symbol some
+    | Root of Symbol.symbol * moded_t plist
 ]*)
 
    fun eq (term1, term2) = 
@@ -81,18 +90,18 @@ struct
          (SymConst c1, SymConst c2) => Symbol.eq (c1, c2)
        | (NatConst n1, NatConst n2) => n1 = n2
        | (StrConst s1, StrConst s2) => s1 = s2
-       | (Structured (f1, terms1), Structured (f2, terms2)) => 
-         Symbol.eq(f1, f2)
-         andalso List.all eq (ListPair.zip (terms1, terms2))
-       | (Var NONE, Var NONE) => true
-       | (Var (SOME v1), Var (SOME v2)) => Symbol.eq (v1, v2)
+       | (Var (NONE, _), (Var (NONE, _))) => true
+       | (Var (SOME v1, _), Var (SOME v2, _)) => Symbol.eq (v1, v2)
        | (Mode (m1, _), Mode (m2, _)) => m1 = m2
        | (_, _) => false
+       | (Root (f1, terms1), Root (f2, terms2)) => 
+         Symbol.eq(f1, f2)
+         andalso List.all eq (ListPair.zip (terms1, terms2))
 
    fun fv term =
       case term of 
-         Var (SOME x) => SetX.singleton x
-       | Structured (_, terms) => fvs terms
+         Var (SOME x, _) => SetX.singleton x
+       | Root (_, terms) => fvs terms
        | _ => SetX.empty
 
    and fvs terms = 
@@ -103,7 +112,10 @@ struct
          SymConst c => Symbol.toValue c
        | NatConst i => IntInf.toString i
        | StrConst s => "\"" ^ s ^ "\""
-       | Structured (f, terms) => 
+       | Var (NONE, _) => "_"
+       | Var (SOME x, _) => Symbol.toValue x
+       | Mode (m, _) => Mode.toString m
+       | Root (f, terms) => 
          if Symbol.eq (f, Symbol.fromValue "_plus") andalso length terms = 2
          then ("(" ^ toString (hd terms) 
                ^ " + " ^ toString (hd (tl terms)) ^ ")")
@@ -111,27 +123,24 @@ struct
                ^ Symbol.toValue f 
                ^ String.concat (map (fn term => " " ^ toString term) terms)
                ^ ")")
-       | Var NONE => "_"
-       | Var (SOME x) => Symbol.toValue x
-       | Mode (m, _) => Mode.toString m
 
    (*[ sortdef subst = term DictX.dict ]*)
   
    (* Total substitution *)
    (*[ val subst: subst * term -> term option ]*)
    (*[ val substs: subst * term list -> term list option
-                 & subst * term R.plist -> term R.plist option ]*)
+                 & subst * term plist -> term plist option ]*)
    fun subst (map, term) =
       case term of 
          SymConst c => SOME (SymConst c)
        | NatConst n => SOME (NatConst n)
        | StrConst s => SOME (StrConst s)
-       | Structured (f, terms) =>  
+       | Var (NONE, _) => NONE
+       | Var (SOME x, _) => DictX.find map x
+       | Root (f, terms) =>  
          (case substs (map, terms) of
              NONE => NONE
-           | SOME terms => SOME (Structured (f, terms)))
-       | Var NONE => NONE
-       | Var (SOME x) => DictX.find map x
+           | SOME terms => SOME (Root (f, terms)))
    and substs (map, []) = SOME []
      | substs (map, term :: terms) = 
        case (subst (map, term), substs (map, terms)) of 
@@ -145,23 +154,26 @@ struct
          SymConst c => SymConst c
        | NatConst n => NatConst n
        | StrConst s => StrConst s
-       | Structured (f, terms) => 
-         Structured (f, R.map (sub (term', x)) terms)
-       | Var NONE => Var NONE
-       | Var (SOME y) => if Symbol.eq (x, y) then term' else Var (SOME y)
+       | Var (NONE, ty) => Var (NONE, ty)
+       | Var (SOME y, ty) => 
+         if Symbol.eq (x, y) then term' else Var (SOME y, ty)
+       | Root (f, terms) => 
+         Root (f, map (sub (term', x)) terms)
 
    (*[ val hasUscore: term -> bool ]*)
    fun hasUscore term = 
       case term of 
-         Var NONE => true  
-       | Structured (_, terms) => List.exists hasUscore terms
+         Var (NONE, _) => true  
+       | Root (_, terms) => List.exists hasUscore terms
        | _ => false
 end
 
 structure Atom = struct
    type t = Symbol.symbol * Term.t list
    (*[ sortdef world = Symbol.symbol * Term.term list ]*)
+   (*[ sortdef world_t = Symbol.symbol * Term.term_t list ]*)
    (*[ sortdef prop = Symbol.symbol * Term.term list ]*) 
+   (*[ sortdef prop_t = Symbol.symbol * Term.term_t list ]*) 
    (*[ sortdef ground_world = Symbol.symbol * Term.ground list ]*) 
    (*[ sortdef ground_prop = Symbol.symbol * Term.ground list ]*) 
    (*[ sortdef moded = Symbol.symbol * Term.moded list ]*) 
@@ -187,7 +199,7 @@ structure Atom = struct
      | toString' parens (w, terms) =
        (if parens then "(" else "")
        ^ Symbol.toValue w 
-       ^ String.concat (R.map (fn term => " " ^ Term.toString term) terms)
+       ^ String.concat (map (fn term => " " ^ Term.toString term) terms)
        ^ (if parens then ")" else "")
    val toString = toString' false
 end
@@ -202,6 +214,10 @@ structure Pat = struct
    datasort pat = 
       Atom of Atom.prop
     | Exists of Symbol.symbol * pat
+
+   datasort pat_t = 
+      Atom of Atom.prop_t
+    | Exists of Symbol.symbol * pat_t
 ]*)
 
    (*[ val fv: pat -> SetX.set ]*)
@@ -238,12 +254,17 @@ structure Prem = struct
    datatype t = 
       Normal of Pat.t
     | Negated of Pat.t
-    | Binrel of Binrel.t * Term.t * Term.t
+    | Binrel of Binrel.t * Term.t * Term.t * Symbol.symbol option
 (*[ 
    datasort prem = 
       Normal of Pat.pat
     | Negated of Pat.pat
-    | Binrel of Binrel.t * Term.term * Term.term
+    | Binrel of Binrel.t * Term.term * Term.term * Symbol.symbol none
+
+   datasort prem_t = 
+      Normal of Pat.pat_t
+    | Negated of Pat.pat_t
+    | Binrel of Binrel.t * Term.term_t * Term.term_t * Symbol.symbol some
 ]*)
 
    (*[ val fv: prem -> SetX.set ]*)
@@ -251,13 +272,14 @@ structure Prem = struct
       case prem of 
          Normal pat => Pat.fv pat
        | Negated pat => Pat.fv pat
-       | Binrel (_, term1, term2) => SetX.union (Term.fv term1) (Term.fv term2)
+       | Binrel (_, term1, term2, _) => 
+           SetX.union (Term.fv term1) (Term.fv term2)
 
    fun toString prem =  
       case prem of 
          Normal pat => Pat.toString pat
        | Negated pat => "not (" ^ Pat.toString pat ^ ")"
-       | Binrel (br, term1, term2) => 
+       | Binrel (br, term1, term2, _) => 
          Term.toString term1 ^ " "
          ^ Binrel.toString br ^ " "
          ^ Term.toString term2
@@ -265,7 +287,10 @@ end
 
 structure Rule = struct
    type t = (Pos.t * Prem.t) list * (Pos.t * Atom.t) list   
-   (*[ sortdef rule = (Pos.t * Prem.prem) list * (Pos.t * Atom.prop) list ]*)
+   (*[ sortdef rule = 
+          (Pos.t * Prem.prem) list * (Pos.t * Atom.prop) list ]*)
+   (*[ sortdef rule_t = 
+          (Pos.t * Prem.prem_t) list * (Pos.t * Atom.prop_t) list ]*)
 
    (*[ val fv: rule -> SetX.set ]*)
    fun fv ((prems, concs): t) =
@@ -300,6 +325,11 @@ struct
       Rel of Pos.t * Atom.world
     | Arrow of Symbol.symbol * rel
     | Pi of Symbol.symbol * Symbol.symbol * rel
+
+   datasort rel_t = 
+      Rel of Pos.t * Atom.world_t
+    | Arrow of Symbol.symbol * rel_t
+    | Pi of Symbol.symbol * Symbol.symbol * rel_t
 
    datasort knd = 
       Type
@@ -355,6 +385,9 @@ structure Decl = struct
    (*[ sortdef depend = 
           (Pos.t * Atom.world) * (Pos.t * Atom.world) list ]*)
 
+   (*[ sortdef depend_t = 
+          (Pos.t * Atom.world_t) * (Pos.t * Atom.world_t) list ]*)
+
    datatype t = 
       World of Pos.t * Symbol.symbol * Class.t
     | Const of Pos.t * Symbol.symbol * Class.t
@@ -378,11 +411,11 @@ structure Decl = struct
    datasort decl_t = 
       World of Pos.t * Symbol.symbol * Class.world
     | Const of Pos.t * Symbol.symbol * Class.typ
-    | Rel of Pos.t * Symbol.symbol * Class.rel
+    | Rel of Pos.t * Symbol.symbol * Class.rel_t
     | Type of Pos.t * Symbol.symbol * Class.knd
     | DB of Pos.t * db
-    | Depend of Pos.t * depend
-    | Rule of Pos.t * Rule.rule
+    | Depend of Pos.t * depend_t
+    | Rule of Pos.t * Rule.rule_t
     | Query of Pos.t * Symbol.symbol * Atom.moded_t
 
    datasort class = 
