@@ -5,7 +5,7 @@
  * and reset with the master Reset.reset () *)
 
 (* XXX INTERFACE - this structure exposes that everything is a HTabX.table, 
- * but, as an invariant, *)
+ * but the invariants will only be maintained if they are used as Tab.tabs. *)
 
 structure Tab = 
 struct

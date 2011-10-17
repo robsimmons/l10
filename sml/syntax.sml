@@ -410,5 +410,29 @@ structure Decl = struct
     | Type of Pos.t * Symbol.symbol * Class.knd
 ]*)
 
+(*[ val print: decl_t -> unit ]*)
+val print = 
+ fn World (_, w, class) => 
+       print (Symbol.toValue w ^ ": " ^ Class.toString class ^ "\n")
+  | Const (_, c, class) => 
+       print (Symbol.toValue c ^ ": " ^ Class.toString class ^ "\n")
+  | Rel (_, a, class) => 
+       print (Symbol.toValue a ^ ": " ^ Class.toString class ^ "\n")
+  | Type (_, t, class) => 
+       print (Symbol.toValue t ^ ": " ^ Class.toString class ^ "\n")
+  | DB (_, (db, _, _)) => 
+       print ("{-# DATABASE " ^ Symbol.toValue db ^ " ... #-}")
+  | Depend (_, (conc, prems)) => 
+       ( print (Atom.toString (#2 conc) ^ " <- ")
+       ; print (String.concatWith ", " (map (Atom.toString o #2) prems))
+       ; print "\n")
+  | Rule (_, (prems, concs)) =>
+       ( print (String.concatWith ", " (map (Prem.toString o #2) prems))
+       ; print " -> "
+       ; print (String.concatWith ", " (map (Atom.toString o #2) concs))
+       ; print "\n")
+  | Query (_, qry, mode) =>
+       ( print ("{-# QUERY " ^ Symbol.toValue qry ^ " ")
+       ; print (Atom.toString mode ^ " #-}\n"))
 end
 

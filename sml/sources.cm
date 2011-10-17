@@ -11,6 +11,8 @@ Group is
    tab.sml
    check-types.sml
 
+   read.sml
+
 (*
    util/symbol.sml
    util/symtab.sml
