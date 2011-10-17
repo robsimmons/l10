@@ -1,21 +1,6 @@
 (* Abstract syntax tree for L10 *)
 (* Robert J. Simmons *)
 
-structure R = 
-struct
-   (*[ datasort 'a plist = op :: of 'a * 'a list ]*)
-
-   (*[ val map: ('a -> 'b) -> 'a list -> 'b list
-              & ('a -> 'b) -> 'a plist -> 'b plist ]*)
-   fun map f [] = []
-     | map f (x :: xs) = f x :: map f xs
-
-   (*[ datasort 'a none = NONE ]*)
-   (*[ datasort 'a some = SOME of 'a ]*)
-end
-
-open R
-
 structure Type = 
 struct
    val t = Symbol.fromValue "t"
@@ -93,10 +78,10 @@ struct
        | (Var (NONE, _), (Var (NONE, _))) => true
        | (Var (SOME v1, _), Var (SOME v2, _)) => Symbol.eq (v1, v2)
        | (Mode (m1, _), Mode (m2, _)) => m1 = m2
-       | (_, _) => false
        | (Root (f1, terms1), Root (f2, terms2)) => 
          Symbol.eq(f1, f2)
          andalso List.all eq (ListPair.zip (terms1, terms2))
+       | (_, _) => false
 
    fun fv term =
       case term of 

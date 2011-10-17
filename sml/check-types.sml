@@ -5,82 +5,27 @@ structure Types :> sig
   
    exception TypeError of Pos.t * string
 
-   (*[ val checkDecl: Decl.decl -> unit ]*)
+   (*[ val check: Decl.decl -> Decl.decl_t ]*)
    (* Takes a raw parsed declarations, makes sure scope, arity,
     * and simple types are all respected, and prevents duplicate definitions. 
     * May add new constants of extensible type to ConTab. *)
-   val checkDecl : Decl.t -> unit
+   val check: Decl.t -> Decl.t
 
 end = struct
 
-(*[ val tc_namespace: Pos.t -> string -> Symbol.symbol -> unit ]*)
-(* Avoid double definition. *)
-fun tc_namespace pos syntax x = 
-   let 
-      fun doubledef s = 
-         syntax ^ " `" ^ Symbol.toValue x ^ "` already declared as a " ^ s
-      fun illegalId s = 
-         syntax ^ " identifier `" ^ Symbol.toValue x ^ "` contains " ^ s
-   in 
-      if Tab.member Tab.types x
-      then raise TypeError (pos, doubledef "type")
-      else if Tab.member Tab.worlds x
-      then raise TypeError (pos, doubledef "world")
-      else if Tab.member Tab.rels x
-      then raise TypeError (pos, doubledef "relation")
-      else if Tab.member Tab.cons x
-      then raise TypeError (pos, doubledef "term constructor")
-      else if String.isSubstring "_" (String.fromValue x)
-      then raise TypeError (pos, illegalId "underscore")
-      else if String.isSubstring "'" (String.fromValue x)
-      then raise TypeError (pos, illegalId "single-quote")
-      else ()
-   end
+   exception TypeError of Pos.t * string
 
 
 (* 
 structure A = Ast
 open Symbol
 
-(* tc_namespace (syntax, x, lookup_result) 
- * Utility function used with table look up to avoid double-definition *)
-fun tc_namespace (syntax, x) = 
-   if isSome (TypeTab.find x)
-   then raise Fail (syntax ^ " " ^ name x ^ " already declared as a type")
-   else if isSome (WorldTab.find x)
-   then raise Fail (syntax ^ " " ^ name x ^ " already declared as a world")
-   else if isSome (RelTab.find x)
-   then raise Fail (syntax ^ " " ^ name x ^ " already delcared as a relation")
-   else if isSome (ConTab.find x)
-   then raise Fail (syntax ^ " " ^ name x 
-                    ^ " already declared as a term constructor")
-   else if String.isSubstring "_" (name x)
-   then raise Fail (syntax ^ " identifier \"" ^ name x 
-                    ^ "\": contains underscore")
-   else if String.isSubstring "'" (name x)
-   then raise Fail (syntax 
-                    ^ " identifier \"" ^ name x 
-                    ^ "\": contains single-quote")
-   else ()
-
 fun tc_database x = 
    if isSome (DbTab.find x)
    then raise Fail ("Database " ^ name x ^ " already defined")
    else ()
 
-(* tc_type typ - asserts that a symbol is a type *)
-fun tc_typ typ = 
-   case TypeTab.find typ of
-      NONE => raise Fail ("Type " ^ name typ ^ " not declared.")
-    | _ => ()
 
-(* tc_args args - checks that types are defined, returns bound variables *)
-fun tc_args' (map, []) = map
-  | tc_args' (map, (NONE, typ) :: args) = 
-    (tc_typ typ; tc_args' (map, args))
-  | tc_args' (map, (SOME x, typ) :: args) = 
-    (tc_typ typ; tc_args' (MapX.insert (map, x, SOME typ), args))
-fun tc_args args = tc_args' (MapX.empty, args)
 
 
 fun require typ1 typ2 = 
@@ -316,30 +261,96 @@ fun checkDecl decl =
                         ^ " declarations, but " ^ name x ^ " was free.")
       end
 
+(* tc_args args - checks that types are defined, returns bound variables *)
+fun tc_args' (map, []) = map
+  | tc_args' (map, (NONE, typ) :: args) = 
+    (tc_typ typ; tc_args' (map, args))
+  | tc_args' (map, (SOME x, typ) :: args) = 
+    (tc_typ typ; tc_args' (MapX.insert (map, x, SOME typ), args))
+fun tc_args args = tc_args' (MapX.empty, args)
+
 *)
 
-(*[ val checkDecl: Decl.decl -> Decl.decl_t ]*)
-fun checkDecl decl = 
+(*[ sortdef env = Symbol.symbol DictX.dict ]*)
+
+(*[ val tc_t: Pos.t -> Symbol.symbol -> unit ]*)
+fun tc_t pos t = 
+   if Tab.member Tab.types t then () 
+   else raise TypeError (pos, "Type " ^ Symbol.toValue t ^ " not declared.")
+
+
+(*[ val tc_namespace: Pos.t -> string -> Symbol.symbol -> unit ]*)
+(* Avoid double definition for the namespace that is shared by everything
+ * except for database declarations. *)
+fun tc_namespace pos syntax x = 
+   let 
+      fun doubledef s = 
+         syntax ^ " `" ^ Symbol.toValue x ^ "` already declared as a " ^ s
+      fun illegalId s = 
+         syntax ^ " identifier `" ^ Symbol.toValue x ^ "` contains " ^ s
+   in 
+      if Tab.member Tab.types x
+      then raise TypeError (pos, doubledef "type")
+      else if Tab.member Tab.worlds x
+      then raise TypeError (pos, doubledef "world")
+      else if Tab.member Tab.rels x
+      then raise TypeError (pos, doubledef "relation")
+      else if Tab.member Tab.cons x
+      then raise TypeError (pos, doubledef "term constructor")
+      else if String.isSubstring "_" (Symbol.toValue x)
+      then raise TypeError (pos, illegalId "underscore")
+      else if String.isSubstring "'" (Symbol.toValue x)
+      then raise TypeError (pos, illegalId "single-quote")
+      else ()
+   end
+
+
+(*[ val tc_class: Pos.t -> env -> ( Class.world -> Class.world 
+                                  & Class.typ -> Class.typ
+                                  & Class.rel -> Class.rel_t
+                                  & Class.knd -> Class.knd) ]*)
+fun tc_class pos env class = 
+   case class of 
+      Class.Base t => 
+         ( tc_t pos t
+         ; Class.Base t)
+    | Class.Rel _ => raise Match
+    | Class.World => Class.World
+    | Class.Type => Class.Type
+    | Class.Builtin => Class.Builtin
+    | Class.Extensible => Class.Extensible
+    | Class.Arrow (t, class) => 
+         ( tc_t pos t
+         ; Class.Arrow (t, tc_class pos env class))
+    | Class.Pi (x, t, class) => 
+         ( tc_t pos t
+         ; Class.Pi (x, t, tc_class pos (DictX.insert env x t) class))
+
+
+(*[ val check: Decl.decl -> Decl.decl_t ]*)
+fun check decl = 
    case decl of 
-      Decl.Type (pos, typ, class) => 
-         ( tc_namespace ("Type", typ)
-         ; Decl.Type (pos, typ, class))
+      Decl.Type (pos, t, class) => 
+         ( tc_namespace pos "Type" t
+         ; Decl.Type (pos, t, tc_class pos DictX.empty class))
 
       (* Worlds are well-formed 
        * if they haven't been declared already
        * and if all their indices are valid types *)
-    | A.DeclWorld (w, args) => 
-         ( tc_namespace ("World", w)
-         ; ignore (tc_args args))
+    | Decl.World (pos, w, class) => 
+         ( tc_namespace pos "World" w
+         ; Decl.World (pos, w, tc_class pos DictX.empty class))
 
       (* Constant declarations are well-formed 
        * if they haven't been declared already
        * and if their indices are valid types *)
-    | A.DeclConst (c, args, typ) => 
-      (tc_namespace ("Constant", c)
-       ; ignore (tc_args args) 
-       ; tc_typ typ)
+    | Decl.Const (pos, c, class) => 
+         ( tc_namespace pos "Constant" c
+         ; Decl.Const (pos, c, tc_class pos DictX.empty class))
 
+    | _ => raise Match
+
+(*
       (* Relations declarations are well-formed
        * if they haven't been declared already
        * if their indices are valid types
@@ -358,6 +369,7 @@ fun checkDecl decl =
             raise Fail ("Variable " ^ name x 
                         ^ " used in world but not bound." )
       end
+*)
 
 
 end
