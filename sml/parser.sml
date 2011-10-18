@@ -18,7 +18,8 @@ end = struct
       datatype terminal = datatype Token.t
 
       datatype syn = 
-         Ascribe of (Pos.t * string) * syn
+         Ucid of Pos.t * string
+       | Ascribe of (Pos.t * string) * syn
        | Assign of (Pos.t * string) * syn
        | Arrow of syn * syn
        | Conj of syn * syn
@@ -39,7 +40,8 @@ end = struct
 
       fun getpos syn = 
          case syn of 
-            Ascribe ((pos, _), syn) => Pos.union pos (getpos syn)
+            Ucid (pos, _) => pos
+          | Ascribe ((pos, _), syn) => Pos.union pos (getpos syn)
           | Assign ((pos, _), syn) => Pos.union pos (getpos syn)
           | Arrow (syn1, syn2) => Pos.union (getpos syn1) (getpos syn2)
           | Conj (syn1, syn2) => Pos.union (getpos syn1) (getpos syn2)
@@ -272,13 +274,30 @@ end = struct
                    Pos.t
                    -> syn * Decl.class
                    -> Decl.class ]*)
-            fun pi pos (Ascribe ((_, x), syn), class) = 
-                let val t = p_t syn in 
+            fun pi pos (arg, class) = 
+                let 
+                   fun p_arg (Ucid (_, x)) = (x, NONE)
+                     | p_arg (Ascribe ((_, x), syn)) = (x, SOME (p_t syn))
+                     | p_arg _ = 
+                       raise SyntaxError 
+                          (SOME (getpos syn),
+                           "Pi-bindings `{...}` must be of the form `{x:t}`")
+
+                   val (x, t) = p_arg syn 
+                   fun ty () = 
+                      case t of 
+                         NONE => 
+                         raise SyntaxError 
+                                 (SOME pos, 
+                                  "Cannot infer type of bound variable `" 
+                                  ^ x ^ "`")
+                       | SOME t => t
+                in 
                    case class of 
                       Decl.World (p, w, class) => 
-                      Decl.World (p, w, Class.Arrow (t, class))
+                      Decl.World (p, w, Class.Arrow (ty (), class))
                     | Decl.Const (p, c, class) => 
-                      Decl.Const (p, c, Class.Arrow (t, class))
+                      Decl.Const (p, c, Class.Arrow (ty (), class))
                     | Decl.Rel (p, r, class) => 
                       Decl.Rel (p, r, Class.Pi (Symbol.fromValue x, t, class))
                     | Decl.Type _ => 
@@ -286,10 +305,6 @@ end = struct
                          (SOME pos,
                           "Dependent types `{...} type` not allowed")
                end
-             | pi pos (syn, _) = 
-               raise SyntaxError 
-                  (SOME (getpos syn),
-                   "Pi-bindings `{...}` must be of the form `{x:t}`")
 
             (*[ val arrow: 
                    Pos.t

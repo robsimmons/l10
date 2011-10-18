@@ -271,7 +271,15 @@ fun tc_args args = tc_args' (MapX.empty, args)
 
 *)
 
-(*[ sortdef env = Symbol.symbol DictX.dict ]*)
+(* Utility function for requiring two types to be equal *)
+fun require pos typ1 typ2 = 
+   if Symbol.eq (typ1, typ2) then () 
+   else raise TypeError (pos, "Expected a term of type " ^ Symbol.toValue typ1 
+                              ^ ", but found a constructor of type" 
+                              ^ Symbol.toValue typ2)
+
+
+(*[ sortdef env = Symbol.symbol option DictX.dict ]*)
 
 (*[ val tc_t: Pos.t -> Symbol.symbol -> unit ]*)
 fun tc_t pos t = 
@@ -295,7 +303,7 @@ fun tc_namespace pos syntax x =
       then raise TypeError (pos, doubledef "world")
       else if Tab.member Tab.rels x
       then raise TypeError (pos, doubledef "relation")
-      else if Tab.member Tab.cons x
+      else if Tab.member Tab.consts x
       then raise TypeError (pos, doubledef "term constructor")
       else if String.isSubstring "_" (Symbol.toValue x)
       then raise TypeError (pos, illegalId "underscore")
@@ -305,26 +313,137 @@ fun tc_namespace pos syntax x =
    end
 
 
-(*[ val tc_class: Pos.t -> env -> ( Class.world -> Class.world 
-                                  & Class.typ -> Class.typ
-                                  & Class.rel -> Class.rel_t
-                                  & Class.knd -> Class.knd) ]*)
+(* Checks a term at a given type, and returns a (potentially) larger context if
+ * it found any type variables that were not already in the environment.
+ * It is an invariant that the types passed as arguments are already
+ * well-formed. *)
+
+(*[ val tc_term: Pos.t -> env -> Symbol.symbol -> 
+       ( Term.term -> env * Term.term_t
+       & Term.ground -> env * Term.ground
+       & Term.moded -> env * Term.moded_t) ]*)
+
+(*[ val tc_spine: Pos.t -> env -> Class.typ ->
+       ( Term.term conslist -> env * Symbol.symbol * Term.term_t conslist
+       & Term.ground conslist -> env * Symbol.symbol * Term.ground conslist
+       & Term.moded conslist -> env * Symbol.symbol * Term.moded_t conslist)]*)
+
+fun tc_term pos env typ term = 
+   case term of  
+      Term.SymConst c => 
+      (case Tab.find Tab.consts c of 
+          NONE => (case Tab.lookup Tab.types typ of
+                      Class.Extensible =>  
+                         ( Tab.bind (Decl.Const (pos, c, Class.Base typ))
+                         ; (env, Term.SymConst c))
+                    | _ => raise TypeError (pos, "Constant `"
+                                                 ^ Symbol.toValue c
+                                                 ^ "` not declared and type `"
+                                                 ^ Symbol.toValue typ 
+                                                 ^ "` not extensible"))
+        | SOME (Class.Base typ') => 
+             if Symbol.eq (typ, typ') then (env, Term.SymConst c)
+             else raise TypeError (pos, "Constant `" ^ Symbol.toValue c 
+                                        ^ "` has type `" ^ Symbol.toValue typ'
+                                        ^ "`, but a term of type `" 
+                                        ^ Symbol.toValue typ
+                                        ^ "` was expected")
+        | SOME class => 
+             raise TypeError (pos, "Function symbol `" ^ Symbol.toValue c
+                                   ^ "` expected" 
+                                   ^ Int.toString (Class.arrows class) 
+                                   ^ " argument(s), was given none"))
+    | Term.NatConst n => (require pos typ Type.nat; (env, Term.NatConst n))
+    | Term.StrConst s => (require pos typ Type.string; (env, Term.StrConst s))
+    | Term.Root (f, spine) => 
+      (case Tab.find Tab.consts f of
+          NONE => raise TypeError (pos, "Function symbol " ^ Symbol.toValue f
+                                        ^ " not defined")
+        | SOME class => 
+          let 
+             val (env', typ', spine_t) = tc_spine pos env class spine
+          in 
+             if Symbol.eq (typ, typ') 
+             then (env', Term.Root (f, spine_t))
+             else raise TypeError (pos, "Term `" ^ Symbol.toValue f 
+                                        ^ " ...` has type `" 
+                                        ^ Symbol.toValue typ'
+                                        ^ "`, but a term of type `" 
+                                        ^ Symbol.toValue typ
+                                        ^ "` was expected")
+          end)
+    | Term.Var (NONE, NONE) => (env, Term.Var (NONE, SOME typ))
+    | Term.Var (SOME x, NONE) => 
+      (case DictX.find env x of
+          NONE => 
+             (DictX.insert env x (SOME typ), Term.Var (SOME x, SOME typ))
+        | SOME NONE => 
+             (DictX.insert env x (SOME typ), Term.Var (SOME x, SOME typ))
+        | SOME (SOME typ') => 
+             if Symbol.eq (typ, typ') 
+             then (env, Term.Var (SOME x, SOME typ))
+             else raise TypeError (pos, "Variable `" ^ Symbol.toValue x
+                                        ^ "` elsewhere given type `" 
+                                        ^ Symbol.toValue typ' ^ "`, but here\
+                                        \ a term of type `" 
+                                        ^ Symbol.toValue typ 
+                                        ^ "` was expected"))
+    | Term.Mode (m, NONE) => (env, Term.Mode (m, SOME typ))
+
+and tc_spine _ = raise Match
+
+
+(*[ val tc_class: Pos.t -> env -> ( Class.world -> env * Class.world 
+                                  & Class.typ -> env * Class.typ
+                                  & Class.rel -> env * Class.rel_t
+                                  & Class.knd -> env * Class.knd) ]*)
 fun tc_class pos env class = 
    case class of 
       Class.Base t => 
          ( tc_t pos t
-         ; Class.Base t)
+         ; (env, Class.Base t))
     | Class.Rel _ => raise Match
-    | Class.World => Class.World
-    | Class.Type => Class.Type
-    | Class.Builtin => Class.Builtin
-    | Class.Extensible => Class.Extensible
+    | Class.World => (env, Class.World)
+    | Class.Type => (env, Class.Type)
+    | Class.Builtin => (env, Class.Builtin)
+    | Class.Extensible => (env, Class.Extensible)
     | Class.Arrow (t, class) => 
+      let val (env, class) = tc_class pos env class in
          ( tc_t pos t
-         ; Class.Arrow (t, tc_class pos env class))
-    | Class.Pi (x, t, class) => 
-         ( tc_t pos t
-         ; Class.Pi (x, t, tc_class pos (DictX.insert env x t) class))
+         ; (env, Class.Arrow (t, class)))
+      end
+    | Class.Pi (x, t_ish, class) =>
+      let 
+         val oldt = DictX.find env x 
+         val () = case t_ish of NONE => () | SOME t => tc_t pos t
+         val (env, class) = tc_class pos (DictX.insert env x t_ish) class
+         val boundty =
+            case DictX.find env x of 
+               NONE => raise TypeError (pos, "Internal invariant broken")
+             | SOME NONE =>
+                  raise TypeError (pos, "Cannot infer type of bound variable `" 
+                                        ^ Symbol.toValue x ^ "`")
+             | SOME (SOME ty) => ty
+         val env = 
+            case oldt of
+               NONE => DictX.remove env x
+             | SOME t => DictX.insert env x t
+      in 
+        (env, Class.Pi (x, SOME boundty, class))
+      end
+
+
+(*[ val tc_closed_class: Pos.t -> ( Class.world -> Class.world 
+                                  & Class.typ -> Class.typ
+                                  & Class.rel -> Class.rel_t
+                                  & Class.knd -> Class.knd) ]*)
+fun tc_closed_class pos class = 
+   let val (env, class) = tc_class pos DictX.empty class in
+      case DictX.toList env of
+         [] => class
+       | (x, _) :: _ => raise TypeError (pos, "Variable `" ^ Symbol.toValue x 
+                                              ^ "` free in classifier.")  
+   end
 
 
 (*[ val check: Decl.decl -> Decl.decl_t ]*)
@@ -332,22 +451,29 @@ fun check decl =
    case decl of 
       Decl.Type (pos, t, class) => 
          ( tc_namespace pos "Type" t
-         ; Decl.Type (pos, t, tc_class pos DictX.empty class))
+         ; Decl.Type (pos, t, tc_closed_class pos class))
 
-      (* Worlds are well-formed 
-       * if they haven't been declared already
-       * and if all their indices are valid types *)
     | Decl.World (pos, w, class) => 
          ( tc_namespace pos "World" w
-         ; Decl.World (pos, w, tc_class pos DictX.empty class))
+         ; Decl.World (pos, w, tc_closed_class pos class))
 
-      (* Constant declarations are well-formed 
-       * if they haven't been declared already
-       * and if their indices are valid types *)
     | Decl.Const (pos, c, class) => 
+      let val class = tc_closed_class pos class in
          ( tc_namespace pos "Constant" c
-         ; Decl.Const (pos, c, tc_class pos DictX.empty class))
-
+         ; case (Tab.lookup Tab.types (Class.base class), class) of
+              (Class.Extensible, Class.Base _) => ()
+            | (Class.Type, _) => ()
+            | (Class.Extensible, _) =>
+                 raise TypeError (pos, "Extensible type `" 
+                    ^ Symbol.toValue (Class.base class) ^ "` given a constant\
+                    \ that is not of base type.")
+            | (Class.Builtin, _) => 
+                 raise TypeError (pos, "Built-in type `"
+                    ^ Symbol.toValue (Class.base class) ^ "` cannot be given\
+                    \ new constants.")
+            | _ => raise TypeError (pos, "WHY IS THIS NOT A REDUNDANT MATCH?")
+         ; Decl.Const (pos, c, tc_closed_class pos class))
+      end
     | _ => raise Match
 
 (*

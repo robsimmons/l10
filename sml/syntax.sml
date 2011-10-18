@@ -33,41 +33,41 @@ struct
     | NatConst of IntInf.int
     | StrConst of string
     | Var of Symbol.symbol option * Symbol.symbol none
-    | Root of Symbol.symbol * term plist
+    | Root of Symbol.symbol * term conslist
 
    datasort term_t = 
       SymConst of Symbol.symbol 
     | NatConst of IntInf.int
     | StrConst of string
     | Var of Symbol.symbol option * Symbol.symbol some
-    | Root of Symbol.symbol * term_t plist
+    | Root of Symbol.symbol * term_t conslist
 
    datasort ground = 
       SymConst of Symbol.symbol 
     | NatConst of IntInf.int
     | StrConst of string
-    | Root of Symbol.symbol * ground plist
+    | Root of Symbol.symbol * ground conslist
   
    datasort shape = 
       SymConst of Symbol.symbol 
     | NatConst of IntInf.int
     | StrConst of string
     | Var of Symbol.symbol none * Symbol.symbol none
-    | Root of Symbol.symbol * shape plist
+    | Root of Symbol.symbol * shape conslist
 
    datasort moded = 
       SymConst of Symbol.symbol 
     | NatConst of IntInf.int
     | StrConst of string
     | Mode of Mode.t * Symbol.symbol none
-    | Root of Symbol.symbol * moded plist
+    | Root of Symbol.symbol * moded conslist
 
    datasort moded_t = 
       SymConst of Symbol.symbol 
     | NatConst of IntInf.int
     | StrConst of string
     | Mode of Mode.t * Symbol.symbol some
-    | Root of Symbol.symbol * moded_t plist
+    | Root of Symbol.symbol * moded_t conslist
 ]*)
 
    fun eq (term1, term2) = 
@@ -114,7 +114,7 @@ struct
    (* Total substitution *)
    (*[ val subst: subst * term -> term option ]*)
    (*[ val substs: subst * term list -> term list option
-                 & subst * term plist -> term plist option ]*)
+                 & subst * term conslist -> term conslist option ]*)
    fun subst (map, term) =
       case term of 
          SymConst c => SOME (SymConst c)
@@ -296,7 +296,7 @@ struct
     | Builtin
     | Extensible
     | Arrow of Symbol.symbol * t
-    | Pi of Symbol.symbol * Symbol.symbol * t
+    | Pi of Symbol.symbol * Symbol.symbol option * t
 (*[
    datasort world = 
       World
@@ -309,25 +309,31 @@ struct
    datasort rel = 
       Rel of Pos.t * Atom.world
     | Arrow of Symbol.symbol * rel
-    | Pi of Symbol.symbol * Symbol.symbol * rel
+    | Pi of Symbol.symbol * Symbol.symbol option * rel
 
    datasort rel_t = 
       Rel of Pos.t * Atom.world_t
     | Arrow of Symbol.symbol * rel_t
-    | Pi of Symbol.symbol * Symbol.symbol * rel_t
+    | Pi of Symbol.symbol * Symbol.symbol some * rel_t
 
    datasort knd = 
       Type
     | Builtin
     | Extensible
 ]*)
+   
+   fun arrows class = 
+      case class of 
+         Arrow (_, class) => 1+arrows class
+       | Pi (_, _, class) => 1+arrows class
+       | _ => 0
  
-   (*[ val relToTyp: rel -> typ & rel_t -> typ ]*)
+   (*[ val relToTyp: rel_t -> typ ]*)
    fun relToTyp class = 
       case class of
          Rel _ => Base Type.rel
        | Arrow (t, class) => Arrow (t, relToTyp class)
-       | Pi (x, t, class) => Arrow (t, relToTyp class)
+       | Pi (x, SOME t, class) => Arrow (t, relToTyp class)
 
    (*[ val worldToTyp: world -> typ ]*)
    fun worldToTyp class = 
@@ -357,7 +363,9 @@ struct
        | Builtin => "builtin"
        | Extensible => "extensible"
        | Arrow (t, typ) => Symbol.toValue t ^ " -> " ^ toString typ
-       | Pi (x, t, typ) => 
+       | Pi (x, NONE, typ) => 
+         "{" ^ Symbol.toValue x ^ "} " ^ toString typ
+       | Pi (x, SOME t, typ) => 
          "{" ^ Symbol.toValue x ^ ": " ^ Symbol.toValue t ^ "} " ^ toString typ
 end
 

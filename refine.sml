@@ -1,5 +1,5 @@
 OS.FileSys.chDir "../sml-cidre/src";
-CM.make "sources.cm";
+CM.make "../sml-cidre/src/sources.cm";
 
 OS.FileSys.chDir "../../cmlib/lib";
 R.refine_file "coord.sig";

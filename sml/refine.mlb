@@ -1,19 +1,17 @@
-$(CMLIB)/lib/cmlib.mlb
+../../cmlib/lib/cmlib.mlb
 cmlib-defaults.sml
 
-ann "nonexhaustiveMatch ignore" in 
+$(SML_LIB)/refined-basis/basis.mlb
 
-   syntax.sml
-   l10.cmlex.sml
-   lexer.sml
-   l10.cmyacc.sml
-   parser.sml
+syntax.sml
+l10.cmlex.sml
+lexer.sml
+l10.cmyacc.sml
+parser.sml
 
-   tab.sml
-   check-types.sml
-   read.sml
-
-end
+tab.sml
+check-types.sml
+read.sml
 
 (*
 $(SML_LIB)/basis/basis.mlb

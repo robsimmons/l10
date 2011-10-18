@@ -47,6 +47,7 @@ nonterminal Decl : decl =
    1:LANNO ANNO_QUERY 2:LCID COLON 3:LCID 4:Modes 5:RANNO => Query
 
 nonterminal Bind : syn =
+   1:UCID                         => Ucid
    1:UCID COLON 2:Syn             => ascribe_ucid 
 
 nonterminal Syn : syn =

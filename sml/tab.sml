@@ -50,8 +50,8 @@ struct
    (*[ val rels: Class.rel_t tab ]*)
    val rels: Class.t tab = HTabX.table 1
 
-   (*[ val cons: Class.typ tab ]*)
-   val cons: Class.t tab = HTabX.table 1
+   (*[ val consts: Class.typ tab ]*)
+   val consts: Class.t tab = HTabX.table 1
 
    (* Reverse lookup: all the constructors used to make a term of a type *)
    (*[ val typecon: Symbol.symbol list tab ]*)
@@ -81,15 +81,15 @@ struct
    (* Loads a (presumed to be fully checked) declaration into the database. *)
    fun bind (Decl.World (_, w, class)) = 
          ( HTabX.insert worlds w class
-         ; HTabX.insert cons w (Class.worldToTyp class))
+         ; HTabX.insert consts w (Class.worldToTyp class))
      | bind (Decl.Const (_, c, class)) =
          let val t = Class.base class in  
-            ( HTabX.insert cons c class
+            ( HTabX.insert consts c class
             ; HTabX.insertMerge typecon t [ c ] (fn cs => c :: cs))
          end
      | bind (Decl.Rel (_, r, class)) = 
          ( HTabX.insert rels r class 
-         ; HTabX.insert cons r (Class.relToTyp class))
+         ; HTabX.insert consts r (Class.relToTyp class))
      | bind (Decl.Type (_, a, class)) = HTabX.insert types a class
      | bind (Decl.DB _) = raise Match
      | bind (Decl.Depend (depend as (_, ((_, (w, _)), _)))) =
@@ -121,7 +121,7 @@ struct
       ( HTabX.reset types n
       ; HTabX.reset worlds n
       ; HTabX.reset rels n
-      ; HTabX.reset cons n
+      ; HTabX.reset consts n
       ; HTabX.reset typecon n
       ; bind plus
       ; bind (Decl.Type (pos, Type.t, Class.Extensible))
