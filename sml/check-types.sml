@@ -323,7 +323,7 @@ fun tc_namespace pos syntax x =
        & Term.ground -> env * Term.ground
        & Term.moded -> env * Term.moded_t) ]*)
 
-(*[ val tc_spine: Pos.t -> env -> Class.typ ->
+(*[ val tc_spine: Pos.t -> env -> Class.typ -> Symbol.symbol ->
        ( Term.term conslist -> env * Symbol.symbol * Term.term_t conslist
        & Term.ground conslist -> env * Symbol.symbol * Term.ground conslist
        & Term.moded conslist -> env * Symbol.symbol * Term.moded_t conslist)]*)
@@ -361,7 +361,7 @@ fun tc_term pos env typ term =
                                         ^ " not defined")
         | SOME class => 
           let 
-             val (env', typ', spine_t) = tc_spine pos env class spine
+             val (env', typ', spine_t) = tc_spine pos env class f spine
           in 
              if Symbol.eq (typ, typ') 
              then (env', Term.Root (f, spine_t))
@@ -390,8 +390,27 @@ fun tc_term pos env typ term =
                                         ^ "` was expected"))
     | Term.Mode (m, NONE) => (env, Term.Mode (m, SOME typ))
 
-and tc_spine _ = raise Match
-
+and tc_spine pos env class f terms = 
+   case (class, terms) of 
+      (Class.Arrow (t, Class.Base t'), [ term ]) =>
+      let val (env', term') = tc_term pos env t term in
+         (env', t', [ term' ])
+      end
+    | (Class.Arrow (t, class), term1 :: term2 :: terms) =>
+      let 
+         val (env', term1') = tc_term pos env t term1 
+         val (env'', t', terms') = tc_spine pos env' class f (term2 :: terms)
+      in
+         (env'', t', term1' :: terms')
+      end
+    | (Class.Base _, _) => 
+         raise TypeError (pos, "Function symbol `" ^ Symbol.toValue f 
+                               ^ "` given " ^ Int.toString (length terms) 
+                               ^ " too many arguments")
+    | (Class.Arrow (t, class), [ _ ]) =>
+         raise TypeError (pos, "Function symbol `" ^ Symbol.toValue f 
+                               ^ "` given too few arguments")
+       
 
 (*[ val tc_class: Pos.t -> env -> ( Class.world -> env * Class.world 
                                   & Class.typ -> env * Class.typ
