@@ -446,7 +446,14 @@ fun tc_class pos env class =
       Class.Base t => 
          ( tc_t pos t
          ; (env, Class.Base t))
-    | Class.Rel _ => raise Match
+    | Class.Rel (pos, (w, terms)) =>
+      (case Tab.find Tab.worlds w of 
+          NONE => raise TypeError (pos, "World `" ^ Symbol.toValue w 
+                                        ^ "` not declared")
+        | SOME class => 
+          let val (env', _, terms') = tc_spine pos env w class terms in
+             (env', Class.Rel (pos, (w, terms')))
+          end)
     | Class.World => (env, Class.World)
     | Class.Type => (env, Class.Type)
     | Class.Builtin => (env, Class.Builtin)
