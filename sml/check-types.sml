@@ -331,6 +331,8 @@ fun tc_namespace pos syntax x =
           & Term.ground list     -> env * Symbol.symbol * Term.ground list
           & Term.moded conslist -> env * Symbol.symbol * Term.moded_t conslist
           & Term.moded list     -> env * Symbol.symbol * Term.moded_t list)
+       & Class.rel_t -> 
+          ( Term.term list -> env * Symbol.symbol * Term.term_t list)
        & Class.world -> 
           ( Term.term list -> env * Symbol.symbol * Term.term_t list))]*)
 
@@ -396,6 +398,9 @@ fun tc_term pos env typ term =
                                         ^ "` was expected"))
     | Term.Mode (m, NONE) => (env, Term.Mode (m, SOME typ))
 
+(* RJS Oct 18 2011 - is it okay that I'm leaving out the part where I 
+ * substitue pi-bound types into the kind? This is, as a result, basically just
+ * doing simple type checking, but I think that's what I want to be doing. *)
 and tc_spine pos env f class terms = 
    let fun toomany w = 
          TypeError (pos, w ^ " `" ^ Symbol.toValue f 
@@ -413,10 +418,20 @@ and tc_spine pos env f class terms =
          in
             (env'', t', term1' :: terms')
          end
+       | (Class.Pi (_, SOME t, class), term1 :: terms) =>
+         let 
+            val (env', term1') = tc_term pos env t term1 
+            val (env'', t', terms') = tc_spine pos env' f class terms
+         in
+            (env'', t', term1' :: terms')
+         end
        | (Class.Base _, _) => raise toomany "Function symbol" 
        | (Class.World, _) => raise toomany "World "
        | (Class.Rel _, _) => raise toomany "Predicate "
        | (Class.Arrow (t, class), []) =>
+            raise TypeError (pos, "Not enough arguments for `" 
+                                  ^ Symbol.toValue f ^ "`")
+       | (Class.Pi (_, SOME t, class), []) =>
             raise TypeError (pos, "Not enough arguments for `" 
                                   ^ Symbol.toValue f ^ "`")
    end
