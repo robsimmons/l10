@@ -509,24 +509,29 @@ fun check decl =
          ; Decl.World (pos, w, tc_closed_class pos class))
 
     | Decl.Const (pos, c, class) => 
-      let (*[ val class': {typ: Class.typ, knd: Class.knd} ]*)
-         val class' = {typ = tc_closed_class pos class,
-                       knd = Tab.lookup Tab.types (Class.base class)}
+      let 
+         (*[ val typ: Class.typ ]*)
+         val typ = tc_closed_class pos class
+         (*[ val knd: Class.knd ]*)
+         val knd = Tab.lookup Tab.types (Class.base class)
       in
          ( tc_namespace pos "Constant" c
-         ; case class' of
-              { typ, knd = Class.Type} => ()
-            | { typ = Class.Base _, knd = Class.Extensible} => ()
-            | { typ, knd = Class.Extensible} =>
-                 raise TypeError (pos, "Extensible type `" 
-                    ^ Symbol.toValue (Class.base typ) ^ "` cannot have a\ 
-                    \ complex constructor; only `" ^ Symbol.toValue c ^ ": "
-                    ^ Symbol.toValue (Class.base typ) ^ "` is allowed.")
-            | { typ, knd = Class.Builtin} => 
+         ; case knd of
+              Class.Type => ()
+            | Class.Extensible => 
+              (case typ of Class.Base _ => ()
+                | _ => raise TypeError (pos, "Extensible type `" 
+                                             ^ Symbol.toValue (Class.base typ) 
+                                             ^ "` cannot have a complex\
+                                             \ constructor; only `" 
+                                             ^ Symbol.toValue c ^ ": "
+                                             ^ Symbol.toValue (Class.base typ) 
+                                             ^ "` is allowed."))
+            | Class.Builtin => 
                  raise TypeError (pos, "Built-in type `"
-                    ^ Symbol.toValue (Class.base typ) ^ "` cannot be given\
-                    \ new constants.")
-         ; Decl.Const (pos, c, #typ class'))
+                                       ^ Symbol.toValue (Class.base typ) 
+                                       ^ "` cannot be given new constants.")
+         ; Decl.Const (pos, c, typ))
       end
     | _ => raise Match
 
