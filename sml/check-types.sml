@@ -404,8 +404,8 @@ fun tc_term pos env typ term =
 and tc_spine pos env f class terms = 
    let fun toomany w = 
          TypeError (pos, w ^ " `" ^ Symbol.toValue f 
-                               ^ "` given " ^ Int.toString (length terms) 
-                               ^ " too many arguments")
+                         ^ "` given " ^ Int.toString (length terms) 
+                         ^ " too many arguments")
    in 
       case (class, terms) of 
          (Class.Base t', []) => (env, t', [])
