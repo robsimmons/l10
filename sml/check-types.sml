@@ -509,21 +509,24 @@ fun check decl =
          ; Decl.World (pos, w, tc_closed_class pos class))
 
     | Decl.Const (pos, c, class) => 
-      let val class = tc_closed_class pos class in
+      let (*[ val class': {typ: Class.typ, knd: Class.knd} ]*)
+         val class' = {typ = tc_closed_class pos class,
+                       knd = Tab.lookup Tab.types (Class.base class)}
+      in
          ( tc_namespace pos "Constant" c
-         ; case (Tab.lookup Tab.types (Class.base class), class) of
-              (Class.Extensible, Class.Base _) => ()
-            | (Class.Type, _) => ()
-            | (Class.Extensible, _) =>
+         ; case class' of
+              { typ, knd = Class.Type} => ()
+            | { typ = Class.Base _, knd = Class.Extensible} => ()
+            | { typ, knd = Class.Extensible} =>
                  raise TypeError (pos, "Extensible type `" 
-                    ^ Symbol.toValue (Class.base class) ^ "` given a constant\
-                    \ that is not of base type.")
-            | (Class.Builtin, _) => 
+                    ^ Symbol.toValue (Class.base typ) ^ "` cannot have a\ 
+                    \ complex constructor; only `" ^ Symbol.toValue c ^ ": "
+                    ^ Symbol.toValue (Class.base typ) ^ "` is allowed.")
+            | { typ, knd = Class.Builtin} => 
                  raise TypeError (pos, "Built-in type `"
-                    ^ Symbol.toValue (Class.base class) ^ "` cannot be given\
+                    ^ Symbol.toValue (Class.base typ) ^ "` cannot be given\
                     \ new constants.")
-            | _ => raise TypeError (pos, "WHY IS THIS NOT A REDUNDANT MATCH?")
-         ; Decl.Const (pos, c, tc_closed_class pos class))
+         ; Decl.Const (pos, c, #typ class'))
       end
     | _ => raise Match
 
