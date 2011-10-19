@@ -109,35 +109,35 @@ struct
                  linecomment: symbol stream -> u,
                  comment: symbol stream -> u },
          start: symbol stream,
-         str: symbol list
+         match: symbol list
          }
 
       val extent =
          let 
             fun loop accum [] right = 
                 (Pos.pos right right, right, String.implode (rev accum))
-              | loop accum ((c, right) :: str) _ = 
-                loop (c :: accum) str right
+              | loop accum ((c, right) :: match) _ = 
+                loop (c :: accum) match right
          in
             loop []
          end
 
-      fun simple nextstate token ({ follow, self, str, ...}: arg) left = 
+      fun simple nextstate token ({ follow, self, match, ...}: arg) left = 
          let 
-            val (pos, coord, _) = extent str left
+            val (pos, coord, _) = extent match left
          in
             Cons (token pos, lazy (fn () => (nextstate self) follow coord))
          end
 
-      fun action nextstate f ({ follow, self, str, ...}: arg) left = 
+      fun action nextstate f ({ follow, self, match, ...}: arg) left = 
          let 
-            val (pos, coord, str') = extent str left
+            val (pos, coord, match') = extent match left
          in
-            Cons (f (pos, str'), lazy (fn () => (nextstate self) follow coord))
+            Cons (f (pos, match'), lazy (fn () => (nextstate self) follow coord))
          end
 
-      fun fastforward nextstate ({ follow, self, str, ...}: arg) left = 
-         (nextstate self) follow (#2 (extent str left))
+      fun fastforward nextstate ({ follow, self, match, ...}: arg) left = 
+         (nextstate self) follow (#2 (extent match left))
 
       fun eof _ _ = Nil
       val space = fastforward #lexmain
@@ -173,21 +173,21 @@ struct
       val ucid = action #lexmain UCID
       val lcid = action #lexmain LCID
       val num = action #lexmain 
-         (fn (pos, str) => 
-            (case IntInf.fromString str of 
+         (fn (pos, match) => 
+            (case IntInf.fromString match of 
                NONE => raise LexError (Pos.left pos, "Bad integer constant")
              | SOME i => NUM (pos, i)))
       val str = action #lexmain
-         (fn (pos, str) => 
-            STRING (pos, String.substring (str, 1, size str - 2)))
+         (fn (pos, match) => 
+            STRING (pos, String.substring (match, 1, size match - 2)))
 
-      fun linecomment ({ follow, self, str, ...}: arg) coord = 
+      fun linecomment ({ follow, self, match, ...}: arg) coord = 
          let val (coord', follow') = 
-                (#linecomment self) follow (#2 (extent str coord))
+                (#linecomment self) follow (#2 (extent match coord))
          in (#lexmain self) follow' coord' end
-      fun comment ({ follow, self, str, ...}: arg) coord = 
+      fun comment ({ follow, self, match, ...}: arg) coord = 
          let val (coord', follow') = 
-                (#comment self) follow (#2 (extent str coord))
+                (#comment self) follow (#2 (extent match coord))
          in (#lexmain self) follow' coord' end
       val anno_start = simple #anno LANNO
       fun error _ coord = raise LexError (coord, "Lex error")
@@ -202,30 +202,30 @@ struct
       val anno_lcid = action #lexmain LCID
 
       val anno_end = simple #lexmain RANNO
-      fun anno_linecomment ({ follow, self, str, ...}: arg) coord = 
+      fun anno_linecomment ({ follow, self, match, ...}: arg) coord = 
          let val (coord', follow') = 
-                (#linecomment self) follow (#2 (extent str coord))
+                (#linecomment self) follow (#2 (extent match coord))
          in (#anno self) follow' coord' end
-      fun anno_comment ({ follow, self, str, ...}: arg) coord = 
+      fun anno_comment ({ follow, self, match, ...}: arg) coord = 
          let val (coord', follow') = 
-                (#comment self) follow (#2 (extent str coord))
+                (#comment self) follow (#2 (extent match coord))
          in (#anno self) follow' coord' end
       fun anno_error _ coord = 
          raise LexError (coord, "Lex error in annotation")
 
-      fun linecomment_close ({ follow, self, str, ...}: arg) coord =
-         (#2 (extent str coord), follow)
+      fun linecomment_close ({ follow, self, match, ...}: arg) coord =
+         (#2 (extent match coord), follow)
       val linecomment_skip = fastforward #linecomment
       fun linecomment_error _ coord =
          raise LexError(coord, "Unterminated line comment at end of file")
 
-      fun comment_open ({ follow, self, str, ...}: arg) coord = 
+      fun comment_open ({ follow, self, match, ...}: arg) coord = 
          let val (coord', follow') = 
-                (#comment self) follow (#2 (extent str coord))
+                (#comment self) follow (#2 (extent match coord))
          in (#comment self) follow' coord' end
       val comment_skip = fastforward #comment
-      fun comment_close ({ follow, self, str, ... }: arg) coord = 
-         (#2 (extent str coord), follow)
+      fun comment_close ({ follow, self, match, ... }: arg) coord = 
+         (#2 (extent match coord), follow)
       fun comment_error _ coord =
          raise LexError (coord, "Unclosed comment at end of file")
 

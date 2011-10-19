@@ -8,12 +8,12 @@ structure Types :> sig
    (*[ val check: Decl.decl -> Decl.decl_t ]*)
    (* Takes a raw parsed declarations, makes sure scope, arity,
     * and simple types are all respected, and prevents duplicate definitions. 
-    * May add new constants of extensible type to ConTab. *)
+    * May add new constants of extensible type to Tab.consts. *)
    val check: Decl.t -> Decl.t
 
 end = struct
 
-   exception TypeError of Pos.t * string
+exception TypeError of Pos.t * string
 
 
 (* 
@@ -271,21 +271,8 @@ fun tc_args args = tc_args' (MapX.empty, args)
 
 *)
 
-(* Utility function for requiring two types to be equal *)
-fun require pos typ1 typ2 = 
-   if Symbol.eq (typ1, typ2) then () 
-   else raise TypeError (pos, "Expected a term of type " ^ Symbol.toValue typ1 
-                              ^ ", but found a constructor of type" 
-                              ^ Symbol.toValue typ2)
 
-
-(*[ sortdef env = Symbol.symbol option DictX.dict ]*)
-
-(*[ val tc_t: Pos.t -> Symbol.symbol -> unit ]*)
-fun tc_t pos t = 
-   if Tab.member Tab.types t then () 
-   else raise TypeError (pos, "Type " ^ Symbol.toValue t ^ " not declared.")
-
+(* == Signature invariants == *)
 
 (*[ val tc_namespace: Pos.t -> string -> Symbol.symbol -> unit ]*)
 (* Avoid double definition for the namespace that is shared by everything
@@ -312,6 +299,24 @@ fun tc_namespace pos syntax x =
       else ()
    end
 
+(* == Types == *)
+
+(*[ sortdef env = Symbol.symbol option DictX.dict ]*)
+
+(*[ val tc_t: Pos.t -> Symbol.symbol -> unit ]*)
+fun tc_t pos t = 
+   if Tab.member Tab.types t then () 
+   else raise TypeError (pos, "Type " ^ Symbol.toValue t ^ " not declared.")
+
+(* Utility function for requiring two types to be equal *)
+fun require pos typ1 typ2 = 
+   if Symbol.eq (typ1, typ2) then () 
+   else raise TypeError (pos, "Expected a term of type " ^ Symbol.toValue typ1 
+                              ^ ", but found a constructor of type" 
+                              ^ Symbol.toValue typ2)
+
+
+(* == Terms == *)
 
 (* Checks a term at a given type, and returns a (potentially) larger context if
  * it found any type variables that were not already in the environment.
@@ -435,7 +440,75 @@ and tc_spine pos env f class terms =
             raise TypeError (pos, "Not enough arguments for `" 
                                   ^ Symbol.toValue f ^ "`")
    end
+
+(* Takes a list of terms and tries to figure out what their type must be.
+ *
+ * All term checking is done by *checking,* which creates a problem for 
+ * equality, which is treated as polymorphic. Mode checking will fail anyway if
+ * both variables in an equality are unknown, so we are okay in failing early
+ * in this case. *)
+
+(*[ val seek_typ: env -> Term.term list -> Symbol.symbol option ]*)
+fun seek_typ env [] = NONE
+  | seek_typ env (term :: terms) =
+    case term of
+       Term.SymConst c => 
+       (case Tab.find Tab.consts c of 
+           NONE => seek_typ env terms
+         | SOME typ => SOME (Class.base typ))
+     | Term.NatConst _ => SOME Type.nat
+     | Term.StrConst _ => SOME Type.string
+     | Term.Root (f, _) =>
+       (case Tab.find Tab.consts f of
+           NONE => seek_typ env terms
+         | SOME typ => SOME (Class.base typ))
+     | Term.Var (NONE, NONE) => seek_typ env terms
+     | Term.Var (SOME x, NONE) => 
+       (case DictX.find env x of
+           NONE => seek_typ env terms
+         | SOME NONE => seek_typ env terms
+         | SOME (SOME t) => SOME t)
        
+
+(* == Atoms - worlds and atomic propositions == *)
+
+(* Worlds and atomic propositions are ensured, by parser invariant, to have
+ * a head variable present in the appropriate table, which means we can do a
+ * lookup instead of a more-cautious find. *)
+
+(*[ val tc_atom: env -> 
+       ( Class.world -> (Pos.t * Atom.world) -> env * (Pos.t * Atom.world_t)
+       & Class.rel_t -> (Pos.t * Atom.prop) -> env * (Pos.t * Atom.prop_t)) ]*)
+
+fun tc_atom env class (pos, (w, terms)) = 
+   let 
+      val (env', _, terms') = tc_spine pos env w class terms
+   in (env', (pos, (w, terms'))) end
+
+(*[ val tc_worlds: env -> (Pos.t * Atom.world) list ->
+       env * (Pos.t * Atom.world_t) list ]*)
+fun tc_worlds env [] = (env, [])
+  | tc_worlds env ((world as (_, (w, _))) :: worlds) = 
+    let 
+       val (env', world') = tc_atom env (Tab.lookup Tab.worlds w) world
+       val (env'', worlds') = tc_worlds env' worlds
+    in
+       (env'', world' :: worlds')
+    end
+
+(*[ val tc_props: env -> (Pos.t * Atom.prop) list ->
+       env * (Pos.t * Atom.prop_t) list ]*)
+fun tc_props env [] = (env, [])
+  | tc_props env ((prop as (_, (r, _))) :: props) =
+    let 
+       val (env', prop') = tc_atom env (Tab.lookup Tab.rels r) prop
+       val (env'', props') = tc_props env' props
+    in
+       (env'', prop' :: props')
+    end
+
+
+(* == Classifiers == *)
 
 (*[ val tc_class: Pos.t -> env -> ( Class.world -> env * Class.world 
                                   & Class.typ -> env * Class.typ
@@ -470,7 +543,7 @@ fun tc_class pos env class =
          val (env, class) = tc_class pos (DictX.insert env x t_ish) class
          val boundty =
             case DictX.find env x of 
-               NONE => raise TypeError (pos, "Internal invariant broken")
+               NONE => raise TypeError (pos, "Internal")
              | SOME NONE =>
                   raise TypeError (pos, "Cannot infer type of bound variable `" 
                                         ^ Symbol.toValue x ^ "`")
@@ -482,7 +555,6 @@ fun tc_class pos env class =
       in 
         (env, Class.Pi (x, SOME boundty, class))
       end
-
 
 (*[ val tc_closed_class: Pos.t -> ( Class.world -> Class.world 
                                   & Class.typ -> Class.typ
@@ -496,6 +568,8 @@ fun tc_closed_class pos class =
                                               ^ "` free in classifier.")  
    end
 
+
+(* == Top-level declarations == *)
 
 (*[ val check: Decl.decl -> Decl.decl_t ]*)
 fun check decl = 
@@ -531,6 +605,11 @@ fun check decl =
                  raise TypeError (pos, "Built-in type `"
                                        ^ Symbol.toValue (Class.base typ) 
                                        ^ "` cannot be given new constants.")
+            | Class.Base _ => raise Match
+            | Class.Rel _ => raise Match
+            | Class.World => raise Match
+            | Class.Arrow _ => raise Match
+            | Class.Pi _ => raise Match
          ; Decl.Const (pos, c, typ))
       end
     | _ => raise Match
