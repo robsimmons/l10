@@ -391,7 +391,11 @@ structure Decl = struct
     | DB of Pos.t * (Symbol.symbol * (Pos.t * Atom.t) list * (Pos.t * Atom.t))
     | Depend of Pos.t 
          * ((Pos.t * Atom.t) * (Pos.t * Atom.t) list)
+<<<<<<< Updated upstream
     | Rule of Pos.t * Rule.t
+=======
+    | Rule of Pos.t * Rule.t 
+>>>>>>> Stashed changes
     | Query of Pos.t * Symbol.symbol * Atom.t
 (*[
    datasort decl = 
@@ -411,7 +415,11 @@ structure Decl = struct
     | Type of Pos.t * Symbol.symbol * Class.knd
     | DB of Pos.t * db
     | Depend of Pos.t * depend_t 
+<<<<<<< Updated upstream
     | Rule of Pos.t * Rule.rule_t 
+=======
+    | Rule of Pos.t * Rule.rule_t
+>>>>>>> Stashed changes
     | Query of Pos.t * Symbol.symbol * Atom.moded_t
 
    datasort class = 
