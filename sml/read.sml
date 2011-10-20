@@ -14,7 +14,7 @@ struct
 fun readdecls stream = 
    case Stream.front stream of
       Stream.Nil => ()
-    | Stream.Cons (Decl.Rule (rule as (pos, _, _)), stream) => 
+    | Stream.Cons (Decl.Rule (rule as (pos, _)), stream) => 
          (* Needs to bind two decls: the rule and the associated dependency *)
          ( raise Types.TypeError (pos, "Not prepared to handle rule decls"))
     | Stream.Cons (decl, stream) => 

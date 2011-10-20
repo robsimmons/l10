@@ -391,8 +391,7 @@ structure Decl = struct
     | DB of Pos.t * (Symbol.symbol * (Pos.t * Atom.t) list * (Pos.t * Atom.t))
     | Depend of Pos.t 
          * ((Pos.t * Atom.t) * (Pos.t * Atom.t) list)
-         * Symbol.symbol DictX.dict option
-    | Rule of Pos.t * Rule.t * Symbol.symbol DictX.dict option
+    | Rule of Pos.t * Rule.t 
     | Query of Pos.t * Symbol.symbol * Atom.t
 (*[
    datasort decl = 
@@ -401,8 +400,8 @@ structure Decl = struct
     | Rel of Pos.t * Symbol.symbol * Class.rel
     | Type of Pos.t * Symbol.symbol * Class.knd
     | DB of Pos.t * db
-    | Depend of Pos.t * depend * Type.env none
-    | Rule of Pos.t * Rule.rule * Type.env none
+    | Depend of Pos.t * depend
+    | Rule of Pos.t * Rule.rule
     | Query of Pos.t * Symbol.symbol * Atom.moded
 
    datasort decl_t = 
@@ -411,8 +410,8 @@ structure Decl = struct
     | Rel of Pos.t * Symbol.symbol * Class.rel_t
     | Type of Pos.t * Symbol.symbol * Class.knd
     | DB of Pos.t * db
-    | Depend of Pos.t * depend_t * Type.env some
-    | Rule of Pos.t * Rule.rule_t * Type.env some
+    | Depend of Pos.t * depend_t 
+    | Rule of Pos.t * Rule.rule_t
     | Query of Pos.t * Symbol.symbol * Atom.moded_t
 
    datasort class = 
@@ -434,11 +433,11 @@ val print =
        print (Symbol.toValue t ^ ": " ^ Class.toString class ^ "\n")
   | DB (_, (db, _, _)) => 
        print ("{-# DATABASE " ^ Symbol.toValue db ^ " ... #-}")
-  | Depend (_, (conc, prems), _) => 
+  | Depend (_, (conc, prems)) => 
        ( print (Atom.toString (#2 conc) ^ " <- ")
        ; print (String.concatWith ", " (map (Atom.toString o #2) prems))
        ; print "\n")
-  | Rule (_, (prems, concs), _) =>
+  | Rule (_, (prems, concs)) =>
        ( print (String.concatWith ", " (map (Prem.toString o #2) prems))
        ; print " -> "
        ; print (String.concatWith ", " (map (Atom.toString o #2) concs))

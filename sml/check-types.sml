@@ -607,7 +607,6 @@ fun check decl =
                  raise TypeError (pos, "Built-in type `"
                                        ^ Symbol.toValue (Class.base typ) 
                                        ^ "` cannot be given new constants.")
-           (*[ <: Class.knd -> unit ]*)
          ; Decl.Const (pos, c, typ))
       end
 
@@ -619,15 +618,7 @@ fun check decl =
          ( tc_namespace pos "Type" t
          ; Decl.Type (pos, t, tc_closed_class pos class))
 
-    | Decl.DB (pos, (db, props, world)) => 
-      let 
-         val props' = #2 (tc_props DictX.empty props)
-         val world' = hd (#2 (tc_worlds DictX.empty [ world ]))
-      in
-         Decl.DB (pos, (db, props', world'))
-      end
-
-    | Decl.Depend (pos, (world, worlds), NONE) => raise Match
+    | Decl.Depend (pos, (world, worlds)) => raise Match
 
     | _ => raise Match
 
