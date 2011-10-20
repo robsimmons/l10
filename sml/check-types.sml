@@ -315,6 +315,12 @@ fun require pos typ1 typ2 =
                               ^ ", but found a constructor of type" 
                               ^ Symbol.toValue typ2)
 
+(*[ good_env: Pos.t -> env -> Type.env ]*)
+fun good_env pos = 
+   DictX.map
+      (fn NONE => raise TypeError (pos, "Some types for free variables unknown")
+        | SOME t => t)
+
 
 (* == Terms == *)
 
@@ -574,11 +580,7 @@ fun tc_closed_class pos class =
 (*[ val check: Decl.decl -> Decl.decl_t ]*)
 fun check decl = 
    case decl of 
-      Decl.Type (pos, t, class) => 
-         ( tc_namespace pos "Type" t
-         ; Decl.Type (pos, t, tc_closed_class pos class))
-
-    | Decl.World (pos, w, class) => 
+      Decl.World (pos, w, class) => 
          ( tc_namespace pos "World" w
          ; Decl.World (pos, w, tc_closed_class pos class))
 
@@ -588,8 +590,9 @@ fun check decl =
          val typ = tc_closed_class pos class
          (*[ val knd: Class.knd ]*)
          val knd = Tab.lookup Tab.types (Class.base class)
-         val () = 
-           case knd of
+      in
+         ( tc_namespace pos "Constant" c
+         ; case knd of
               Class.Type => ()
             | Class.Extensible => 
               (case typ of Class.Base _ => ()
@@ -604,32 +607,30 @@ fun check decl =
                  raise TypeError (pos, "Built-in type `"
                                        ^ Symbol.toValue (Class.base typ) 
                                        ^ "` cannot be given new constants.")
-      in
-         ( tc_namespace pos "Constant" c
+           (*[ <: Class.knd -> unit ]*)
          ; Decl.Const (pos, c, typ))
       end
+
+    | Decl.Rel (pos, r, class) => 
+         ( tc_namespace pos "Relation" r
+         ; Decl.Rel (pos, r, tc_closed_class pos class))
+
+    | Decl.Type (pos, t, class) => 
+         ( tc_namespace pos "Type" t
+         ; Decl.Type (pos, t, tc_closed_class pos class))
+
+    | Decl.DB (pos, (db, props, world)) => 
+      let 
+         val props' = #2 (tc_props DictX.empty props)
+         val world' = hd (#2 (tc_worlds DictX.empty [ world ]))
+      in
+         Decl.DB (pos, (db, props', world'))
+      end
+
+    | Decl.Depend (pos, (world, worlds), NONE) => raise Match
+
     | _ => raise Match
 
-(*
-      (* Relations declarations are well-formed
-       * if they haven't been declared already
-       * if their indices are valid types
-       * if the associated world is valid under (only) the named indices *)
-    | A.DeclRelation (r, args, world) =>
-      let
-         val () = tc_namespace ("Relation", r)
-         val env = tc_args args 
-         val env' = tc_world env world
-         val newenv = 
-            MapX.filteri (fn (x, _) => not (MapX.inDomain (env, x))) env'
-      in
-         case MapX.firsti newenv of
-            NONE => ()
-          | SOME (x, _) => 
-            raise Fail ("Variable " ^ name x 
-                        ^ " used in world but not bound." )
-      end
-*)
 
 
 end

@@ -375,20 +375,21 @@ end = struct
 
        | Arrow (syn1, syn2) =>
          (case p_world' syn2 psig of
-             NONE => (Decl.Rule (pos, p_rule syn psig), psig)
+             NONE => (Decl.Rule (pos, p_rule syn psig, NONE), psig)
            | SOME (p, world) => 
              let 
                 (*[ val p_worlds: syn -> (Pos.t * Atom.world) list ]*)
                 fun p_worlds (Conj (syn1, syn2)) = p_worlds syn1 @ p_worlds syn2
                   | p_worlds syn = [ p_world syn psig ]
              in
-                (Decl.Depend (pos, ((p, world), p_worlds syn1)), psig)
+                (Decl.Depend (pos, ((p, world), p_worlds syn1), NONE), psig)
              end)
                     
        | App _ =>
          (case p_world' syn psig of 
-             NONE => (Decl.Rule (pos, p_rule syn psig), psig)
-           | SOME (p, world) => (Decl.Depend (pos, ((p, world), [])), psig))
+             NONE => (Decl.Rule (pos, p_rule syn psig, NONE), psig)
+           | SOME (p, world) => 
+                (Decl.Depend (pos, ((p, world), []), NONE), psig))
 
        | _ => raise SyntaxError (SOME pos, "Invalid toplevel statement")
 
@@ -405,18 +406,25 @@ end = struct
                Query (left, (_, name), (_, a), modes, right) => 
                let 
                   val name = Symbol.fromValue name
+                  (*[ val modes: Atom.moded ]*)
                   val modes = (Symbol.fromValue a,
                                map (fn mode => Term.Mode (mode, NONE)) modes)
+                  (*[ val decl: Decl.decl ]*)
                   val decl = Decl.Query (Pos.union left right, name, modes) 
+                  (*[ val stream'': Decl.decl Stream.stream ]*)
+                  val stream'' = Stream.lazy (parse' stream' psig)
                in 
-                  Stream.Cons (decl, Stream.lazy (parse' stream' psig))
+                  Stream.Cons (decl, stream'')
                end
              | Syn (syn, pos) => 
                let
                   val pos = Pos.union (getpos syn) pos
+                  (*[ val decl: Decl.decl ]*)
                   val (decl, psig') = p_decl pos syn psig
+                  (*[ val stream'': Decl.decl Stream.stream ]*)
+                  val stream'' = Stream.lazy (parse' stream' psig')
                in
-                  Stream.Cons (decl, Stream.lazy (parse' stream' psig'))
+                  Stream.Cons (decl, stream'')
                end
          end
 
