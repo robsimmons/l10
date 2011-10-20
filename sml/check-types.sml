@@ -588,9 +588,8 @@ fun check decl =
          val typ = tc_closed_class pos class
          (*[ val knd: Class.knd ]*)
          val knd = Tab.lookup Tab.types (Class.base class)
-      in
-         ( tc_namespace pos "Constant" c
-         ; case knd of
+         val () = 
+           case knd of
               Class.Type => ()
             | Class.Extensible => 
               (case typ of Class.Base _ => ()
@@ -605,11 +604,8 @@ fun check decl =
                  raise TypeError (pos, "Built-in type `"
                                        ^ Symbol.toValue (Class.base typ) 
                                        ^ "` cannot be given new constants.")
-            | Class.Base _ => raise Match
-            | Class.Rel _ => raise Match
-            | Class.World => raise Match
-            | Class.Arrow _ => raise Match
-            | Class.Pi _ => raise Match
+      in
+         ( tc_namespace pos "Constant" c
          ; Decl.Const (pos, c, typ))
       end
     | _ => raise Match
