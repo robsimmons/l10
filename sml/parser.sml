@@ -414,9 +414,16 @@ end = struct
                   (*[ val lazybit: unit -> Decl.decl Stream.front ]*)
                   val lazybit = fn () => parse' stream' psig ()
                   (*[ val stream'': Decl.decl Stream.stream ]*)
-                  val stream'' = Stream.lazy lazybit
+                  val stream'' = 
+                     (Stream.lazy
+                        (*[ <: (unit -> Decl.decl Stream.front)
+                                 -> Decl.decl Stream.stream ]*)) 
+                        lazybit
                in 
-                  Stream.Cons (decl, stream'')
+                  (Stream.Cons 
+                     (*[ <: Decl.decl * Decl.decl Stream.stream
+                              -> Decl.decl Stream.front ]*))
+                     (decl, stream'')
                end
              | Syn (syn, pos) => 
                let
@@ -426,13 +433,24 @@ end = struct
                   (*[ val lazybit: unit -> Decl.decl Stream.front ]*)
                   val lazybit = fn () => parse' stream' psig' ()
                   (*[ val stream'': Decl.decl Stream.stream ]*)
-                  val stream'' = Stream.lazy lazybit
+                  val stream'' = 
+                     (Stream.lazy
+                        (*[ <: (unit -> Decl.decl Stream.front)
+                                 -> Decl.decl Stream.stream ]*)) 
+                        lazybit
                in
-                  Stream.Cons (decl, stream'')
+                  (Stream.Cons 
+                     (*[ <: Decl.decl * Decl.decl Stream.stream
+                              -> Decl.decl Stream.front ]*))
+                     (decl, stream'')
                end
          end
 
    (*[ val parse: Token.t Stream.stream -> Decl.decl Stream.stream ]*)
-   fun parse stream = Stream.lazy (parse' stream empty)
+   fun parse stream = 
+      (Stream.lazy 
+         (*[ <: (unit -> Decl.decl Stream.front)
+                  -> Decl.decl Stream.stream ]*)) 
+         (parse' stream empty)
          
 end
