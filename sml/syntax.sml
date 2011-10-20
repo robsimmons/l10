@@ -9,7 +9,7 @@ struct
    val world = Symbol.fromValue "world" (* Pseudo-type for world names *)
    val rel = Symbol.fromValue "rel" (* Pseudo-type for predicates *)
 
-   (*[ sortdef env = Symbol.symbol DictX.dict ]*)
+   type env = Symbol.symbol DictX.dict
 end
 
 structure Mode = 
@@ -391,11 +391,8 @@ structure Decl = struct
     | DB of Pos.t * (Symbol.symbol * (Pos.t * Atom.t) list * (Pos.t * Atom.t))
     | Depend of Pos.t 
          * ((Pos.t * Atom.t) * (Pos.t * Atom.t) list)
-<<<<<<< Updated upstream
-    | Rule of Pos.t * Rule.t
-=======
-    | Rule of Pos.t * Rule.t 
->>>>>>> Stashed changes
+         * Type.env
+    | Rule of Pos.t * Rule.t * Type.env
     | Query of Pos.t * Symbol.symbol * Atom.t
 (*[
    datasort decl = 
@@ -404,8 +401,8 @@ structure Decl = struct
     | Rel of Pos.t * Symbol.symbol * Class.rel
     | Type of Pos.t * Symbol.symbol * Class.knd
     | DB of Pos.t * db
-    | Depend of Pos.t * depend
-    | Rule of Pos.t * Rule.rule
+    | Depend of Pos.t * depend * Type.env none
+    | Rule of Pos.t * Rule.rule * Type.env none
     | Query of Pos.t * Symbol.symbol * Atom.moded
 
    datasort decl_t = 
@@ -414,12 +411,8 @@ structure Decl = struct
     | Rel of Pos.t * Symbol.symbol * Class.rel_t
     | Type of Pos.t * Symbol.symbol * Class.knd
     | DB of Pos.t * db
-    | Depend of Pos.t * depend_t 
-<<<<<<< Updated upstream
-    | Rule of Pos.t * Rule.rule_t 
-=======
-    | Rule of Pos.t * Rule.rule_t
->>>>>>> Stashed changes
+    | Depend of Pos.t * depend_t * Typ.env some
+    | Rule of Pos.t * Rule.rule_t * Typ.env some
     | Query of Pos.t * Symbol.symbol * Atom.moded_t
 
    datasort class = 
