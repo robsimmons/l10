@@ -159,7 +159,9 @@ fun tc_term pos env typ term =
 
 (* RJS Oct 18 2011 - is it okay that I'm leaving out the part where I 
  * substitue pi-bound types into the kind? This is, as a result, basically just
- * doing simple type checking, but I think that's what I want to be doing. *)
+ * doing simple type checking, but I think that's what I want to be doing; 
+ * the substitution bit will happen later on when I build atomic worlds from
+ * atomic props in mode.sml. *)
 and tc_spine pos env f class terms = 
    let fun toomany w = 
          TypeError (pos, w ^ " `" ^ Symbol.toValue f 
