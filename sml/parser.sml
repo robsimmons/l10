@@ -230,7 +230,7 @@ end = struct
          fun p_pat syn = 
             case syn of 
                Ex (_, (_, x), syn) => 
-               Pat.Exists (Symbol.fromValue x, p_pat syn)
+               Pat.Exists (Symbol.fromValue x, NONE, p_pat syn)
              | Conj (syn1, syn2) => 
                raise SyntaxError 
                   (SOME (getpos syn),

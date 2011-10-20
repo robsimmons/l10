@@ -63,7 +63,7 @@ struct
 
    (* Both dependencies and rules are indexed by the "head world" *)
 
-   type depend = (Pos.t * Decl.depend_t * Type.env some)
+   (*[ sortdef depend = (Pos.t * Decl.depend_t * Type.env some) ]*)
    (*[ val depends: depend list tab ]*)
    val depends: 
       ( Pos.t 
@@ -73,7 +73,7 @@ struct
          (*[ <: int -> (Pos.t * Decl.depend_t * Type.env some) list tab ]*))
          1 
 
-   type rule = (Pos.t * Rule.rule_t * Type.env some)
+   (*[ sortdef rule = (Pos.t * Rule.rule_t * Type.env some) ]*)
    (*[ val rules: rule list tab ]*)
    val rules: (Pos.t * Rule.t * Type.env option) list tab =
       (HTabX.table

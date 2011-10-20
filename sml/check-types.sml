@@ -316,10 +316,11 @@ fun require pos typ1 typ2 =
                               ^ Symbol.toValue typ2)
 
 (*[ good_env: Pos.t -> env -> Type.env ]*)
-fun good_env pos = 
+fun good_env pos env = 
    DictX.map
       (fn NONE => raise TypeError (pos, "Some types for free variables unknown")
         | SOME t => t)
+      env
 
 
 (* == Terms == *)
@@ -344,7 +345,8 @@ fun good_env pos =
           & Term.moded list     -> env * Symbol.symbol * Term.moded_t list)
        & Class.rel_t -> 
           ( Term.term list -> env * Symbol.symbol * Term.term_t list
-          & Term.ground list -> env * Symbol.symbol * Term.ground list)
+          & Term.ground list -> env * Symbol.symbol * Term.ground list
+          & Term.moded list -> env * Symbol.symbol * Term.moded_t list)
        & Class.world -> 
           ( Term.term list -> env * Symbol.symbol * Term.term_t list
           & Term.ground list -> env * Symbol.symbol * Term.ground list))]*)
@@ -456,26 +458,27 @@ and tc_spine pos env f class terms =
  * both variables in an equality are unknown, so we are okay in failing early
  * in this case. *)
 
-(*[ val seek_typ: env -> Term.term list -> Symbol.symbol option ]*)
-fun seek_typ env [] = NONE
-  | seek_typ env (term :: terms) =
+(*[ val seek_typ: Pos.t -> env -> Term.term list -> Symbol.symbol ]*)
+fun seek_typ pos env [] = 
+    raise TypeError (pos, "Could not infer types of terms in (in)equality")
+  | seek_typ pos env (term :: terms) =
     case term of
        Term.SymConst c => 
        (case Tab.find Tab.consts c of 
-           NONE => seek_typ env terms
-         | SOME typ => SOME (Class.base typ))
-     | Term.NatConst _ => SOME Type.nat
-     | Term.StrConst _ => SOME Type.string
+           NONE => seek_typ pos env terms
+         | SOME typ => (Class.base typ))
+     | Term.NatConst _ => Type.nat
+     | Term.StrConst _ => Type.string
      | Term.Root (f, _) =>
        (case Tab.find Tab.consts f of
-           NONE => seek_typ env terms
-         | SOME typ => SOME (Class.base typ))
-     | Term.Var (NONE, NONE) => seek_typ env terms
+           NONE => seek_typ pos env terms
+         | SOME typ => (Class.base typ))
+     | Term.Var (NONE, NONE) => seek_typ pos env terms
      | Term.Var (SOME x, NONE) => 
        (case DictX.find env x of
-           NONE => seek_typ env terms
-         | SOME NONE => seek_typ env terms
-         | SOME (SOME t) => SOME t)
+           NONE => seek_typ pos env terms
+         | SOME NONE => seek_typ pos env terms
+         | SOME (SOME t) => t)
        
 
 (* == Atoms - worlds and atomic propositions == *)
@@ -490,7 +493,8 @@ fun seek_typ env [] = NONE
           & (Pos.t * Atom.ground_world) -> env * (Pos.t * Atom.ground_world))
        & Class.rel_t -> 
           ( (Pos.t * Atom.prop) -> env * (Pos.t * Atom.prop_t)
-          & (Pos.t * Atom.ground_prop) -> env * (Pos.t * Atom.ground_prop)))
+          & (Pos.t * Atom.ground_prop) -> env * (Pos.t * Atom.ground_prop)
+          & (Pos.t * Atom.moded) -> env * (Pos.t * Atom.moded_t)))
 ]*)
 
 fun tc_atom env class (pos, (w, terms)) = 
@@ -498,19 +502,31 @@ fun tc_atom env class (pos, (w, terms)) =
       val (env', _, terms') = tc_spine pos env w class terms
    in (env', (pos, (w, terms'))) end
 
+(*[ val tc_world: env ->
+       ( Pos.t * Atom.world -> env * (Pos.t * Atom.world_t)
+       & Pos.t * Atom.ground_world -> env * (Pos.t * Atom.ground_world)) ]*)
+fun tc_world env (world as (_, (w, _))) =
+   tc_atom env (Tab.lookup Tab.worlds w) world
+
 (*[ val tc_worlds: env -> 
        ( (Pos.t * Atom.world) list -> env * (Pos.t * Atom.world_t) list
        & (Pos.t * Atom.ground_world) list 
             -> env * (Pos.t * Atom.ground_world) list) 
 ]*)
 fun tc_worlds env [] = (env, [])
-  | tc_worlds env ((world as (_, (w, _))) :: worlds) = 
+  | tc_worlds env (world :: worlds) = 
     let 
-       val (env', world') = tc_atom env (Tab.lookup Tab.worlds w) world
+       val (env', world') = tc_world env world
        val (env'', worlds') = tc_worlds env' worlds
     in
        (env'', world' :: worlds')
     end
+
+(*[ val tc_prop: env ->
+       ( Pos.t * Atom.prop -> env * (Pos.t * Atom.prop_t)
+       & Pos.t * Atom.ground_prop -> env * (Pos.t * Atom.ground_prop)) ]*)
+fun tc_prop env (prop as (_, (r, _))) =
+   tc_atom env (Tab.lookup Tab.rels r) prop
 
 (*[ val tc_props: env ->
        ( (Pos.t * Atom.prop) list -> env * (Pos.t * Atom.prop_t) list
@@ -518,13 +534,74 @@ fun tc_worlds env [] = (env, [])
            -> env * (Pos.t * Atom.ground_prop) list) 
 ]*)
 fun tc_props env [] = (env, [])
-  | tc_props env ((prop as (_, (r, _))) :: props) =
+  | tc_props env (prop :: props) =
     let 
-       val (env', prop') = tc_atom env (Tab.lookup Tab.rels r) prop
+       val (env', prop') = tc_prop env prop
        val (env'', props') = tc_props env' props
     in
        (env'', prop' :: props')
     end
+
+(*[ val tc_pat: Pos.t -> env -> Pat.pat -> env * Pat.pat_t ]*)
+fun tc_pat pos env pat =
+   case pat of
+      Pat.Atom atom => 
+      let val (env', (pos, atom')) = tc_prop env (pos, atom) in
+         (env', Pat.Atom atom')
+      end
+    | Pat.Exists (x, NONE, pat) =>
+      let 
+         val oldt = DictX.find env x 
+         val (env, pat) = tc_pat pos (DictX.insert env x NONE) pat
+         val boundt =
+            case DictX.find env x of 
+               NONE => raise TypeError (pos, "Internal")
+             | SOME NONE =>
+                  raise TypeError (pos, "Cannot infer type of existentially\
+                                        \ bound variable `" 
+                                        ^ Symbol.toValue x ^ "`")
+             | SOME (SOME t) => t
+         val env = 
+            case oldt of
+               NONE => DictX.remove env x
+             | SOME t => DictX.insert env x t
+      in
+         (env, Pat.Exists (x, SOME boundt, pat))
+      end
+
+(*[ val tc_prem: Pos.t -> env -> Prem.prem -> env * Prem.prem_t ]*)
+fun tc_prem pos env prem =
+   case prem of 
+      Prem.Normal pat => 
+      let val (env', pat') = tc_pat pos env pat in
+         (env', Prem.Normal pat')
+      end
+    | Prem.Negated pat => 
+      let val (env', pat') = tc_pat pos env pat in
+         (env', Prem.Negated pat')
+      end
+    | Prem.Binrel (binrel, term1, term2, NONE) =>
+      let val t = case binrel of 
+                      Binrel.Eq => seek_typ pos env [term1, term2]
+                    | Binrel.Neq => seek_typ pos env [term1, term2]
+                    | Binrel.Gt => Type.nat
+                    | Binrel.Geq => Type.nat
+         val (env', term1') = tc_term pos env t term1
+         val (env'', term2') = tc_term pos env t term2
+      in
+         (env'', Prem.Binrel (binrel, term1', term2', SOME t))
+      end
+
+(*[ val tc_prems: env ->
+       (Pos.t * Prem.prem) list -> env * (Pos.t * Prem.prem_t) list ]*)
+fun tc_prems env [] = (env, [])
+  | tc_prems env ((pos, prem) :: prems) =
+    let
+       val (env', prem') = tc_prem pos env prem
+       val (env'', prems') = tc_prems env' prems
+    in
+       (env'', (pos, prem') :: prems')
+    end 
 
 
 (* == Classifiers == *)
@@ -633,18 +710,34 @@ fun check decl =
 
     | Decl.DB (pos, (db, props, world)) => 
       let  
-         (*[ val props': (Pos.t * Atom.ground_prop) list ]*)
          val (_, props') = tc_props DictX.empty props
-         (*[ val worlds': (Pos.t * Atom.ground_world) list ]*)
-         val (_, worlds') = tc_worlds DictX.empty [ world ]
+         val (_, world') = tc_world DictX.empty world
       in
-         Decl.DB (pos, (db, props', hd worlds'))
+         Decl.DB (pos, (db, props', world'))
       end
 
-    | Decl.Depend (pos, (world, worlds), NONE) => raise Match
+    | Decl.Depend (pos, (world, worlds), NONE) => 
+      let
+         val (env, world') = tc_world DictX.empty world
+         val (env, worlds') = tc_worlds env worlds
+      in
+         Decl.Depend (pos, (world', worlds'), SOME (good_env pos env))
+      end
 
-    | _ => raise Match
+    | Decl.Rule (pos, (prems, concs), NONE) => 
+      let
+         val (env, prems') = tc_prems DictX.empty prems
+         val (env', concs') = tc_props env concs
+      in
+         Decl.Rule (pos, (prems', concs'), SOME (good_env pos env'))
+      end
 
-
-
+    | Decl.Query (pos, qry, mode as (r, _)) =>
+      (case Tab.find Tab.rels r of 
+          NONE => raise TypeError (pos, "Relation `" ^ Symbol.toValue r 
+                                        ^ "` never declared.")
+        | SOME class => 
+          let val (_, (pos, mode')) = tc_atom DictX.empty class (pos, mode) in
+             Decl.Query (pos, qry, mode')
+          end)
 end
