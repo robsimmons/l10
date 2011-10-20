@@ -63,21 +63,34 @@ struct
 
    (* Both dependencies and rules are indexed by the "head world" *)
 
-   (*[ val depends: (Pos.t * Decl.depend_t) list tab ]*)
+   type depend = (Pos.t * Decl.depend_t * Type.env some)
+   (*[ val depends: depend list tab ]*)
    val depends: 
       ( Pos.t 
-      * ((Pos.t * Atom.t) * (Pos.t * Atom.t) list)) list tab = 
-      HTabX.table 1 
+      * ((Pos.t * Atom.t) * (Pos.t * Atom.t) list)
+      * Type.env option) list tab = 
+      (HTabX.table  
+         (*[ <: int -> (Pos.t * Decl.depend_t * Type.env some) list tab ]*))
+         1 
 
-   (*[ val rules: (Pos.t * Rule.rule_t) list tab ]*)
-   val rules: (Pos.t * Rule.t) list tab =
-      HTabX.table 1
+   type rule = (Pos.t * Rule.rule_t * Type.env some)
+   (*[ val rules: rule list tab ]*)
+   val rules: (Pos.t * Rule.t * Type.env option) list tab =
+      (HTabX.table
+         (*[ <: int -> (Pos.t * Rule.rule_t * Type.env some) list tab ]*))
+         1
 
    (*[ val queries: (Pos.t * Atom.moded_t) tab ]*)
    val queries: (Pos.t * Atom.t) tab = HTabX.table 1
 
 
    (* WRITING *)
+
+   val merge: 'a list tab -> Symbol.symbol -> 'a -> unit = 
+      fn tab =>
+      fn key =>
+      fn value =>
+      HTabX.insertMerge tab key [ value ] (fn values => value :: values)
 
    (*[ val bind: Decl.decl_t -> unit ]*)
    (* Loads a (presumed to be fully checked) declaration into the database. *)
@@ -87,21 +100,26 @@ struct
      | bind (Decl.Const (_, c, class)) =
          let val t = Class.base class in  
             ( HTabX.insert consts c class
-            ; HTabX.insertMerge typecon t [ c ] (fn cs => c :: cs))
+            ; merge 
+                 typecon t c)
          end
      | bind (Decl.Rel (_, r, class)) = 
          ( HTabX.insert rels r class 
          ; HTabX.insert consts r (Class.relToTyp class))
      | bind (Decl.Type (_, a, class)) = HTabX.insert types a class
      | bind (Decl.DB _) = raise Match
-     | bind (Decl.Depend (depend as (_, ((_, (w, _)), _)))) =
-         HTabX.insertMerge depends w [ depend ] (fn ds => depend :: ds)
-     | bind (Decl.Rule (rule as (_, (_, concs)))) = 
+     | bind (Decl.Depend (depend as (_, ((_, (w, _)), _), _))) =
+         (merge (*[ <: depend list tab -> Symbol.symbol -> depend -> unit ]*)) 
+            depends w depend
+     | bind (Decl.Rule (rule as (_, (_, concs), _))) = 
          let
             val (_, (r, _)) = hd concs
             val class = HTabX.lookup rels r
             val (w, _) = Class.rel class
-         in HTabX.insertMerge rules w [ rule ] (fn rules => rule :: rules) end
+         in 
+            (merge (*[ <: rule list tab -> Symbol.symbol -> rule -> unit ]*))
+               rules w rule
+         end
      | bind (Decl.Query (pos, m, mode)) = 
          HTabX.insert queries m (pos, mode)
             

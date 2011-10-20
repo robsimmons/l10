@@ -12,9 +12,11 @@ struct
 
 (*[ val readdecls: Decl.decl_t Stream.stream -> unit ]*)
 fun readdecls stream = 
-   case Stream.front stream of
+   case (Stream.front 
+           (*[ <: Decl.decl_t Stream.stream -> Decl.decl_t Stream.front ]*)) 
+           stream of
       Stream.Nil => ()
-    | Stream.Cons (Decl.Rule (rule as (pos, _)), stream) => 
+    | Stream.Cons (Decl.Rule (rule as (pos, _, _)), stream) => 
          (* Needs to bind two decls: the rule and the associated dependency *)
          ( raise Types.TypeError (pos, "Not prepared to handle rule decls"))
     | Stream.Cons (decl, stream) => 
@@ -26,7 +28,11 @@ fun readfile filename =
    let 
       val file = TextIO.openIn filename 
       val stream = 
-         Stream.map Types.check 
+         (Stream.map
+            (*[ <: (Decl.decl -> Decl.decl_t)
+                      -> Decl.decl Stream.stream 
+                      -> Decl.decl_t Stream.stream ]*)) 
+            Types.check 
             (Parser.parse (Lexer.lex filename (Stream.fromInstream file)))
    in
       ( print ("[ == Opening " ^ filename ^ " == ]\n\n")

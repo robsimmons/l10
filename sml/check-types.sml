@@ -641,7 +641,7 @@ fun check decl =
          Decl.DB (pos, (db, props', hd worlds'))
       end
 
-    | Decl.Depend (pos, (world, worlds)) => raise Match
+    | Decl.Depend (pos, (world, worlds), NONE) => raise Match
 
     | _ => raise Match
 

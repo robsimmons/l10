@@ -375,21 +375,21 @@ end = struct
 
        | Arrow (syn1, syn2) =>
          (case p_world' syn2 psig of
-             NONE => (Decl.Rule (pos, p_rule syn psig), psig)
+             NONE => (Decl.Rule (pos, p_rule syn psig, NONE), psig)
            | SOME (p, world) => 
              let 
                 (*[ val p_worlds: syn -> (Pos.t * Atom.world) list ]*)
                 fun p_worlds (Conj (syn1, syn2)) = p_worlds syn1 @ p_worlds syn2
                   | p_worlds syn = [ p_world syn psig ]
              in
-                (Decl.Depend (pos, ((p, world), p_worlds syn1)), psig)
+                (Decl.Depend (pos, ((p, world), p_worlds syn1), NONE), psig)
              end)
                     
        | App _ =>
          (case p_world' syn psig of 
-             NONE => (Decl.Rule (pos, p_rule syn psig), psig)
+             NONE => (Decl.Rule (pos, p_rule syn psig, NONE), psig)
            | SOME (p, world) => 
-                (Decl.Depend (pos, ((p, world), [])), psig))
+                (Decl.Depend (pos, ((p, world), []), NONE), psig))
 
        | _ => raise SyntaxError (SOME pos, "Invalid toplevel statement")
 
