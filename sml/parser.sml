@@ -411,8 +411,10 @@ end = struct
                                map (fn mode => Term.Mode (mode, NONE)) modes)
                   (*[ val decl: Decl.decl ]*)
                   val decl = Decl.Query (Pos.union left right, name, modes) 
+                  (*[ val lazybit: unit -> Decl.decl Stream.front ]*)
+                  val lazybit = fn () => parse' stream' psig ()
                   (*[ val stream'': Decl.decl Stream.stream ]*)
-                  val stream'' = Stream.lazy (parse' stream' psig)
+                  val stream'' = Stream.lazy lazybit
                in 
                   Stream.Cons (decl, stream'')
                end
@@ -421,8 +423,10 @@ end = struct
                   val pos = Pos.union (getpos syn) pos
                   (*[ val decl: Decl.decl ]*)
                   val (decl, psig') = p_decl pos syn psig
+                  (*[ val lazybit: unit -> Decl.decl Stream.front ]*)
+                  val lazybit = fn () => parse' stream' psig' ()
                   (*[ val stream'': Decl.decl Stream.stream ]*)
-                  val stream'' = Stream.lazy (parse' stream' psig')
+                  val stream'' = Stream.lazy lazybit
                in
                   Stream.Cons (decl, stream'')
                end
