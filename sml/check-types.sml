@@ -636,7 +636,7 @@ fun check decl =
          (*[ val props': (Pos.t * Atom.ground_prop) list ]*)
          val (_, props') = tc_props DictX.empty props
          (*[ val worlds': (Pos.t * Atom.ground_world) list ]*)
-         val worlds' = #2 (tc_worlds DictX.empty [ world ])
+         val (_, worlds') = tc_worlds DictX.empty [ world ]
       in
          Decl.DB (pos, (db, props', hd worlds'))
       end
