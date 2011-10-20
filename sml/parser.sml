@@ -396,55 +396,37 @@ end = struct
    (*[ val parse': 
          Token.t Stream.stream -> psig -> unit -> Decl.decl Stream.front ]*)
    fun parse' stream psig () = 
-      case Stream.front stream of 
-         Stream.Nil => Stream.Nil
-       | Stream.Cons _ => 
-         let 
-            val (syndecl, stream') = Parse.parse stream 
-         in
-            case syndecl of 
-               Query (left, (_, name), (_, a), modes, right) => 
-               let 
-                  val name = Symbol.fromValue name
-                  (*[ val modes: Atom.moded ]*)
-                  val modes = (Symbol.fromValue a,
-                               map (fn mode => Term.Mode (mode, NONE)) modes)
-                  (*[ val decl: Decl.decl ]*)
-                  val decl = Decl.Query (Pos.union left right, name, modes) 
-                  (*[ val lazybit: unit -> Decl.decl Stream.front ]*)
-                  val lazybit = fn () => parse' stream' psig ()
-                  (*[ val stream'': Decl.decl Stream.stream ]*)
-                  val stream'' = 
-                     (Stream.lazy
-                        (*[ <: (unit -> Decl.decl Stream.front)
-                                 -> Decl.decl Stream.stream ]*)) 
-                        lazybit
-               in 
-                  (Stream.Cons 
-                     (*[ <: Decl.decl * Decl.decl Stream.stream
-                              -> Decl.decl Stream.front ]*))
-                     (decl, stream'')
-               end
-             | Syn (syn, pos) => 
-               let
-                  val pos = Pos.union (getpos syn) pos
-                  (*[ val decl: Decl.decl ]*)
-                  val (decl, psig') = p_decl pos syn psig
-                  (*[ val lazybit: unit -> Decl.decl Stream.front ]*)
-                  val lazybit = fn () => parse' stream' psig' ()
-                  (*[ val stream'': Decl.decl Stream.stream ]*)
-                  val stream'' = 
-                     (Stream.lazy
-                        (*[ <: (unit -> Decl.decl Stream.front)
-                                 -> Decl.decl Stream.stream ]*)) 
-                        lazybit
-               in
-                  (Stream.Cons 
-                     (*[ <: Decl.decl * Decl.decl Stream.stream
-                              -> Decl.decl Stream.front ]*))
-                     (decl, stream'')
-               end
-         end
+      let 
+         (*[ val stream_cons: Decl.decl * Decl.decl Stream.stream
+                -> Decl.decl Stream.front ]*)
+         val stream_cons = Stream.Cons
+         (*[ val stream_lazy: (unit -> Decl.decl Stream.front)
+                -> Decl.decl Stream.stream ]*)
+         val stream_lazy = Stream.lazy
+      in 
+         case Stream.front stream of 
+            Stream.Nil => Stream.Nil
+          | Stream.Cons _ => 
+            let val (syndecl, stream') = Parse.parse stream in
+               case syndecl of 
+                  Query (left, (_, name), (_, a), modes, right) => 
+                  let 
+                     val name = Symbol.fromValue name
+                     val modes = (Symbol.fromValue a,
+                                  map (fn mode => Term.Mode (mode, NONE)) modes)
+                     val decl = Decl.Query (Pos.union left right, name, modes) 
+                  in 
+                     stream_cons (decl, stream_lazy (parse' stream' psig))
+                  end
+                | Syn (syn, pos) => 
+                  let
+                     val pos = Pos.union (getpos syn) pos
+                     val (decl, psig') = p_decl pos syn psig
+                  in
+                     stream_cons (decl, stream_lazy (parse' stream' psig'))
+                  end
+            end
+      end
 
    (*[ val parse: Token.t Stream.stream -> Decl.decl Stream.stream ]*)
    fun parse stream = 
