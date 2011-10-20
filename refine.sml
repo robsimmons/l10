@@ -1,7 +1,12 @@
-OS.FileSys.chDir "../sml-cidre/src";
-CM.make "../sml-cidre/src/sources.cm";
+OS.FileSys.chDir "../sml-cidre/src/cm2mlb";
+CM.make "../Cidre/cidre.cm";
 
-OS.FileSys.chDir "../../cmlib/lib";
+OS.FileSys.chDir "../../lib/refined-basis";
+R.refine_file "bool.sml";
+R.refine_file "option.sml";
+R.refine_file "list.sml";
+
+OS.FileSys.chDir "../../../cmlib/lib";
 R.refine_file "coord.sig";
 R.refine_file "coord.sml";
 R.refine_file "hash-inc.sig";
@@ -66,3 +71,6 @@ R.refine_file "l10.cmyacc.sml";
 R.refine_file "parser.sml";
 
 R.refine_file "tab.sml";
+R.refine_file "check-types.sml";
+
+R.Flags.DEBUG_REFOBJECTS := true;
