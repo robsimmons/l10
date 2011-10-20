@@ -343,9 +343,11 @@ fun good_env pos =
           & Term.moded conslist -> env * Symbol.symbol * Term.moded_t conslist
           & Term.moded list     -> env * Symbol.symbol * Term.moded_t list)
        & Class.rel_t -> 
-          ( Term.term list -> env * Symbol.symbol * Term.term_t list)
+          ( Term.term list -> env * Symbol.symbol * Term.term_t list
+          & Term.ground list -> env * Symbol.symbol * Term.ground list)
        & Class.world -> 
-          ( Term.term list -> env * Symbol.symbol * Term.term_t list))]*)
+          ( Term.term list -> env * Symbol.symbol * Term.term_t list
+          & Term.ground list -> env * Symbol.symbol * Term.ground list))]*)
 
 fun tc_term pos env typ term = 
    case term of  
@@ -483,16 +485,24 @@ fun seek_typ env [] = NONE
  * lookup instead of a more-cautious find. *)
 
 (*[ val tc_atom: env -> 
-       ( Class.world -> (Pos.t * Atom.world) -> env * (Pos.t * Atom.world_t)
-       & Class.rel_t -> (Pos.t * Atom.prop) -> env * (Pos.t * Atom.prop_t)) ]*)
+       ( Class.world -> 
+          ( (Pos.t * Atom.world) -> env * (Pos.t * Atom.world_t)
+          & (Pos.t * Atom.ground_world) -> env * (Pos.t * Atom.ground_world))
+       & Class.rel_t -> 
+          ( (Pos.t * Atom.prop) -> env * (Pos.t * Atom.prop_t)
+          & (Pos.t * Atom.ground_prop) -> env * (Pos.t * Atom.ground_prop)))
+]*)
 
 fun tc_atom env class (pos, (w, terms)) = 
    let 
       val (env', _, terms') = tc_spine pos env w class terms
    in (env', (pos, (w, terms'))) end
 
-(*[ val tc_worlds: env -> (Pos.t * Atom.world) list ->
-       env * (Pos.t * Atom.world_t) list ]*)
+(*[ val tc_worlds: env -> 
+       ( (Pos.t * Atom.world) list -> env * (Pos.t * Atom.world_t) list
+       & (Pos.t * Atom.ground_world) list 
+            -> env * (Pos.t * Atom.ground_world) list) 
+]*)
 fun tc_worlds env [] = (env, [])
   | tc_worlds env ((world as (_, (w, _))) :: worlds) = 
     let 
@@ -502,8 +512,11 @@ fun tc_worlds env [] = (env, [])
        (env'', world' :: worlds')
     end
 
-(*[ val tc_props: env -> (Pos.t * Atom.prop) list ->
-       env * (Pos.t * Atom.prop_t) list ]*)
+(*[ val tc_props: env ->
+       ( (Pos.t * Atom.prop) list -> env * (Pos.t * Atom.prop_t) list
+       & (Pos.t * Atom.ground_prop) list 
+           -> env * (Pos.t * Atom.ground_prop) list) 
+]*)
 fun tc_props env [] = (env, [])
   | tc_props env ((prop as (_, (r, _))) :: props) =
     let 
@@ -607,7 +620,6 @@ fun check decl =
                  raise TypeError (pos, "Built-in type `"
                                        ^ Symbol.toValue (Class.base typ) 
                                        ^ "` cannot be given new constants.")
-           (*[ <: Class.knd -> unit ]*)
          ; Decl.Const (pos, c, typ))
       end
 
@@ -620,14 +632,16 @@ fun check decl =
          ; Decl.Type (pos, t, tc_closed_class pos class))
 
     | Decl.DB (pos, (db, props, world)) => 
-      let 
-         val props' = #2 (tc_props DictX.empty props)
-         val world' = hd (#2 (tc_worlds DictX.empty [ world ]))
+      let  
+         (*[ val props': (Pos.t * Atom.ground_prop) list ]*)
+         val (_, props') = tc_props DictX.empty props
+         (*[ val worlds': (Pos.t * Atom.ground_world) list ]*)
+         val (_, worlds') = tc_worlds DictX.empty [ world ]
       in
-         Decl.DB (pos, (db, props', world'))
+         Decl.DB (pos, (db, props', hd worlds'))
       end
 
-    | Decl.Depend (pos, (world, worlds), NONE) => raise Match
+    | Decl.Depend (pos, (world, worlds)) => raise Match
 
     | _ => raise Match
 
