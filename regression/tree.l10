@@ -4,9 +4,9 @@ tree: type.
 node: tree -> tree -> tree.
 leaf: tree.
 
-list: type.
-cons: nat -> list -> list.
-end: list.
+nlist: type.
+cons: nat -> nlist -> nlist.
+end: nlist.
 
 rbtree: type.
 red: nat -> rbtree -> rbtree -> rbtree.

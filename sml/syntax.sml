@@ -435,8 +435,9 @@ val print =
        print (Symbol.toValue a ^ ": " ^ Class.toString class ^ ".\n")
   | Type (_, t, class) => 
        print (Symbol.toValue t ^ ": " ^ Class.toString class ^ ".\n")
-  | DB (_, (db, _, _)) => 
-       print ("{-# DATABASE " ^ Symbol.toValue db ^ " ... #-}\n")
+  | DB (_, (db, _, world)) => 
+       print ("{-# DATABASE " ^ Symbol.toValue db ^ " (...) @ " 
+              ^ Atom.toString (#2 world) ^ " #-}\n")
   | Depend (_, (conc, prems), _) => 
        ( print (Atom.toString (#2 conc) ^ " <- ")
        ; print (String.concatWith ", " (map (Atom.toString o #2) prems))

@@ -18,6 +18,73 @@ exception TypeError of Pos.t * string
 
 (* == Signature invariants == *)
 
+(* Illegal identifiers (stolen from cmlex) *)
+val illegal = ref SetX.empty 
+val () = 
+   List.app
+   (fn str => illegal := SetX.insert (!illegal) (Symbol.fromValue str))
+   [
+   "abstype",
+   "andalso",
+   "as",
+   "case",
+   "datatype",
+   "do",
+   "else",
+   "end",
+   "exception",
+   "fn",
+   "fun",
+   "functor",
+   "handle",
+   "if",
+   "in",
+   "infix",
+   "infixr",
+   "include",
+   "let",
+   "local",
+   "nonfix",
+   "of",
+   "op",
+   "open",
+   "orelse",
+   "raise",
+   "sharing",
+   "sig",
+   "signature",
+   "struct",
+   "structure",
+   "then",
+   "type",
+   "val",
+   "where",
+   "while",
+   "withtype",
+
+   "before",
+   "div",
+   "mod",
+   "o",
+
+   "int",
+   "list",
+   "ord",
+   "symbol",
+
+   "true",
+   "false",
+   "nil",
+   "ref"
+   ]
+
+(* Some classifiers *)
+fun check_illegal pos x thing = 
+   if SetX.member (!illegal) x
+   then raise TypeError (pos, "Identifier `" ^ Symbol.toValue x 
+                              ^ "` is reserved and illegal as a " ^ thing)
+   else ()
+
 (*[ val tc_namespace: Pos.t -> string -> Symbol.symbol -> unit ]*)
 (* Avoid double definition for the namespace that is shared by everything
  * except for database declarations. *)
@@ -452,6 +519,7 @@ fun check decl =
 
     | Decl.Type (pos, t, class) => 
          ( tc_namespace pos "Type" t
+         ; check_illegal pos t "type"
          ; Decl.Type (pos, t, tc_closed_class pos class))
 
     | Decl.DB (pos, (db, props, world)) => 
@@ -459,7 +527,8 @@ fun check decl =
          val (_, props') = tc_props DictX.empty props
          val (_, world') = tc_world DictX.empty world
       in
-         Decl.DB (pos, (db, props', world'))
+         ( check_illegal pos db "database"
+         ; Decl.DB (pos, (db, props', world')))
       end
 
     | Decl.Depend (pos, (world, worlds), NONE) => 
@@ -484,6 +553,7 @@ fun check decl =
                                         ^ "` never declared.")
         | SOME class => 
           let val (_, (pos, mode')) = tc_atom DictX.empty class (pos, mode) in
-             Decl.Query (pos, qry, mode')
+             ( check_illegal pos qry "query"
+             ; Decl.Query (pos, qry, mode'))
           end)
 end

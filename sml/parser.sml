@@ -157,7 +157,8 @@ end*) = struct
       case syn of 
          App ((_, t), []) => Symbol.fromValue t
        | _ => raise SyntaxError (SOME (getpos syn), 
-                                 "Expected a simple type, got " ^ str syn)
+                                 "Expected a simple type, got `" 
+                                 ^ str syn ^ "`")
 
    (*[ val p_ground: syn -> Term.ground ]*)
    fun p_ground syn = 
@@ -308,12 +309,13 @@ end*) = struct
                 let 
                    fun p_arg (Ucid (_, x)) = (x, NONE)
                      | p_arg (Ascribe ((_, x), syn)) = (x, SOME (p_t syn))
-                     | p_arg _ = 
+                     | p_arg syn = 
                        raise SyntaxError 
-                          (SOME (getpos syn),
-                           "Pi-bindings `{...}` must be of the form `{x:t}`")
+                          (SOME pos,
+                           "Pi-bindings `{...}` must be of the form `{x:t}`\
+                           \. got `" ^ str syn ^ "`")
 
-                   val (x, t) = p_arg syn 
+                   val (x, t) = p_arg arg 
                    fun ty () = 
                       case t of 
                          NONE => 
@@ -364,6 +366,8 @@ end*) = struct
                   Decl.Const (pos, id, Class.Base (Symbol.fromValue t))
                 | World _ => 
                   Decl.World (pos, id, Class.World)
+                | Type _ => 
+                  Decl.Type (pos, id, Class.Type)
                 | At (Rel _, syn) => 
                   Decl.Rel (pos, id, Class.Rel (p_world syn psig))
                 | At (syn, _) => 
