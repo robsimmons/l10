@@ -42,9 +42,9 @@ terminal RANNO of pos
 
 start Decl
 
-nonterminal Decl : decl =
-   1:Syn 2:PERIOD => full_decl
-   1:LANNO ANNO_QUERY 2:LCID COLON 3:LCID 4:Modes 5:RANNO => Query
+nonterminal Decl : decl = => Done
+   1:Syn 2:PERIOD 3:Decl => Syn
+   1:LANNO ANNO_QUERY 2:LCID COLON 3:LCID 4:Modes 5:RANNO 6:Decl => Query
 
 nonterminal Bind : syn =
    1:UCID                         => Ucid
@@ -53,8 +53,8 @@ nonterminal Bind : syn =
 nonterminal Syn : syn =
    1:LCID COLON 2:Syn             => Ascribe
    1:LCID EQ 2:Syn                => Assign      
-   1:Syn LARROW 2:Syn             => Arrow      
-   1:Syn RARROW 2:Syn             => rarrow      
+   1:Syn LARROW 2:Syn             => larrow
+   1:Syn RARROW 2:Syn             => Arrow      
    1:Syn COMMA 2:Syn              => Conj        
    1:Syn AT 2:Syn                 => At          
    1:Syn EQEQ 2:Syn               => eqeq        

@@ -1,10 +1,10 @@
-structure Parser:> 
+structure Parser(*:> 
 sig
    exception SyntaxError of Pos.t option * string
    
    (*[ val parse: Token.t Stream.stream -> Decl.decl Stream.stream ]*)
    val parse: Token.t Stream.stream -> Decl.t Stream.stream
-end = struct
+end*) = struct
 
    exception SyntaxError of Pos.t option * string
 
@@ -61,14 +61,43 @@ end = struct
           | String (pos, _) => pos
           | Pos (pos, _) => pos
 
+      fun str syn = 
+         case syn of 
+            Ucid (_, s) => "(UCID " ^ s ^ ")"
+          | Ascribe ((_, x), syn) => "(" ^ x ^ " : " ^ str syn ^ ")"
+          | Assign ((_, x), syn) => "(" ^ x ^ " = " ^ str syn ^ ")"
+          | Arrow (syn1, syn2) => "(" ^ str syn1 ^ " = " ^ str syn2 ^ ")"
+          | Conj (syn1, syn2) => "(" ^ str syn1 ^ " , " ^ str syn2 ^ ")"
+          | At (syn1, syn2) => "(" ^ str syn1 ^ " @ " ^ str syn2 ^ ")"
+          | Binrel (_, syn1, syn2) => "(" ^ str syn1 ^ " op " ^ str syn2 ^ ")"
+          | App ((_, x), []) => "(LCID " ^ x ^ ")"
+          | App ((_, x), syns) => 
+               "(" ^ x ^ " " ^ String.concat (map str syns) ^ ")"
+          | Pi (_, syn1, _, syn2) => 
+               "({ " ^ str syn1 ^ " : ... } " ^ str syn2 ^ ")"
+          | Ex (_, (_, x), syn) =>
+               "(Ex " ^ x ^ " . " ^ str syn ^ ")"
+          | Var (_, x) => 
+               "(VAR " ^ x ^ ")"
+          | Uscore pos => "_"
+          | Not (pos, syn) => "(not " ^ str syn ^ ")"
+          | World pos => "world"
+          | Type pos => "type"
+          | Rel pos => "rel" 
+          | Num (_, n) => IntInf.toString n 
+          | String (_, s) => "\"" ^ s ^ "\"" 
+          | Pos (_, syn) => "(XXX " ^ str syn ^ ")"
+
       type sings = syn list      
       datatype decl = 
-         Syn of syn * Pos.t
-       | Query of Pos.t 
-                  * (Pos.t * string)  
-                  * (Pos.t * string) 
-                  * Mode.t list
-                  * Pos.t
+          Syn of syn * Pos.t * decl
+        | Query of Pos.t 
+                   * (Pos.t * string)  
+                   * (Pos.t * string) 
+                   * Mode.t list
+                   * Pos.t
+                   * decl
+        | Done of unit
 
       fun error s = 
          case Stream.front s of 
@@ -77,7 +106,7 @@ end = struct
             SyntaxError (SOME (Token.pos tok), "Unexpected token")
 
       val ascribe_ucid = Ascribe
-      fun rarrow (syn1, syn2) = Arrow (syn2, syn1)
+      fun larrow (syn1, syn2) = Arrow (syn2, syn1)
       fun binrel r (syn1, syn2) = Binrel (r, syn1, syn2)
       fun binrel' r (syn1, syn2) = Binrel (r, syn2, syn1)
       val eqeq = binrel Binrel.Eq
@@ -90,7 +119,8 @@ end = struct
          let val coord = Pos.left (getpos syn1) 
          in App ((Pos.pos coord coord, "_plus"), [syn1, syn2]) end
       fun id1 x = x
-      fun id2 (left, x, right) = Pos (Pos.union left right, x)
+      fun id2 (left, x, right) = x (* XXX BUGFIX, LOSSY *) 
+         (* Pos (Pos.union left right, x) *)
       fun sings_end () = []
       fun sings_cons (syn, sings) = syn :: sings
       fun sings_lcid (lcid, sings) = App (lcid, []) :: sings
@@ -98,7 +128,6 @@ end = struct
       fun mode_input  modes = Mode.Input :: modes
       fun mode_output modes = Mode.Output :: modes
       fun mode_ignore modes = Mode.Ignore :: modes 
-      fun full_decl (syn, pos) = Syn (syn, pos)
    end
 
    structure Parse =  
@@ -127,7 +156,8 @@ end = struct
    fun p_t syn = 
       case syn of 
          App ((_, t), []) => Symbol.fromValue t
-       | _ => raise SyntaxError (SOME (getpos syn), "Expected a simple type")
+       | _ => raise SyntaxError (SOME (getpos syn), 
+                                 "Expected a simple type, got " ^ str syn)
 
    (*[ val p_ground: syn -> Term.ground ]*)
    fun p_ground syn = 
@@ -395,36 +425,33 @@ end = struct
 
    (*[ val parse': 
          Token.t Stream.stream -> psig -> unit -> Decl.decl Stream.front ]*)
-   fun parse' stream psig () = 
+   fun parse' decl psig () = 
       let 
          (*[ val stream_cons: Decl.decl * Decl.decl Stream.stream
                 -> Decl.decl Stream.front ]*)
          val stream_cons = Stream.Cons
+
          (*[ val stream_lazy: (unit -> Decl.decl Stream.front)
                 -> Decl.decl Stream.stream ]*)
          val stream_lazy = Stream.lazy
       in 
-         case Stream.front stream of 
-            Stream.Nil => Stream.Nil
-          | Stream.Cons _ => 
-            let val (syndecl, stream') = Parse.parse stream in
-               case syndecl of 
-                  Query (left, (_, name), (_, a), modes, right) => 
-                  let 
-                     val name = Symbol.fromValue name
-                     val modes = (Symbol.fromValue a,
-                                  map (fn mode => Term.Mode (mode, NONE)) modes)
-                     val decl = Decl.Query (Pos.union left right, name, modes) 
-                  in 
-                     stream_cons (decl, stream_lazy (parse' stream' psig))
-                  end
-                | Syn (syn, pos) => 
-                  let
-                     val pos = Pos.union (getpos syn) pos
-                     val (decl, psig') = p_decl pos syn psig
-                  in
-                     stream_cons (decl, stream_lazy (parse' stream' psig'))
-                  end
+         case decl of 
+            Done () => Stream.Nil
+          | Query (left, (_, name), (_, a), modes, right, decl') => 
+            let 
+               val name = Symbol.fromValue name
+               val modes = (Symbol.fromValue a,
+                            map (fn mode => Term.Mode (mode, NONE)) modes)
+               val decl = Decl.Query (Pos.union left right, name, modes) 
+            in 
+               stream_cons (decl, stream_lazy (parse' decl' psig))
+            end
+          | Syn (syn, pos, decl') => 
+            let
+               val pos = Pos.union (getpos syn) pos
+               val (decl, psig') = p_decl pos syn psig
+            in
+               stream_cons (decl, stream_lazy (parse' decl' psig'))
             end
       end
 
@@ -433,6 +460,6 @@ end = struct
       (Stream.lazy 
          (*[ <: (unit -> Decl.decl Stream.front)
                   -> Decl.decl Stream.stream ]*)) 
-         (parse' stream empty)
+         (parse' (#1 (Parse.parse stream)) empty)
          
 end

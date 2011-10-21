@@ -92,6 +92,7 @@ struct
    open Token
    open Stream
 
+   exception Invariant
    exception LexError of Coord.t * string
 
    structure Arg = 
@@ -112,19 +113,29 @@ struct
          match: symbol list
          }
 
-      val extent =
+      fun extent match left =
          let 
-            fun loop accum [] right = 
-                (Pos.pos right right, right, String.implode (rev accum))
-              | loop accum ((c, right) :: match) _ = 
-                loop (c :: accum) match right
+            fun loop accum match =
+               case match of 
+                  [] => 
+                     raise Invariant (* Don't call extent on epsilon match! *)
+                | [ (c, next) ] => (* Only for a length-1 string *)
+                     (Pos.pos left left, 
+                      next, 
+                      str c)
+                | [ (c, right), (c', next) ] => (* Common base case *)
+                     (Pos.pos right left, 
+                      next, 
+                      String.implode (rev (c' :: c :: accum)))
+                | ((c, _) :: match) =>
+                     loop (c :: accum) match
          in
-            loop []
+            loop [] match
          end
 
       fun simple nextstate token ({ follow, self, match, ...}: arg) left = 
          let 
-            val (pos, coord, _) = extent match left
+            val (pos, coord, match') = extent match left
          in
             Cons (token pos, lazy (fn () => (nextstate self) follow coord))
          end

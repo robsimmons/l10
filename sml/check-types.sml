@@ -50,14 +50,14 @@ fun tc_namespace pos syntax x =
 (*[ val tc_t: Pos.t -> Symbol.symbol -> unit ]*)
 fun tc_t pos t = 
    if Tab.member Tab.types t then () 
-   else raise TypeError (pos, "Type " ^ Symbol.toValue t ^ " not declared.")
+   else raise TypeError (pos, "Type `" ^ Symbol.toValue t ^ "` not declared")
 
 (* Utility function for requiring two types to be equal *)
 fun require pos typ1 typ2 = 
    if Symbol.eq (typ1, typ2) then () 
-   else raise TypeError (pos, "Expected a term of type " ^ Symbol.toValue typ1 
-                              ^ ", but found a constructor of type" 
-                              ^ Symbol.toValue typ2)
+   else raise TypeError (pos, "Expected a term of type `" ^ Symbol.toValue typ1 
+                              ^ "`, but found a constructor of type `" 
+                              ^ Symbol.toValue typ2 ^ "`")
 
 (*[ good_env: Pos.t -> env -> Type.env ]*)
 fun good_env pos env = 

@@ -71,6 +71,15 @@ fun readfile filename =
         handle exn => ((TextIO.closeIn file handle _ => ()); raise exn)
       ; print ("[ == Closing " ^ filename ^ " == ]\n\n"))
    end
+      handle Lexer.LexError (c, s) =>
+                print ("Lex error at " ^ Coord.toString c ^ "\n" ^ s ^ ".\n")
+           | Parser.SyntaxError (NONE, s) =>
+                print ("Parse error at end of file\n" ^ s ^ ".\n")
+           | Parser.SyntaxError (SOME pos, s) => 
+                print ("Parse error at " ^ Pos.toString pos ^ "\n" ^ s ^ ".\n")
+           | Types.TypeError (pos, s) =>
+                print ("Type errror at " ^ Pos.toString pos ^ "\n" ^ s ^ ".\n")
+           | exn => print ("Unexpected error\n")
 
 fun readfiles files = app readfile files
 

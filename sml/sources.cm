@@ -1,5 +1,5 @@
 Group is
-   ../../cmlib/lib/cmlib.cm
+   $CMLIB/cmlib.cm
    cmlib-defaults.sml
 
    syntax.sml
