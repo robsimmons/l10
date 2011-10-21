@@ -44,7 +44,7 @@ start Decl
 
 nonterminal Decl : decl = => Done
    1:Syn 2:PERIOD 3:Decl => Syn
-   1:LANNO ANNO_QUERY 2:LCID COLON 3:LCID 4:Modes 5:RANNO 6:Decl => Query
+   1:LANNO ANNO_QUERY 2:LCID 3:LCID 4:Modes 5:RANNO 6:Decl => Query
 
 nonterminal Bind : syn =
    1:UCID                         => Ucid

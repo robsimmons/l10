@@ -76,7 +76,7 @@ fun readfile filename =
       handle Lexer.LexError (c, s) =>
                 print ("Lex error at " ^ Coord.toString c ^ "\n" ^ s ^ ".\n")
            | Parser.SyntaxError (NONE, s) =>
-                print ("Parse error at end of file\n" ^ s ^ ".\n")
+                print ("Parse error at end of file.\n")
            | Parser.SyntaxError (SOME pos, s) => 
                 print ("Parse error at " ^ Pos.toString pos ^ "\n" ^ s ^ ".\n")
            | Types.TypeError (pos, s) =>

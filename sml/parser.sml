@@ -1,10 +1,10 @@
-structure Parser(*:> 
+structure Parser:> 
 sig
    exception SyntaxError of Pos.t option * string
    
    (*[ val parse: Token.t Stream.stream -> Decl.decl Stream.stream ]*)
    val parse: Token.t Stream.stream -> Decl.t Stream.stream
-end*) = struct
+end = struct
 
    exception SyntaxError of Pos.t option * string
 

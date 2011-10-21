@@ -210,7 +210,8 @@ struct
       val anno_plus = simple #anno PLUS
       val anno_minus = simple #anno MINUS
       val anno_uscore = simple #anno USCORE
-      val anno_lcid = action #lexmain LCID
+      val anno_lcid = action #anno LCID
+      val anno_colon = simple #anno COLON
 
       val anno_end = simple #lexmain RANNO
       fun anno_linecomment ({ follow, self, match, ...}: arg) coord = 

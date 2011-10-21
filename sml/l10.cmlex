@@ -67,6 +67,8 @@ function anno : tok =
    '(        => anno_lparen
    ')        => anno_rparen
 
+   ':        => anno_colon
+
    '+        => anno_plus
    '-        => anno_minus
    '_        => anno_uscore
