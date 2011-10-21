@@ -1,5 +1,6 @@
 // Commands
 
+t: extensible.
 inst: type.
 binop:  t -> t -> t -> t -> inst.
 move:   t -> t -> inst.

@@ -23,6 +23,9 @@ struct
    (*[ val list: 'a tab -> (Symbol.symbol * 'a) list ]*)
    fun list tab = HTabX.toList tab
 
+   (*[ val fold: (Symbol.symbol * 'a * 'b -> 'b) -> 'b -> 'a tab -> 'b ]*)
+   fun fold f x tab = HTabX.fold f x tab
+
    (*[ val lookup: 'a tab -> Symbol.symbol -> 'a ]*)
    fun lookup tab x = HTabX.lookup tab x
 

@@ -152,7 +152,6 @@ end = struct
       PS { worlds = worlds, rels = SetX.insert rels x} 
 
    fun rels (PS {rels, ...}) = rels
-   val empty = PS { worlds = SetX.empty, rels = SetX.empty }
   
    (*[ val p_t: syn -> Symbol.symbol ]*)
    fun p_t syn = 
@@ -447,8 +446,7 @@ end = struct
        | _ => raise SyntaxError (SOME pos, "Ill-formed top-level statement `"
                                            ^ str syn ^ "`")
 
-   (*[ val parse': 
-         Token.t Stream.stream -> psig -> unit -> Decl.decl Stream.front ]*)
+   (*[ val parse': decl -> psig -> unit -> Decl.decl Stream.front ]*)
    fun parse' decl psig () = 
       let 
          (*[ val stream_cons: Decl.decl * Decl.decl Stream.stream
@@ -481,9 +479,16 @@ end = struct
 
    (*[ val parse: Token.t Stream.stream -> Decl.decl Stream.stream ]*)
    fun parse stream = 
-      (Stream.lazy 
-         (*[ <: (unit -> Decl.decl Stream.front)
-                  -> Decl.decl Stream.stream ]*)) 
-         (parse' (#1 (Parse.parse stream)) empty)
-         
+      let
+         val worlds = 
+            Tab.fold (fn (w, _, set) => SetX.insert set w) SetX.empty Tab.worlds
+         val rels = 
+            Tab.fold (fn (r, _, set) => SetX.insert set r) SetX.empty Tab.rels
+         val init = PS { worlds = worlds, rels = rels}
+      in 
+         (Stream.lazy 
+            (*[ <: (unit -> Decl.decl Stream.front)
+                     -> Decl.decl Stream.stream ]*)) 
+            (parse' (#1 (Parse.parse stream)) init)
+      end
 end

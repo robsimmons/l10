@@ -71,6 +71,7 @@ struct
        | NOT pos => pos
        | WORLD pos => pos
        | TYPE pos => pos
+       | EXTENSIBLE pos => pos
        | REL pos => pos
        | USCORE pos => pos
   

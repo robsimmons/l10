@@ -3,14 +3,13 @@ Group is
    cmlib-defaults.sml
 
    syntax.sml
+   tab.sml
+   check-types.sml
+
    l10.cmlex.sml
    lexer.sml
    l10.cmyacc.sml
    parser.sml
-
-   tab.sml
-   check-types.sml
-
    read.sml
 
 (*

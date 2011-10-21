@@ -1,3 +1,4 @@
+t: extensible.
 w1: world.
 
 edge: {X : t} {Y : t} rel @ w1.
