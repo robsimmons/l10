@@ -158,7 +158,7 @@ end = struct
       case strip syn of 
          App ((_, t), []) => Symbol.fromValue t
        | _ => raise SyntaxError (SOME (getpos syn), 
-                                 "Expected a simple type, got `" 
+                                 "Ill-formed simple type `" 
                                  ^ str syn ^ "`")
 
    (*[ val p_ground: syn -> Term.ground ]*)
@@ -187,7 +187,8 @@ end = struct
        | String (_, s) => Term.StrConst s
        | Var (_, x) => Term.Var (SOME (Symbol.fromValue x), NONE)
        | Uscore _ => Term.Var (NONE, NONE)
-       | _ => raise SyntaxError (SOME (getpos syn), "Ill-formed term")
+       | _ => raise SyntaxError (SOME (getpos syn), "Ill-formed term `" 
+                                                    ^ str syn ^ "`")
 
    (*[ val p_world': syn -> psig -> (Pos.t * Atom.world) option ]*)
    fun p_world' syn psig =
@@ -215,7 +216,8 @@ end = struct
                (SOME pos, 
                 "Not a declared world constant: `" ^ x ^ "`")
          end
-       | _ => raise SyntaxError (SOME (getpos syn), "Not a valid world")
+       | _ => raise SyntaxError (SOME (getpos syn), "Ill-formed world `"
+                                                    ^ str syn ^ "`")
 
    (*[ val p_prop: syn -> psig -> Atom.prop ]*)
    fun p_prop syn psig = 
@@ -228,7 +230,9 @@ end = struct
                (SOME pos, 
                 "Not a declared relation constant: `" ^ x ^ "`")
          end
-       | _ => raise SyntaxError (SOME (getpos syn), "Not a valid world")
+       | _ => raise SyntaxError (SOME (getpos syn), "Ill-formed atomic\ 
+                                                    \ proposition `" ^ str syn
+                                                    "`")
 
    (*[ val p_ground_world: syn -> psig -> (Pos.t * Atom.ground_world) ]*)
    fun p_ground_world syn psig =
