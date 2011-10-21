@@ -1,0 +1,8 @@
+w: world.
+wt: t -> world.
+wstring: string -> world.
+wnat: nat -> world.
+
+wt foo <- w.
+wstring "hey" <- w.
+wstring 4 <- w.
