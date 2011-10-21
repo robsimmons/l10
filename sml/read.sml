@@ -81,6 +81,9 @@ fun readfile filename =
                 print ("Parse error at " ^ Pos.toString pos ^ "\n" ^ s ^ ".\n")
            | Types.TypeError (pos, s) =>
                 print ("Type errror at " ^ Pos.toString pos ^ "\n" ^ s ^ ".\n")
+           | IO.Io {cause, function, name} =>
+                print ("I/O error trying to " ^ function ^ " " ^ name ^ "\n"
+                       ^ exnMessage cause ^ "\n")
            | exn => print ("Unexpected error: " ^ exnName exn ^ "\n" 
                            ^ exnMessage exn ^ "\n") 
 
