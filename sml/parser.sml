@@ -36,7 +36,10 @@ end = struct
        | Rel of Pos.t
        | Num of Pos.t * IntInf.int
        | String of Pos.t * string
-       | Pos of Pos.t * syn
+       | Paren of Pos.t * syn * Pos.t
+
+      fun strip (Paren (_, syn, _)) = strip syn
+        | strip syn = syn
 
       fun getpos syn = 
          case syn of 
@@ -59,14 +62,14 @@ end = struct
           | Rel pos => pos
           | Num (pos, _) => pos
           | String (pos, _) => pos
-          | Pos (pos, _) => pos
+          | Paren (pos1, _, pos2) => Pos.union pos1 pos2
 
       fun str syn = 
          case syn of 
             Ucid (_, s) => "(UCID " ^ s ^ ")"
           | Ascribe ((_, x), syn) => "(" ^ x ^ " : " ^ str syn ^ ")"
           | Assign ((_, x), syn) => "(" ^ x ^ " = " ^ str syn ^ ")"
-          | Arrow (syn1, syn2) => "(" ^ str syn1 ^ " = " ^ str syn2 ^ ")"
+          | Arrow (syn1, syn2) => "(" ^ str syn1 ^ " -> " ^ str syn2 ^ ")"
           | Conj (syn1, syn2) => "(" ^ str syn1 ^ " , " ^ str syn2 ^ ")"
           | At (syn1, syn2) => "(" ^ str syn1 ^ " @ " ^ str syn2 ^ ")"
           | Binrel (_, syn1, syn2) => "(" ^ str syn1 ^ " op " ^ str syn2 ^ ")"
@@ -86,7 +89,7 @@ end = struct
           | Rel pos => "rel" 
           | Num (_, n) => IntInf.toString n 
           | String (_, s) => "\"" ^ s ^ "\"" 
-          | Pos (_, syn) => "(XXX " ^ str syn ^ ")"
+          | Paren (_, syn, _) => "(" ^ str syn ^ ")"
 
       type sings = syn list      
       datatype decl = 
@@ -119,8 +122,6 @@ end = struct
          let val coord = Pos.left (getpos syn1) 
          in App ((Pos.pos coord coord, "_plus"), [syn1, syn2]) end
       fun id1 x = x
-      fun id2 (left, x, right) = x (* XXX BUGFIX, LOSSY *) 
-         (* Pos (Pos.union left right, x) *)
       fun sings_end () = []
       fun sings_cons (syn, sings) = syn :: sings
       fun sings_lcid (lcid, sings) = App (lcid, []) :: sings
@@ -154,7 +155,7 @@ end = struct
   
    (*[ val p_t: syn -> Symbol.symbol ]*)
    fun p_t syn = 
-      case syn of 
+      case strip syn of 
          App ((_, t), []) => Symbol.fromValue t
        | _ => raise SyntaxError (SOME (getpos syn), 
                                  "Expected a simple type, got `" 
@@ -162,7 +163,7 @@ end = struct
 
    (*[ val p_ground: syn -> Term.ground ]*)
    fun p_ground syn = 
-      case syn of 
+      case strip syn of 
          App ((_, c), []) => Term.SymConst (Symbol.fromValue c)
        | App ((_, c), syns) => 
          Term.Root (Symbol.fromValue c, map p_ground syns)
@@ -172,12 +173,13 @@ end = struct
          raise SyntaxError (SOME pos, "Free variable in ground term")
        | Uscore pos => 
          raise SyntaxError (SOME pos, "Underscore in ground term")
-       | _ =>
-         raise SyntaxError (SOME (getpos syn), "Ill-formed term")
+       | _ => 
+         raise SyntaxError (SOME (getpos syn), "Ill-formed term `" 
+                                               ^ str syn ^ "`")
 
    (*[ val p_term: syn -> Term.term ]*)
    fun p_term syn = 
-      case syn of 
+      case strip syn of 
          App ((_, c), []) => Term.SymConst (Symbol.fromValue c)
        | App ((_, c), syns) => 
          Term.Root (Symbol.fromValue c, map p_term syns)
@@ -189,7 +191,7 @@ end = struct
 
    (*[ val p_world': syn -> psig -> (Pos.t * Atom.world) option ]*)
    fun p_world' syn psig =
-      case syn of 
+      case strip syn of 
          App ((_, x), syns) =>
          let val w = Symbol.fromValue x in 
             if isWorld psig w
@@ -204,7 +206,7 @@ end = struct
 
    (*[ val p_world: syn -> psig -> (Pos.t * Atom.world) ]*)
    fun p_world syn psig = 
-      case syn of 
+      case strip syn of 
          App ((pos, x), syns) =>
          let val w = Symbol.fromValue x in 
             if isWorld psig w
@@ -217,7 +219,7 @@ end = struct
 
    (*[ val p_prop: syn -> psig -> Atom.prop ]*)
    fun p_prop syn psig = 
-      case syn of 
+      case strip syn of 
          App ((pos, x), syns) =>
          let val a = Symbol.fromValue x in 
             if isRel psig a
@@ -230,7 +232,7 @@ end = struct
 
    (*[ val p_ground_world: syn -> psig -> (Pos.t * Atom.ground_world) ]*)
    fun p_ground_world syn psig =
-      case syn of 
+      case strip syn of 
          App ((pos, x), syns) =>
          let val w = Symbol.fromValue x in 
             if isWorld psig w
@@ -243,7 +245,7 @@ end = struct
 
    (*[ val p_ground_prop: syn -> psig -> (Pos.t * Atom.ground_prop) ]*)
    fun p_ground_prop syn psig = 
-      case syn of 
+      case strip syn of 
          App ((pos, x), syns) =>
          let val a = Symbol.fromValue x in 
             if isRel psig a
@@ -259,7 +261,7 @@ end = struct
       let
          (*[ p_pat: syn -> Pat.pat ]*)
          fun p_pat syn = 
-            case syn of 
+            case strip syn of 
                Ex (_, (_, x), syn) => 
                Pat.Exists (Symbol.fromValue x, NONE, p_pat syn)
              | Conj (syn1, syn2) => 
@@ -271,7 +273,7 @@ end = struct
 
          (*[ val p_prem: syn -> Prem.prem ]*)
          fun p_prem syn = 
-            case syn of 
+            case strip syn of 
                Not (_, syn) => Prem.Negated (p_pat syn)
              | Binrel (br, syn1, syn2) => 
                Prem.Binrel (br, p_term syn1, p_term syn2, NONE)
@@ -279,17 +281,17 @@ end = struct
 
          (*[ val p_prems: syn -> (Pos.t * Prem.prem) list ]*)
          fun p_prems syn = 
-            case syn of 
+            case strip syn of 
                Conj (syn1, syn2) => p_prems syn1 @ p_prems syn2
              | syn => [ (getpos syn, p_prem syn) ]
 
          (*[ val p_concs: syn -> (Pos.t * Atom.prop) list ]*)
          fun p_concs syn =
-            case syn of 
+            case strip syn of 
                Conj (syn1, syn2) => p_concs syn1 @ p_concs syn2
              | syn => [ (getpos syn, p_prop syn psig) ]
       in
-         case syn of
+         case strip syn of
             Arrow (syn1, syn2) => (p_prems syn1, p_concs syn2)
           | _ => ([], p_concs syn)
       end

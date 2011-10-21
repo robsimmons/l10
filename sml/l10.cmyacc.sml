@@ -2262,7 +2262,7 @@ val App : {1:pos_str, 2:sings} -> syn
 val Not : {1:pos, 2:syn} -> syn
 val Pi : {1:pos, 2:syn, 3:pos, 4:syn} -> syn
 val Ex : {1:pos, 2:pos_str, 3:syn} -> syn
-val id2 : {1:pos, 2:syn, 3:pos} -> syn
+val Paren : {1:pos, 2:syn, 3:pos} -> syn
 val Var : pos_str -> syn
 val Uscore : pos -> syn
 val World : pos -> syn
@@ -2393,7 +2393,7 @@ Vector.fromList [(0,0,(fn rest => Value.decl(Arg.Done {})::rest)),
 (1,2,(fn Value.syn(arg0)::Value.pos(arg1)::rest => Value.syn(Arg.Not {2=arg0,1=arg1})::rest|_=>raise (Fail "bad parser"))),
 (1,4,(fn Value.syn(arg0)::Value.pos(arg1)::Value.syn(arg2)::Value.pos(arg3)::rest => Value.syn(Arg.Pi {4=arg0,3=arg1,2=arg2,1=arg3})::rest|_=>raise (Fail "bad parser"))),
 (1,4,(fn Value.syn(arg0)::_::Value.pos_str(arg1)::Value.pos(arg2)::rest => Value.syn(Arg.Ex {3=arg0,2=arg1,1=arg2})::rest|_=>raise (Fail "bad parser"))),
-(4,3,(fn Value.pos(arg0)::Value.syn(arg1)::Value.pos(arg2)::rest => Value.syn(Arg.id2 {3=arg0,2=arg1,1=arg2})::rest|_=>raise (Fail "bad parser"))),
+(4,3,(fn Value.pos(arg0)::Value.syn(arg1)::Value.pos(arg2)::rest => Value.syn(Arg.Paren {3=arg0,2=arg1,1=arg2})::rest|_=>raise (Fail "bad parser"))),
 (4,1,(fn Value.pos_str(arg0)::rest => Value.syn(Arg.Var arg0)::rest|_=>raise (Fail "bad parser"))),
 (4,1,(fn Value.pos(arg0)::rest => Value.syn(Arg.Uscore arg0)::rest|_=>raise (Fail "bad parser"))),
 (4,1,(fn Value.pos(arg0)::rest => Value.syn(Arg.World arg0)::rest|_=>raise (Fail "bad parser"))),

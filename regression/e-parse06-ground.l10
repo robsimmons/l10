@@ -1,0 +1,3 @@
+w: world.
+a: t -> rel @ w.
+db = a _ @ w.

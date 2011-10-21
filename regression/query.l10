@@ -1,0 +1,7 @@
+foo: type.
+w: world.
+r: foo -> foo -> rel @ w.
+{-# QUERY r3 r + - #-}
+{-# QUERY r1 r + + #-}
+{-# QUERY r2 r - - #-}
+{-# QUERY r4 r - + #-}

@@ -72,7 +72,7 @@ nonterminal Syn : syn =
    1:EX 2:UCID PERIOD 3:Syn       => Ex             precr 10
 
 nonterminal Simp : syn =
-   1:LPAREN 2:Syn 3:RPAREN        => id2
+   1:LPAREN 2:Syn 3:RPAREN        => Paren
    1:UCID                         => Var
    1:USCORE                       => Uscore
    1:WORLD                        => World
