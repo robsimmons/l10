@@ -147,7 +147,7 @@ end*) = struct
 
    fun isRel (PS { rels, ...}) x = SetX.member rels x
    fun addRel (PS {worlds, rels}) x = 
-      PS { worlds = SetX.insert worlds x, rels = rels} 
+      PS { worlds = worlds, rels = SetX.insert rels x} 
 
    fun rels (PS {rels, ...}) = rels
    val empty = PS { worlds = SetX.empty, rels = SetX.empty }
