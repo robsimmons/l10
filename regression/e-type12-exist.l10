@@ -1,0 +1,5 @@
+t: type.
+s: type.
+w: world.
+r: rel @ w. 
+r <- Ex X. r.

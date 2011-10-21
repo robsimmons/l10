@@ -347,7 +347,7 @@ end = struct
                       raise SyntaxError 
                          (SOME pos,
                           "Declared types can only be classified by `type` or\
-                          \ `extensible`.")
+                          \ `extensible`")
                end
 
             (*[ val arrow: 
@@ -365,7 +365,8 @@ end = struct
                 | Decl.Type _ => 
                   raise SyntaxError 
                      (SOME pos,
-                      "Dependent types `t -> type` not allowed")
+                      "Declared types can only be classified by `type` or\
+                      \ `extensible`")
 
             (*[ val class: syn -> Decl.class ]*)
             fun class syn =
@@ -388,7 +389,7 @@ end = struct
                          Decl.Rel (pos, id, Class.Rel (p_world syn2 psig))
                     | _ => raise SyntaxError
                          (SOME (getpos syn1), 
-                          "Expected-`rel` to the left of `@` in a classifier\
+                          "Expected-`rel` to the left of `@` in a classifier,\
                           \ got `" ^ str syn1 ^ "`"))
                 | _ => 
                   raise SyntaxError
@@ -423,7 +424,7 @@ end = struct
        | Assign (id, syn) => 
          raise SyntaxError  
             (SOME (getpos syn),
-             "Database assignment not of the form (...) @ ...")
+             "Database assignment not of the form `(...) @ ...`")
 
        | Arrow (syn1, syn2) =>
          (case p_world' syn2 psig of
@@ -443,7 +444,8 @@ end = struct
            | SOME (p, world) => 
                 (Decl.Depend (pos, ((p, world), []), NONE), psig))
 
-       | _ => raise SyntaxError (SOME pos, "Invalid toplevel statement")
+       | _ => raise SyntaxError (SOME pos, "Ill-formed top-level statement `"
+                                           ^ str syn ^ "`")
 
    (*[ val parse': 
          Token.t Stream.stream -> psig -> unit -> Decl.decl Stream.front ]*)

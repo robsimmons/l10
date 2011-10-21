@@ -129,7 +129,8 @@ fun require pos typ1 typ2 =
 (*[ good_env: Pos.t -> env -> Type.env ]*)
 fun good_env pos env = 
    DictX.map
-      (fn NONE => raise TypeError (pos, "Some types for free variables unknown")
+      (fn NONE => (* Shouldn't ever take this branch -rjs Oct 21 2011 *)
+          raise TypeError (pos, "Some types for free variables unknown")
         | SOME t => t)
       env
 
@@ -184,15 +185,15 @@ fun tc_term pos env typ term =
                                         ^ "` was expected")
         | SOME class => 
              raise TypeError (pos, "Function symbol `" ^ Symbol.toValue c
-                                   ^ "` expected" 
+                                   ^ "` expected " 
                                    ^ Int.toString (Class.arrows class) 
                                    ^ " argument(s), was given none"))
     | Term.NatConst n => (require pos typ Type.nat; (env, Term.NatConst n))
     | Term.StrConst s => (require pos typ Type.string; (env, Term.StrConst s))
     | Term.Root (f, spine) => 
       (case Tab.find Tab.consts f of
-          NONE => raise TypeError (pos, "Function symbol " ^ Symbol.toValue f
-                                        ^ " not defined")
+          NONE => raise TypeError (pos, "Function symbol `" ^ Symbol.toValue f
+                                        ^ "` not defined")
         | SOME class => 
           let 
              val (env', typ', spine_t) = tc_spine pos env f class spine
@@ -429,13 +430,11 @@ fun tc_class pos env class =
          ( tc_t pos t
          ; (env, Class.Base t))
     | Class.Rel (pos, (w, terms)) =>
-      (case Tab.find Tab.worlds w of 
-          NONE => raise TypeError (pos, "World `" ^ Symbol.toValue w 
-                                        ^ "` not declared")
-        | SOME class => 
-          let val (env', _, terms') = tc_spine pos env w class terms in
-             (env', Class.Rel (pos, (w, terms')))
-          end)
+      let val (env', _, terms') = 
+             tc_spine pos env w (Tab.lookup Tab.worlds w) terms 
+      in
+         (env', Class.Rel (pos, (w, terms')))
+      end
     | Class.World => (env, Class.World)
     | Class.Type => (env, Class.Type)
     | Class.Builtin => (env, Class.Builtin)
@@ -474,7 +473,7 @@ fun tc_closed_class pos class =
       case DictX.toList env of
          [] => class
        | (x, _) :: _ => raise TypeError (pos, "Variable `" ^ Symbol.toValue x 
-                                              ^ "` free in classifier.")  
+                                              ^ "` free in classifier")  
    end
 
 
@@ -505,11 +504,11 @@ fun check decl =
                                              \ constructor; only `" 
                                              ^ Symbol.toValue c ^ ": "
                                              ^ Symbol.toValue (Class.base typ) 
-                                             ^ "` is allowed."))
+                                             ^ "` is allowed"))
             | Class.Builtin => 
                  raise TypeError (pos, "Built-in type `"
                                        ^ Symbol.toValue (Class.base typ) 
-                                       ^ "` cannot be given new constants.")
+                                       ^ "` cannot be given new constants")
          ; Decl.Const (pos, c, typ))
       end
 
@@ -550,7 +549,7 @@ fun check decl =
     | Decl.Query (pos, qry, mode as (r, _)) =>
       (case Tab.find Tab.rels r of 
           NONE => raise TypeError (pos, "Relation `" ^ Symbol.toValue r 
-                                        ^ "` never declared.")
+                                        ^ "` never declared")
         | SOME class => 
           let val (_, (pos, mode')) = tc_atom DictX.empty class (pos, mode) in
              ( check_illegal pos qry "query"

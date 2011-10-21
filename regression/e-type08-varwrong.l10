@@ -1,0 +1,4 @@
+t: type.
+s: type.
+w: s -> world.
+r: {X: t} rel @ w X. 
