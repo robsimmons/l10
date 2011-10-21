@@ -66,14 +66,14 @@ end = struct
 
       fun str syn = 
          case syn of 
-            Ucid (_, s) => "(UCID " ^ s ^ ")"
+            Ucid (_, s) => s
           | Ascribe ((_, x), syn) => "(" ^ x ^ " : " ^ str syn ^ ")"
           | Assign ((_, x), syn) => "(" ^ x ^ " = " ^ str syn ^ ")"
           | Arrow (syn1, syn2) => "(" ^ str syn1 ^ " -> " ^ str syn2 ^ ")"
           | Conj (syn1, syn2) => "(" ^ str syn1 ^ " , " ^ str syn2 ^ ")"
           | At (syn1, syn2) => "(" ^ str syn1 ^ " @ " ^ str syn2 ^ ")"
           | Binrel (_, syn1, syn2) => "(" ^ str syn1 ^ " op " ^ str syn2 ^ ")"
-          | App ((_, x), []) => "(LCID " ^ x ^ ")"
+          | App ((_, x), []) => x
           | App ((_, x), syns) => 
                "(" ^ x ^ " " ^ String.concat (map str syns) ^ ")"
           | Pi (_, syn1, _, syn2) => 
@@ -381,7 +381,7 @@ end = struct
                 | _ => 
                   raise SyntaxError
                      (SOME (getpos syn), 
-                      "Not a valid classifier")
+                      "Not a valid classifier: `" ^ str syn ^ "`")
 
             val decl = class syn
             val psig' = 
