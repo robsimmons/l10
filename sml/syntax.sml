@@ -428,24 +428,24 @@ structure Decl = struct
 (*[ val print: decl_t -> unit ]*)
 val print = 
  fn World (_, w, class) => 
-       print (Symbol.toValue w ^ ": " ^ Class.toString class ^ "\n")
+       print (Symbol.toValue w ^ ": " ^ Class.toString class ^ ".\n")
   | Const (_, c, class) => 
-       print (Symbol.toValue c ^ ": " ^ Class.toString class ^ "\n")
+       print (Symbol.toValue c ^ ": " ^ Class.toString class ^ ".\n")
   | Rel (_, a, class) => 
-       print (Symbol.toValue a ^ ": " ^ Class.toString class ^ "\n")
+       print (Symbol.toValue a ^ ": " ^ Class.toString class ^ ".\n")
   | Type (_, t, class) => 
-       print (Symbol.toValue t ^ ": " ^ Class.toString class ^ "\n")
+       print (Symbol.toValue t ^ ": " ^ Class.toString class ^ ".\n")
   | DB (_, (db, _, _)) => 
        print ("{-# DATABASE " ^ Symbol.toValue db ^ " ... #-}")
   | Depend (_, (conc, prems), _) => 
        ( print (Atom.toString (#2 conc) ^ " <- ")
        ; print (String.concatWith ", " (map (Atom.toString o #2) prems))
-       ; print "\n")
+       ; print ".\n")
   | Rule (_, (prems, concs), _) =>
        ( print (String.concatWith ", " (map (Prem.toString o #2) prems))
        ; print " -> "
        ; print (String.concatWith ", " (map (Atom.toString o #2) concs))
-       ; print "\n")
+       ; print ".\n")
   | Query (_, qry, mode) =>
        ( print ("{-# QUERY " ^ Symbol.toValue qry ^ " ")
        ; print (Atom.toString mode ^ " #-}\n"))

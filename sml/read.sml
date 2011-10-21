@@ -66,7 +66,7 @@ fun readfile filename =
          stream_map Types.check 
             (Parser.parse (Lexer.lex filename (Stream.fromInstream file)))
    in
-      ( print ("[ == Opening " ^ filename ^ " == ]\n\n")
+      ( print ("[ == Opening " ^ filename ^ " == ]\n")
       ; load stream
         handle exn => ((TextIO.closeIn file handle _ => ()); raise exn)
       ; print ("[ == Closing " ^ filename ^ " == ]\n\n"))
