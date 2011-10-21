@@ -100,14 +100,13 @@ struct
      | bind (Decl.Const (_, c, class)) =
          let val t = Class.base class in  
             ( HTabX.insert consts c class
-            ; merge 
-                 typecon t c)
+            ; merge typecon t c)
          end
      | bind (Decl.Rel (_, r, class)) = 
          ( HTabX.insert rels r class 
          ; HTabX.insert consts r (Class.relToTyp class))
      | bind (Decl.Type (_, a, class)) = HTabX.insert types a class
-     | bind (Decl.DB _) = raise Match
+     | bind (Decl.DB (pos, (db as (d, _, _)))) = HTabX.insert dbs d db
      | bind (Decl.Depend (depend as (_, ((_, (w, _)), _), _))) =
          (merge (*[ <: depend list tab -> Symbol.symbol -> depend -> unit ]*)) 
             depends w depend
