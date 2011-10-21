@@ -5,7 +5,8 @@ $(SML_LIB)/refined-basis/basis.mlb
 
 syntax.sml
 tab.sml
-check-types.sml
+types.sml
+worlds.sml
 
 l10.cmlex.sml
 lexer.sml

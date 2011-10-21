@@ -1,7 +1,7 @@
 (* Mode checking *)
 (* Robert J. Simmons *)
 
-structure Mode:> sig
+structure Modes:> sig
 
    (* Takes a atomic propisition, pulls the underlying world *)
    val pullWorld: Ast.atomic -> Ast.world

@@ -277,9 +277,9 @@ end
 structure Rule = struct
    type t = (Pos.t * Prem.t) list * (Pos.t * Atom.t) list   
    (*[ sortdef rule = 
-          (Pos.t * Prem.prem) list * (Pos.t * Atom.prop) list ]*)
+          (Pos.t * Prem.prem) list * (Pos.t * Atom.prop) conslist ]*)
    (*[ sortdef rule_t = 
-          (Pos.t * Prem.prem_t) list * (Pos.t * Atom.prop_t) list ]*)
+          (Pos.t * Prem.prem_t) list * (Pos.t * Atom.prop_t) conslist ]*)
 
    (*[ val fv: rule -> SetX.set ]*)
    fun fv ((prems, concs): t) =

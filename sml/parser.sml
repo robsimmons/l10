@@ -292,7 +292,7 @@ end = struct
                Conj (syn1, syn2) => p_prems syn1 @ p_prems syn2
              | syn => [ (getpos syn, p_prem syn) ]
 
-         (*[ val p_concs: syn -> (Pos.t * Atom.prop) list ]*)
+         (*[ val p_concs: syn -> (Pos.t * Atom.prop) conslist ]*)
          fun p_concs syn =
             case strip syn of 
                Conj (syn1, syn2) => p_concs syn1 @ p_concs syn2

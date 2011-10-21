@@ -344,6 +344,7 @@ fun tc_prop env (prop as (_, (r, _))) =
 
 (*[ val tc_props: env ->
        ( (Pos.t * Atom.prop) list -> env * (Pos.t * Atom.prop_t) list
+       & (Pos.t * Atom.prop) conslist -> env * (Pos.t * Atom.prop_t) conslist
        & (Pos.t * Atom.ground_prop) list 
            -> env * (Pos.t * Atom.ground_prop) list) 
 ]*)
