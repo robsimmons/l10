@@ -110,12 +110,12 @@ struct
                ^ String.concat (map (fn term => " " ^ toString term) terms)
                ^ ")")
 
-   (*[ sortdef subst = term DictX.dict ]*)
+   (*[ sortdef subst = term_t DictX.dict ]*)
   
    (* Total substitution *)
-   (*[ val subst: subst * term -> term option ]*)
-   (*[ val substs: subst * term list -> term list option
-                 & subst * term conslist -> term conslist option ]*)
+   (*[ val subst: subst * term_t -> term_t option ]*)
+   (*[ val substs: subst * term_t list -> term_t list option
+                 & subst * term_t conslist -> term_t conslist option ]*)
    fun subst (map, term) =
       case term of 
          SymConst c => SOME (SymConst c)
