@@ -26,9 +26,11 @@ val stream_map = Stream.map
 fun load stream = 
    case stream_front stream of
       Stream.Nil => ()
-    | Stream.Cons (Decl.Rule (rule as (pos, _, _)), stream) => 
-         (* Needs to bind two decls: the rule and the associated dependency *)
-         ( raise Types.TypeError (pos, "Not prepared to handle rule decls"))
+    | Stream.Cons (decl as (Decl.Rule rule), stream) => 
+         (* XXX Needs to bind the rule *and* the associated dependency *)
+         ( Tab.bind decl
+         ; Decl.print decl 
+         ; load stream)
     | Stream.Cons (decl, stream) => 
          ( Tab.bind decl
          ; Decl.print decl
@@ -79,7 +81,8 @@ fun readfile filename =
                 print ("Parse error at " ^ Pos.toString pos ^ "\n" ^ s ^ ".\n")
            | Types.TypeError (pos, s) =>
                 print ("Type errror at " ^ Pos.toString pos ^ "\n" ^ s ^ ".\n")
-           | exn => print ("Unexpected error\n")
+           | exn => print ("Unexpected error: " ^ exnName exn ^ "\n" 
+                           ^ exnMessage exn ^ "\n") 
 
 fun readfiles files = app readfile files
 
