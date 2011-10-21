@@ -359,7 +359,7 @@ end = struct
 
             (*[ val class: syn -> Decl.class ]*)
             fun class syn =
-               case syn of
+               case strip syn of
                   Arrow (syn1, syn2) => 
                   arrow pos (p_t syn1, class syn2)
                 | Pi (left, syn1, right, syn2) =>
@@ -370,12 +370,14 @@ end = struct
                   Decl.World (pos, id, Class.World)
                 | Type _ => 
                   Decl.Type (pos, id, Class.Type)
-                | At (Rel _, syn) => 
-                  Decl.Rel (pos, id, Class.Rel (p_world syn psig))
-                | At (syn, _) => 
-                  raise SyntaxError
-                     (SOME (getpos syn), 
-                      "Non-`rel` to the left of `@` in a classifier")
+                | At (syn1, syn2) => 
+                  (case strip syn1 of 
+                      Rel _ => 
+                         Decl.Rel (pos, id, Class.Rel (p_world syn2 psig))
+                    | _ => raise SyntaxError
+                         (SOME (getpos syn1), 
+                          "Expected-`rel` to the left of `@` in a classifier\
+                          \ got `" ^ str syn1 ^ "`"))
                 | _ => 
                   raise SyntaxError
                      (SOME (getpos syn), 
