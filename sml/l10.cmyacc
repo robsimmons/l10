@@ -73,7 +73,7 @@ nonterminal Syn : syn =
 
 nonterminal Simp : syn =
    1:LPAREN 2:Syn 3:RPAREN        => Paren
-   1:UCID                         => Var
+   1:UCID                         => var
    1:USCORE                       => Uscore
    1:WORLD                        => World
    1:TYPE                         => Type

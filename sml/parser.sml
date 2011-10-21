@@ -28,7 +28,6 @@ end = struct
        | App of (Pos.t * string) * syn list
        | Pi of Pos.t * syn * Pos.t * syn
        | Ex of Pos.t * (Pos.t * string) * syn
-       | Var of Pos.t * string 
        | Uscore of Pos.t
        | Not of Pos.t * syn
        | World of Pos.t
@@ -54,7 +53,6 @@ end = struct
           | App ((pos, _), syns) => Pos.union pos (getpos (List.last syns))
           | Pi (pos, _, _, syn) => Pos.union pos (getpos syn)
           | Ex (pos, (_, _), syn) => Pos.union pos (getpos syn)
-          | Var (pos, _) => pos
           | Uscore pos => pos
           | Not (pos, syn) => Pos.union pos (getpos syn)
           | World pos => pos
@@ -72,7 +70,8 @@ end = struct
           | Arrow (syn1, syn2) => "(" ^ str syn1 ^ " -> " ^ str syn2 ^ ")"
           | Conj (syn1, syn2) => "(" ^ str syn1 ^ " , " ^ str syn2 ^ ")"
           | At (syn1, syn2) => "(" ^ str syn1 ^ " @ " ^ str syn2 ^ ")"
-          | Binrel (_, syn1, syn2) => "(" ^ str syn1 ^ " op " ^ str syn2 ^ ")"
+          | Binrel (b, syn1, syn2) => 
+               "(" ^ str syn1 ^ " " ^ Binrel.toString b ^ " " ^ str syn2 ^ ")"
           | App ((_, x), []) => x
           | App ((_, x), syns) => 
                "(" ^ x ^ " " ^ String.concat (map str syns) ^ ")"
@@ -80,8 +79,6 @@ end = struct
                "({ " ^ str syn1 ^ " : ... } " ^ str syn2 ^ ")"
           | Ex (_, (_, x), syn) =>
                "(Ex " ^ x ^ " . " ^ str syn ^ ")"
-          | Var (_, x) => 
-               "(VAR " ^ x ^ ")"
           | Uscore pos => "_"
           | Not (pos, syn) => "(not " ^ str syn ^ ")"
           | World pos => "world"
@@ -123,6 +120,7 @@ end = struct
          in App ((Pos.pos coord coord, "_plus"), [syn1, syn2]) end
       fun id1 x = x
       fun sings_end () = []
+      val var = Ucid
       fun sings_cons (syn, sings) = syn :: sings
       fun sings_lcid (lcid, sings) = App (lcid, []) :: sings
       fun mode_end () = []
@@ -169,7 +167,7 @@ end = struct
          Term.Root (Symbol.fromValue c, map p_ground syns)
        | Num (_, n) => Term.NatConst n
        | String (_, s) => Term.StrConst s
-       | Var (pos, x) => 
+       | Ucid (pos, x) => 
          raise SyntaxError (SOME pos, "Free variable in ground term")
        | Uscore pos => 
          raise SyntaxError (SOME pos, "Underscore in ground term")
@@ -185,7 +183,7 @@ end = struct
          Term.Root (Symbol.fromValue c, map p_term syns)
        | Num (_, n) => Term.NatConst n
        | String (_, s) => Term.StrConst s
-       | Var (_, x) => Term.Var (SOME (Symbol.fromValue x), NONE)
+       | Ucid (_, x) => Term.Var (SOME (Symbol.fromValue x), NONE)
        | Uscore _ => Term.Var (NONE, NONE)
        | _ => raise SyntaxError (SOME (getpos syn), "Ill-formed term `" 
                                                     ^ str syn ^ "`")
@@ -232,7 +230,7 @@ end = struct
          end
        | _ => raise SyntaxError (SOME (getpos syn), "Ill-formed atomic\ 
                                                     \ proposition `" ^ str syn
-                                                    "`")
+                                                    ^ "`")
 
    (*[ val p_ground_world: syn -> psig -> (Pos.t * Atom.ground_world) ]*)
    fun p_ground_world syn psig =
