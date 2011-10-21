@@ -143,7 +143,6 @@ struct
       ; HTabX.reset consts n
       ; HTabX.reset typecon n
       ; bind plus
-      ; bind (Decl.Type (pos, Type.t, Class.Extensible))
       ; bind (Decl.Type (pos, Type.nat, Class.Builtin))
       ; bind (Decl.Type (pos, Type.string, Class.Builtin))
       ; bind (Decl.Type (pos, Type.world, Class.Type))

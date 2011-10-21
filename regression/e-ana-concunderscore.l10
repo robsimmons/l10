@@ -1,3 +1,4 @@
+t: extensible.
 w: world.
 r: t -> t -> rel @ w.
 

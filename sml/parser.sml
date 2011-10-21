@@ -32,6 +32,7 @@ end = struct
        | Not of Pos.t * syn
        | World of Pos.t
        | Type of Pos.t
+       | Extensible of Pos.t
        | Rel of Pos.t
        | Num of Pos.t * IntInf.int
        | String of Pos.t * string
@@ -57,6 +58,7 @@ end = struct
           | Not (pos, syn) => Pos.union pos (getpos syn)
           | World pos => pos
           | Type pos => pos
+          | Extensible pos => pos
           | Rel pos => pos
           | Num (pos, _) => pos
           | String (pos, _) => pos
@@ -74,7 +76,7 @@ end = struct
                "(" ^ str syn1 ^ " " ^ Binrel.toString b ^ " " ^ str syn2 ^ ")"
           | App ((_, x), []) => x
           | App ((_, x), syns) => 
-               "(" ^ x ^ " " ^ String.concat (map str syns) ^ ")"
+               "(" ^ x ^ " " ^ String.concatWith " " (map str syns) ^ ")"
           | Pi (_, syn1, _, syn2) => 
                "({ " ^ str syn1 ^ " : ... } " ^ str syn2 ^ ")"
           | Ex (_, (_, x), syn) =>
@@ -83,6 +85,7 @@ end = struct
           | Not (pos, syn) => "(not " ^ str syn ^ ")"
           | World pos => "world"
           | Type pos => "type"
+          | Extensible pos => "extensible"
           | Rel pos => "rel" 
           | Num (_, n) => IntInf.toString n 
           | String (_, s) => "\"" ^ s ^ "\"" 
@@ -243,7 +246,8 @@ end = struct
                (SOME pos, 
                 "Not a declared world constant: `" ^ x ^ "`")
          end
-       | _ => raise SyntaxError (SOME (getpos syn), "Not a valid world")
+       | _ => raise SyntaxError (SOME (getpos syn), "Ill-formed world `"
+                                                    ^ str syn ^ "`")
 
    (*[ val p_ground_prop: syn -> psig -> (Pos.t * Atom.ground_prop) ]*)
    fun p_ground_prop syn psig = 
@@ -256,7 +260,9 @@ end = struct
                (SOME pos, 
                 "Not a declared relation constant: `" ^ x ^ "`")
          end
-       | _ => raise SyntaxError (SOME (getpos syn), "Not a valid world")
+       | _ => raise SyntaxError (SOME (getpos syn), "Ill-formed atomic\ 
+                                                    \ proposition `" ^ str syn
+                                                    ^ "`")
 
    (*[ val p_rule: syn -> psig -> Rule.rule ]*)
    fun p_rule syn psig: Rule.t = 
@@ -314,6 +320,7 @@ end = struct
                    fun p_arg (Ucid (_, x)) = (x, NONE)
                      | p_arg (Ascribe ((_, x), syn)) = (x, SOME (p_t syn))
                      | p_arg syn = 
+                       (* Think this is dead code -rjs Oct 21 2011 *)
                        raise SyntaxError 
                           (SOME pos,
                            "Pi-bindings `{...}` must be of the form `{x:t}`\
@@ -339,7 +346,8 @@ end = struct
                     | Decl.Type _ => 
                       raise SyntaxError 
                          (SOME pos,
-                          "Dependent types `{...} type` not allowed")
+                          "Declared types can only be classified by `type` or\
+                          \ `extensible`.")
                end
 
             (*[ val arrow: 
@@ -372,6 +380,8 @@ end = struct
                   Decl.World (pos, id, Class.World)
                 | Type _ => 
                   Decl.Type (pos, id, Class.Type)
+                | Extensible _ => 
+                  Decl.Type (pos, id, Class.Extensible)
                 | At (syn1, syn2) => 
                   (case strip syn1 of 
                       Rel _ => 
@@ -398,8 +408,10 @@ end = struct
        | Assign ((_, id), At (syn1, syn2)) => 
          let 
             (*[ val p_props: syn -> (Pos.t * Atom.ground_prop) list ]*)
-            fun p_props (Conj (syn1, syn2)) = p_props syn1 @ p_props syn2
-              | p_props syn = [ p_ground_prop syn psig ]
+            fun p_props syn =
+               case strip syn of 
+                  Conj (syn1, syn2) => p_props syn1 @ p_props syn2
+                | _ => [ p_ground_prop syn psig ]
          in 
             (Decl.DB (pos, 
                       (Symbol.fromValue id, 

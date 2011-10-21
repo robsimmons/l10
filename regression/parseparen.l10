@@ -1,3 +1,4 @@
+t: extensible.
 w: (world).
 a: ((((t)) -> ((rel @ w)))).
 (a X, (a B, ((a C, a D), a Z))) -> (((a (D)))).

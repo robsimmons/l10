@@ -1,0 +1,3 @@
+w: world.
+a: nat -> rel @ w.
+a 12 <- Ex X. a X, a X.

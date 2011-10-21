@@ -45,6 +45,7 @@ function lexmain : tok =
    "not"     => not   
    "world"   => world
    "type"    => ty
+   "extensible" => extensible
    "rel"     => rel
    '_        => uscore
    

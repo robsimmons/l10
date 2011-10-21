@@ -29,6 +29,7 @@ struct
     | NOT of Pos.t
     | WORLD of Pos.t
     | TYPE of Pos.t
+    | EXTENSIBLE of Pos.t
     | REL of Pos.t
     | USCORE of Pos.t
   
@@ -178,6 +179,7 @@ struct
       val not = simple #lexmain NOT
       val world = simple #lexmain WORLD
       val ty = simple #lexmain TYPE
+      val extensible = simple #lexmain EXTENSIBLE
       val rel = simple #lexmain REL
       val uscore = simple #lexmain USCORE
 

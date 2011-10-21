@@ -1,3 +1,4 @@
+t: extensible.
 w: world.
 a: t -> rel @ w.
 db = a (x @ y) @ w.

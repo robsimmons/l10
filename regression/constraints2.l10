@@ -1,5 +1,6 @@
 // Negated constraints: currently, this does not work.
 
+t: extensible.
 w: world.
 
 a: t -> t -> rel @ w.

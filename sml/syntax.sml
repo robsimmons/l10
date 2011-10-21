@@ -3,7 +3,6 @@
 
 structure Type = 
 struct
-   val t = Symbol.fromValue "t"
    val nat = Symbol.fromValue "nat"
    val string = Symbol.fromValue "string"
    val world = Symbol.fromValue "world" (* Pseudo-type for world names *)

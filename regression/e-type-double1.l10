@@ -1,5 +1,6 @@
 // Should be an error: relations and worlds inhabit the same namespace
 // Necessary for syntatic differentiation of rules and explicit dependencies
+t: extensible.
 w: world.
 foo: world.
 bar: world.

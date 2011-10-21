@@ -1,3 +1,4 @@
+t: extensible.
 w: world.
 wt: t -> world.
 wstring: string -> world.

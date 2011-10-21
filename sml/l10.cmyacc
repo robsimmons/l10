@@ -29,6 +29,7 @@ terminal MINUS of pos   precl 80
 terminal NOT of pos
 terminal WORLD of pos
 terminal TYPE of pos
+terminal EXTENSIBLE of pos
 terminal REL of pos
 terminal USCORE of pos
 
@@ -77,6 +78,7 @@ nonterminal Simp : syn =
    1:USCORE                       => Uscore
    1:WORLD                        => World
    1:TYPE                         => Type
+   1:EXTENSIBLE                   => Extensible
    1:REL                          => Rel
    1:NUM                          => Num
    1:STRING                       => String
