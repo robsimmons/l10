@@ -1,0 +1,4 @@
+w: string -> world.
+a: {X: string} rel @ w X.
+b: rel @ w "foo".
+(Ex X. a X) -> b.

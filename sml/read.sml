@@ -26,9 +26,9 @@ val stream_map = Stream.map
 fun load stream = 
    case stream_front stream of
       Stream.Nil => ()
-    | Stream.Cons (decl as (Decl.Rule rule), stream) => 
-         (* XXX Needs to bind the rule *and* the associated dependency *)
-         ( Tab.bind decl
+    | Stream.Cons (decl as (Decl.Rule (pos, rule, fv)), stream) => 
+         ( Tab.bind (Decl.Depend (pos, Worlds.ofRule rule, fv))
+         ; Tab.bind decl
          ; Decl.print decl 
          ; load stream)
     | Stream.Cons (decl, stream) => 
@@ -80,7 +80,9 @@ fun readfile filename =
            | Parser.SyntaxError (SOME pos, s) => 
                 print ("Parse error at " ^ Pos.toString pos ^ "\n" ^ s ^ ".\n")
            | Types.TypeError (pos, s) =>
-                print ("Type errror at " ^ Pos.toString pos ^ "\n" ^ s ^ ".\n")
+                print ("Type error at " ^ Pos.toString pos ^ "\n" ^ s ^ ".\n")
+           | Worlds.WorldsError (pos, s) =>
+                print ("World error at " ^ Pos.toString pos ^ "\n" ^ s ^ ".\n")
            | IO.Io {cause, function, name} =>
                 print ("I/O error trying to " ^ function ^ " " ^ name ^ "\n"
                        ^ exnMessage cause ^ "\n")
