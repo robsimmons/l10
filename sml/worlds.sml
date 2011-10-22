@@ -9,7 +9,7 @@ structure Worlds:> sig
    val ofProp: Pos.t * Atom.t -> Pos.t * Atom.t
   
    (*[ val ofRule: Rule.rule_t -> Decl.depend_t ]*)
-   val ofRule: Rule.t -> ((Pos.t * Atom.t) * (Pos.t * Atom.t) list)
+   val ofRule: Rule.t -> ((Pos.t * Atom.t) * (Pos.t * Prem.t) list)
 
 end = 
 struct
@@ -39,10 +39,10 @@ fun ofProp (pos, (a, terms)) =
    end
   
 (*[ val ofRule: Rule.rule_t -> Decl.depend_t ]*)
-fun ofRule (prems, conc :: concs) =
+fun ofRule ((prems, conc :: concs): Rule.t) =
    let 
       val world = ofProp conc
-      (*[ val checkconc: Pos.pos * Atom.prop_t -> unit ]*)
+      (*[ val checkconc: Pos.t * Atom.prop_t -> unit ]*)
       fun checkconc conc' = 
          let val world' = ofProp conc' in
             if Atom.eq (#2 world, #2 world') then ()
@@ -56,29 +56,31 @@ fun ofRule (prems, conc :: concs) =
                                               ^ Atom.toString (#2 conc)
                                               ^ "` with has associated world `"
                                               ^ Atom.toString (#2 world))
+         end
 
+      (*[ val ofPat: Pos.t -> Pat.pat_t -> Pat.wpat_t * SetX.set ]*)
       fun ofPat pos pat = 
          case pat of 
-            Pat.Atomic prop => (ofProp (pos, prop), Atom.fv (#2 prop))
+            Pat.Atom prop => 
+            let val (pos, world) = ofProp (pos, prop) in 
+               (Pat.Atom world, Atom.fv world)
+            end
           | Pat.Exists (x, SOME _, pat) => 
-            let val (world, fv) = ofPat pat in
+            let val (world, fv) = ofPat pos pat in
                if not (SetX.member fv x) then (world, fv)
                else raise WorldError (pos, "Local variable `"
-                                           ^ Symbol.toValue x "` used in a\
+                                           ^ Symbol.toValue x ^ "` used in a\
                                            \ world-sensitive position")
             end
       
-      fun pullPrem prem = 
-         case Prem of 
-            Prem.Normal (pos, pat) => SOME (#1 (ofPat pos pat))
-          | Prem.Negated (pos, pat) =>
-            (* This is one of many cases where *)
-            let val world = 
-SOME (#1 (ofPat pos pat))
-          | Prem.Binrel _ = NONE
+      (*[ val ofPrem: Pos.t * Prem.prem_t -> (Pos.t * Prem.wprem_t) option ]*)
+      fun ofPrem (pos, prem) = 
+         case prem of 
+            Prem.Normal pat => SOME (pos, Prem.Normal (#1 (ofPat pos pat)))
+          | Prem.Negated pat => SOME (pos, Prem.Negated (#1 (ofPat pos pat)))
+          | Prem.Binrel _ => NONE
    in
       ( app checkconc concs
-      ; (world, ))
+      ; (world, List.mapPartial ofPrem prems))
    end
-
 end

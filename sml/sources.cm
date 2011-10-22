@@ -5,7 +5,7 @@ Group is
    syntax.sml
    tab.sml
    types.sml
-   (* worlds.sml *)
+   worlds.sml
 
    l10.cmlex.sml
    lexer.sml
