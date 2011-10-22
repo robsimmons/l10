@@ -323,17 +323,24 @@ fun tc_world env (world as (_, (w, _))) =
    tc_atom env (Tab.lookup Tab.worlds w) world
 
 (*[ val tc_worlds: env -> 
-       ( (Pos.t * Atom.world) list -> env * (Pos.t * Atom.world_t) list
-       & (Pos.t * Atom.ground_world) list 
-            -> env * (Pos.t * Atom.ground_world) list) 
+       (Pos.t * Prem.wprem) list -> env * (Pos.t * Prem.wprem_t) list
 ]*)
 fun tc_worlds env [] = (env, [])
   | tc_worlds env (world :: worlds) = 
     let 
-       val (env', world') = tc_world env world
+       (*[ val f: Pat.wpat_t -> Prem.wprem_t ]*)
+       (*[ val world: Symbol.symbol * Term.term list ]*)
+       val (pos, f, world) = 
+          case world of
+             (pos, Prem.Normal (Pat.Atom world)) => (pos, (Prem.Normal (*[ <: Pat.wpat_t -> Prem.wprem_t ]*)), (world (*[ <: Atom.world ]*)))
+           | (pos, Prem.Negated (Pat.Atom world)) => (pos, (Prem.Negated (*[ <: Pat.wpat_t -> Prem.wprem_t ]*)), (world (*[ <: Atom.world ]*)))
+       val (env', (pos, world')) = tc_world env (pos, world)
        val (env'', worlds') = tc_worlds env' worlds
+       (*[ val world: Pos.t * Prem.wprem_t ]*)
+       val world = (pos, (f (*[ <: Pat.wpat_t -> Prem.wprem_t ]*)) 
+ ((Pat.Atom (*[ <: Atom.world_t -> Pat.wpat_t ]*)) world'))
     in
-       (env'', world' :: worlds')
+       (env'', world :: worlds')
     end
 
 (*[ val tc_prop: env ->

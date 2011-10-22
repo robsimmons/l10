@@ -430,9 +430,12 @@ end = struct
              NONE => (Decl.Rule (pos, p_rule syn psig, NONE), psig)
            | SOME (p, world) => 
              let 
-                (*[ val p_worlds: syn -> (Pos.t * Atom.world) list ]*)
+                (*[ val p_worlds: syn -> (Pos.t * Prem.wprem) list ]*)
                 fun p_worlds (Conj (syn1, syn2)) = p_worlds syn1 @ p_worlds syn2
-                  | p_worlds syn = [ p_world syn psig ]
+                  | p_worlds syn = 
+                    let val (pos, world) = p_world syn psig in
+                       [ (pos, Prem.Normal (Pat.Atom world)) ]
+                    end
              in
                 (Decl.Depend (pos, ((p, world), p_worlds syn1), NONE), psig)
              end)

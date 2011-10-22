@@ -70,7 +70,7 @@ struct
    (*[ val depends: depend list tab ]*)
    val depends: 
       ( Pos.t 
-      * ((Pos.t * Atom.t) * (Pos.t * Atom.t) list)
+      * ((Pos.t * Atom.t) * (Pos.t * Prem.t) list)
       * Type.env option) list tab = 
       (HTabX.table  
          (*[ <: int -> (Pos.t * Decl.depend_t * Type.env some) list tab ]*))

@@ -204,6 +204,10 @@ structure Pat = struct
    datasort pat_t = 
       Atom of Atom.prop_t
     | Exists of Symbol.symbol * Symbol.symbol some * pat_t
+
+   datasort wpat = Atom of Atom.world
+
+   datasort wpat_t = Atom of Atom.world_t
 ]*)
 
    (*[ val fv: pat -> SetX.set ]*)
@@ -254,6 +258,10 @@ structure Prem = struct
       Normal of Pat.pat_t
     | Negated of Pat.pat_t
     | Binrel of Binrel.t * Term.term_t * Term.term_t * Symbol.symbol some
+
+   datasort wprem = Normal of Pat.wpat | Negated of Pat.wpat
+   
+   datasort wprem_t = Normal of Pat.wpat_t | Negated of Pat.wpat_t
 ]*)
 
    (*[ val fv: prem -> SetX.set ]*)
@@ -380,10 +388,10 @@ structure Decl = struct
           * (Pos.t * Atom.ground_world) ]*)
 
    (*[ sortdef depend = 
-          (Pos.t * Atom.world) * (Pos.t * Atom.world) list ]*)
+          (Pos.t * Atom.world) * (Pos.t * Prem.wprem) list ]*)
 
    (*[ sortdef depend_t = 
-          (Pos.t * Atom.world_t) * (Pos.t * Atom.world_t) list ]*)
+          (Pos.t * Atom.world_t) * (Pos.t * Prem.wprem_t) list ]*)
 
    datatype t = 
       World of Pos.t * Symbol.symbol * Class.t
@@ -392,7 +400,7 @@ structure Decl = struct
     | Type of Pos.t * Symbol.symbol * Class.t
     | DB of Pos.t * (Symbol.symbol * (Pos.t * Atom.t) list * (Pos.t * Atom.t))
     | Depend of Pos.t 
-         * ((Pos.t * Atom.t) * (Pos.t * Atom.t) list)
+         * ((Pos.t * Atom.t) * (Pos.t * Prem.t) list)
          * Type.env option
     | Rule of Pos.t * Rule.t * Type.env option
     | Query of Pos.t * Symbol.symbol * Atom.t
@@ -439,7 +447,7 @@ val print =
               ^ Atom.toString (#2 world) ^ " #-}\n")
   | Depend (_, (conc, prems), _) => 
        ( print (Atom.toString (#2 conc) ^ " <- ")
-       ; print (String.concatWith ", " (map (Atom.toString o #2) prems))
+       ; print (String.concatWith ", " (map (Prem.toString o #2) prems))
        ; print ".\n")
   | Rule (_, (prems, concs), _) =>
        ( print (String.concatWith ", " (map (Prem.toString o #2) prems))
