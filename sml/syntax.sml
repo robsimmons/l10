@@ -165,10 +165,10 @@ structure Atom = struct
    (*[ sortdef moded = Symbol.symbol * Term.moded list ]*) 
    (*[ sortdef moded_t = Symbol.symbol * Term.moded_t list ]*) 
 
-   (*[ val fv: world_t -> SetX.set & prop_t -> SetX.set ]*)
+   (*[ val fv: (world & prop) -> SetX.set ]*)
    fun fv (_, terms) = Term.fvs terms
 
-   (*[ val fvs: world_t list -> SetX.set & prop_t list -> SetX.set ]*)
+   (*[ val fvs: (world & prop) list -> SetX.set ]*)
    fun fvs atoms = 
       List.foldr (fn (atom, set) => SetX.union (fv atom) set) SetX.empty atoms
 
@@ -210,7 +210,7 @@ structure Pat = struct
    datasort wpat_t = Atom of Atom.world_t
 ]*)
 
-   (*[ val fv: pat_t -> SetX.set ]*)
+   (*[ val fv: pat -> SetX.set ]*)
    fun fv pat = 
       case pat of 
          Atom atomic => Atom.fv atomic
@@ -218,7 +218,7 @@ structure Pat = struct
          let val vars = fv pat 
          in if SetX.member vars x then SetX.remove vars x else vars end
 
-   (*[ val fvs: pat_t list -> SetX.set ]*)
+   (*[ val fvs: pat list -> SetX.set ]*)
    fun fvs pats = 
       foldl (fn (x, y) => SetX.union x y) SetX.empty (map fv pats)
 
@@ -264,7 +264,7 @@ structure Prem = struct
    datasort wprem_t = Normal of Pat.wpat_t | Negated of Pat.wpat_t
 ]*)
 
-   (*[ val fv: prem_t -> SetX.set ]*)
+   (*[ val fv: prem -> SetX.set ]*)
    fun fv prem = 
       case prem of 
          Normal pat => Pat.fv pat
@@ -289,7 +289,7 @@ structure Rule = struct
    (*[ sortdef rule_t = 
           (Pos.t * Prem.prem_t) list * (Pos.t * Atom.prop_t) conslist ]*)
 
-   (*[ val fv: rule_t -> SetX.set ]*)
+   (*[ val fv: rule -> SetX.set ]*)
    fun fv ((prems, concs): t) =
       SetX.union 
          (List.foldl (fn (x, y) => SetX.union x y)
