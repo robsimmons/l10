@@ -103,12 +103,12 @@ struct
        | Mode (m, _) => Mode.toString m
        | Root (f, terms) => 
          if Symbol.eq (f, Symbol.fromValue "_plus") andalso length terms = 2
-         then ("(" ^ toString (hd terms) 
-               ^ " + " ^ toString (hd (tl terms)) ^ ")")
-         else ("(" 
-               ^ Symbol.toValue f 
-               ^ String.concat (map (fn term => " " ^ toString term) terms)
-               ^ ")")
+         then ( "(" ^ toString (hd terms) 
+              ^ " + " ^ toString (hd (tl terms)) ^ ")")
+         else ( "(" 
+              ^ Symbol.toValue f 
+              ^ String.concat (map (fn term => " " ^ toString term) terms)
+              ^ ")")
 
    (*[ sortdef subst = term_t DictX.dict ]*)
   
@@ -124,14 +124,14 @@ struct
        | Var (NONE, _) => NONE
        | Var (SOME x, _) => DictX.find map x
        | Root (f, terms) =>  
-         (case substs (map, terms) of
-             NONE => NONE
-           | SOME terms => SOME (Root (f, terms)))
+           (case substs (map, terms) of
+               NONE => NONE
+             | SOME terms => SOME (Root (f, terms)))
    and substs (map, []) = SOME []
      | substs (map, term :: terms) = 
-       case (subst (map, term), substs (map, terms)) of 
-          (SOME term, SOME terms) => SOME (term :: terms) 
-        | _ => NONE
+          case (subst (map, term), substs (map, terms)) of 
+             (SOME term, SOME terms) => SOME (term :: terms) 
+           | _ => NONE
 
    (* Partial substition *)
    (*[ val sub: (term * Symbol.symbol) -> term -> term ]*)
@@ -183,10 +183,10 @@ structure Atom = struct
    (*[ val toString: t -> string ]*) 
    fun toString' parens (w, []) = Symbol.toValue w
      | toString' parens (w, terms) =
-       (if parens then "(" else "")
-       ^ Symbol.toValue w 
-       ^ String.concat (map (fn term => " " ^ Term.toString term) terms)
-       ^ (if parens then ")" else "")
+          ( if parens then "(" else "")
+          ^ Symbol.toValue w 
+          ^ String.concat (map (fn term => " " ^ Term.toString term) terms)
+          ^ (if parens then ")" else "")
    val toString = toString' false
 end
 
@@ -216,7 +216,8 @@ structure Pat = struct
          Atom atomic => Atom.fv atomic
        | Exists (x, _, pat) => 
          let val vars = fv pat 
-         in if SetX.member vars x then SetX.remove vars x else vars end
+         in if SetX.member vars x then SetX.remove vars x else vars 
+         end
 
    (*[ val fvs: pat_t list -> SetX.set ]*)
    fun fvs pats = 
@@ -226,7 +227,7 @@ structure Pat = struct
       case pat of
          Atom atm => Atom.toString' false atm
        | Exists (x, NONE, pat0) => 
-         "(Ex " ^ Symbol.toValue x ^ ". " ^ toString pat0 ^ ")"
+            "(Ex " ^ Symbol.toValue x ^ ". " ^ toString pat0 ^ ")"
        | Exists (x, SOME t, pat0) => 
          "(Ex " ^ Symbol.toValue x ^ ":" ^ Symbol.toValue t ^ ". "
          ^ toString pat0 ^ ")"
@@ -277,9 +278,9 @@ structure Prem = struct
          Normal pat => Pat.toString pat
        | Negated pat => "not (" ^ Pat.toString pat ^ ")"
        | Binrel (br, term1, term2, _) => 
-         Term.toString term1 ^ " "
-         ^ Binrel.toString br ^ " "
-         ^ Term.toString term2
+          ( Term.toString term1 ^ " "
+          ^ Binrel.toString br ^ " "
+          ^ Term.toString term2
 end
 
 structure Rule = struct
@@ -376,9 +377,10 @@ struct
        | Extensible => "extensible"
        | Arrow (t, typ) => Symbol.toValue t ^ " -> " ^ toString typ
        | Pi (x, NONE, typ) => 
-         "{" ^ Symbol.toValue x ^ "} " ^ toString typ
+            "{" ^ Symbol.toValue x ^ "} " ^ toString typ
        | Pi (x, SOME t, typ) => 
-         "{" ^ Symbol.toValue x ^ ": " ^ Symbol.toValue t ^ "} " ^ toString typ
+          ( "{" ^ Symbol.toValue x ^ ": " ^ Symbol.toValue t ^ "} " 
+          ^ toString typ)
 end
 
 structure Decl = struct
@@ -399,7 +401,8 @@ structure Decl = struct
     | Rel of Pos.t * Symbol.symbol * Class.t
     | Type of Pos.t * Symbol.symbol * Class.t
     | DB of Pos.t * (Symbol.symbol * (Pos.t * Atom.t) list * (Pos.t * Atom.t))
-    | Depend of Pos.t 
+    | Depend of 
+         Pos.t 
          * ((Pos.t * Atom.t) * (Pos.t * Prem.t) list)
          * Type.env option
     | Rule of Pos.t * Rule.t * Type.env option
@@ -443,8 +446,8 @@ val print =
   | Type (_, t, class) => 
        print (Symbol.toValue t ^ ": " ^ Class.toString class ^ ".\n")
   | DB (_, (db, _, world)) => 
-       print ("{-# DATABASE " ^ Symbol.toValue db ^ " (...) @ " 
-              ^ Atom.toString (#2 world) ^ " #-}\n")
+       print ( "{-# DATABASE " ^ Symbol.toValue db ^ " (...) @ " 
+             ^ Atom.toString (#2 world) ^ " #-}\n")
   | Depend (_, (conc, prems), _) => 
        ( print (Atom.toString (#2 conc) ^ " <- ")
        ; print (String.concatWith ", " (map (Prem.toString o #2) prems))
