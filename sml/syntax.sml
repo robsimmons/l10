@@ -280,7 +280,7 @@ structure Prem = struct
        | Binrel (br, term1, term2, _) => 
           ( Term.toString term1 ^ " "
           ^ Binrel.toString br ^ " "
-          ^ Term.toString term2
+          ^ Term.toString term2)
 end
 
 structure Rule = struct
@@ -449,16 +449,16 @@ val print =
        print ( "{-# DATABASE " ^ Symbol.toValue db ^ " (...) @ " 
              ^ Atom.toString (#2 world) ^ " #-}\n")
   | Depend (_, (conc, prems), _) => 
-       ( print (Atom.toString (#2 conc) ^ " <- ")
-       ; print (String.concatWith ", " (map (Prem.toString o #2) prems))
-       ; print ".\n")
+     ( print (Atom.toString (#2 conc) ^ " <- ")
+     ; print (String.concatWith ", " (map (Prem.toString o #2) prems))
+     ; print ".\n")
   | Rule (_, (prems, concs), _) =>
-       ( print (String.concatWith ", " (map (Prem.toString o #2) prems))
-       ; print " -> "
-       ; print (String.concatWith ", " (map (Atom.toString o #2) concs))
-       ; print ".\n")
+     ( print (String.concatWith ", " (map (Prem.toString o #2) prems))
+     ; print " -> "
+     ; print (String.concatWith ", " (map (Atom.toString o #2) concs))
+     ; print ".\n")
   | Query (_, qry, mode) =>
-       ( print ("{-# QUERY " ^ Symbol.toValue qry ^ " ")
-       ; print (Atom.toString mode ^ " #-}\n"))
+     ( print ("{-# QUERY " ^ Symbol.toValue qry ^ " ")
+     ; print (Atom.toString mode ^ " #-}\n"))
 end
 

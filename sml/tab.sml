@@ -4,65 +4,66 @@
 (* All stored information from the signature should be referenced here 
  * and reset with the master Reset.reset () *)
 
-(* XXX INTERFACE - this structure exposes that everything is a HTabX.table, 
- * but the invariants will only be maintained if they are used as Tab.tabs. *)
+(* XXX INTERFACE - this structure exposes that everything is a 
+ * SymbolHashTable.table, but the invariants will only be maintained if they 
+ * are used as Tab.tabs. *)
 
 structure Tab = 
 struct
-   type 'a tab = 'a HTabX.table
+   type 'a tab = 'a SymbolHashTable.table
 
 
    (* READING *)
 
    (*[ val app: 'a tab -> (Symbol.symbol * 'a -> unit) -> unit ]*)
-   fun app tab f = HTabX.app f tab
+   fun app tab f = SymbolHashTable.app f tab
 
    (*[ val find: 'a tab -> Symbol.symbol -> 'a option ]*)
-   fun find tab x = HTabX.find tab x
+   fun find tab x = SymbolHashTable.find tab x
 
    (*[ val list: 'a tab -> (Symbol.symbol * 'a) list ]*)
-   fun list tab = HTabX.toList tab
+   fun list tab = SymbolHashTable.toList tab
 
    (*[ val fold: (Symbol.symbol * 'a * 'b -> 'b) -> 'b -> 'a tab -> 'b ]*)
-   fun fold f x tab = HTabX.fold f x tab
+   fun fold f x tab = SymbolHashTable.fold f x tab
 
    (*[ val lookup: 'a tab -> Symbol.symbol -> 'a ]*)
-   fun lookup tab x = HTabX.lookup tab x
+   fun lookup tab x = SymbolHashTable.lookup tab x
 
    (*[ val lookup_list: 'a list tab -> Symbol.symbol -> 'a list ]*)
    fun lookup_list tab x =
-      case HTabX.find tab x of
+      case SymbolHashTable.find tab x of
          NONE => []
        | SOME values => values
 
    (*[ val member: 'a tab -> Symbol.symbol -> bool ]*)
-   fun member tab x = HTabX.member tab x
+   fun member tab x = SymbolHashTable.member tab x
 
    (*[ val range: 'a tab -> 'a list ]*)
-   fun range tab = map #2 (HTabX.toList tab)
+   fun range tab = map #2 (SymbolHashTable.toList tab)
 
 
    (* SIGNATURE TABLES *)
 
    (*[ val types: Class.knd tab ]*)
-   val types: Class.t tab = HTabX.table 1
+   val types: Class.t tab = SymbolHashTable.table 1
 
    (*[ val worlds: Class.world tab ]*)
-   val worlds: Class.t tab = HTabX.table 1
+   val worlds: Class.t tab = SymbolHashTable.table 1
 
    (*[ val rels: Class.rel_t tab ]*)
-   val rels: Class.t tab = HTabX.table 1
+   val rels: Class.t tab = SymbolHashTable.table 1
 
    (*[ val consts: Class.typ tab ]*)
-   val consts: Class.t tab = HTabX.table 1
+   val consts: Class.t tab = SymbolHashTable.table 1
 
    (* Reverse lookup: all the constructors used to make a term of a type *)
    (*[ val typecon: Symbol.symbol list tab ]*)
-   val typecon: Symbol.symbol list tab = HTabX.table 1
+   val typecon: Symbol.symbol list tab = SymbolHashTable.table 1
 
    (*[ val dbs: Decl.db tab ]*)
    val dbs: (Symbol.symbol * (Pos.t * Atom.t) list * (Pos.t * Atom.t)) tab =
-      HTabX.table 1
+      SymbolHashTable.table 1
 
    (* Both dependencies and rules are indexed by the "head world" *)
 
@@ -72,19 +73,19 @@ struct
       ( Pos.t 
       * ((Pos.t * Atom.t) * (Pos.t * Prem.t) list)
       * Type.env option) list tab = 
-      (HTabX.table  
+      (SymbolHashTable.table  
          (*[ <: int -> (Pos.t * Decl.depend_t * Type.env some) list tab ]*))
          1 
 
    (*[ sortdef rule = (Pos.t * Rule.rule_t * Type.env some) ]*)
    (*[ val rules: rule list tab ]*)
    val rules: (Pos.t * Rule.t * Type.env option) list tab =
-      (HTabX.table
+      (SymbolHashTable.table
          (*[ <: int -> (Pos.t * Rule.rule_t * Type.env some) list tab ]*))
          1
 
    (*[ val queries: (Pos.t * Atom.moded_t) tab ]*)
-   val queries: (Pos.t * Atom.t) tab = HTabX.table 1
+   val queries: (Pos.t * Atom.t) tab = SymbolHashTable.table 1
 
 
    (* WRITING *)
@@ -93,37 +94,39 @@ struct
       fn tab =>
       fn key =>
       fn value =>
-      HTabX.insertMerge tab key [ value ] (fn values => value :: values)
+      SymbolHashTable.insertMerge tab key [ value ] 
+         (fn values => value :: values)
 
    (*[ val bind: Decl.decl_t -> unit ]*)
    (* Loads a (presumed to be fully checked) declaration into the database. *)
    fun bind (Decl.World (_, w, class)) = 
-         ( HTabX.insert worlds w class
-         ; HTabX.insert consts w (Class.worldToTyp class))
+        ( SymbolHashTable.insert worlds w class
+        ; SymbolHashTable.insert consts w (Class.worldToTyp class))
      | bind (Decl.Const (_, c, class)) =
-         let val t = Class.base class in  
-            ( HTabX.insert consts c class
-            ; merge typecon t c)
-         end
+       let val t = Class.base class 
+       in  
+        ( SymbolHashTable.insert consts c class
+        ; merge typecon t c)
+       end
      | bind (Decl.Rel (_, r, class)) = 
-         ( HTabX.insert rels r class 
-         ; HTabX.insert consts r (Class.relToTyp class))
-     | bind (Decl.Type (_, a, class)) = HTabX.insert types a class
-     | bind (Decl.DB (pos, (db as (d, _, _)))) = HTabX.insert dbs d db
+        ( SymbolHashTable.insert rels r class 
+        ; SymbolHashTable.insert consts r (Class.relToTyp class))
+     | bind (Decl.Type (_, a, class)) = SymbolHashTable.insert types a class
+     | bind (Decl.DB (pos, (db as (d, _, _)))) = SymbolHashTable.insert dbs d db
      | bind (Decl.Depend (depend as (_, ((_, (w, _)), _), _))) =
          (merge (*[ <: depend list tab -> Symbol.symbol -> depend -> unit ]*)) 
-            depends w depend
+             depends w depend
      | bind (Decl.Rule (rule as (_, (_, concs), _))) = 
-         let
-            val (_, (r, _)) = hd concs
-            val class = HTabX.lookup rels r
-            val (w, _) = Class.rel class
-         in 
-            (merge (*[ <: rule list tab -> Symbol.symbol -> rule -> unit ]*))
-               rules w rule
-         end
+       let
+          val (_, (r, _)) = hd concs
+          val class = SymbolHashTable.lookup rels r
+          val (w, _) = Class.rel class
+       in 
+         (merge (*[ <: rule list tab -> Symbol.symbol -> rule -> unit ]*))
+             rules w rule
+       end
      | bind (Decl.Query (pos, m, mode)) = 
-         HTabX.insert queries m (pos, mode)
+          SymbolHashTable.insert queries m (pos, mode)
             
    local 
       val coord = Coord.init "?"
@@ -140,16 +143,16 @@ struct
       val n = 1000 
    in
    fun reset () = 
-      ( HTabX.reset types n
-      ; HTabX.reset worlds n
-      ; HTabX.reset rels n
-      ; HTabX.reset consts n
-      ; HTabX.reset typecon n
-      ; bind plus
-      ; bind (Decl.Type (pos, Type.nat, Class.Builtin))
-      ; bind (Decl.Type (pos, Type.string, Class.Builtin))
-      ; bind (Decl.Type (pos, Type.world, Class.Type))
-      ; bind (Decl.Type (pos, Type.rel, Class.Type)))
+    ( SymbolHashTable.reset types n
+    ; SymbolHashTable.reset worlds n
+    ; SymbolHashTable.reset rels n
+    ; SymbolHashTable.reset consts n
+    ; SymbolHashTable.reset typecon n
+    ; bind plus
+    ; bind (Decl.Type (pos, Type.nat, Class.Builtin))
+    ; bind (Decl.Type (pos, Type.string, Class.Builtin))
+    ; bind (Decl.Type (pos, Type.world, Class.Type))
+    ; bind (Decl.Type (pos, Type.rel, Class.Type)))
    end
 
    val () = reset ()

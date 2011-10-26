@@ -1,8 +1,8 @@
 (* Type checking *)
 (* Robert J. Simmons *)
 
-structure Types :> sig
-  
+structure Types :> 
+sig
    exception TypeError of Pos.t * string
 
    (*[ val check: Decl.decl -> Decl.decl_t ]*)
@@ -10,8 +10,8 @@ structure Types :> sig
     * and simple types are all respected, and prevents duplicate definitions. 
     * May add new constants of extensible type to Tab.consts. *)
    val check: Decl.t -> Decl.t
-
-end = struct
+end =
+struct
 
 exception Invariant
 exception TypeError of Pos.t * string
@@ -22,61 +22,59 @@ exception TypeError of Pos.t * string
 val illegal = ref SetX.empty 
 val () = 
    List.app
-   (fn str => illegal := SetX.insert (!illegal) (Symbol.fromValue str))
-   [
-   "abstype",
-   "andalso",
-   "as",
-   "case",
-   "datatype",
-   "do",
-   "else",
-   "end",
-   "exception",
-   "fn",
-   "fun",
-   "functor",
-   "handle",
-   "if",
-   "in",
-   "infix",
-   "infixr",
-   "include",
-   "let",
-   "local",
-   "nonfix",
-   "of",
-   "op",
-   "open",
-   "orelse",
-   "raise",
-   "sharing",
-   "sig",
-   "signature",
-   "struct",
-   "structure",
-   "then",
-   "type",
-   "val",
-   "where",
-   "while",
-   "withtype",
+      (fn str => illegal := SetX.insert (!illegal) (Symbol.fromValue str))
+      ([ "abstype"
+       , "andalso"
+       , "as"
+       , "case"
+       , "datatype"
+       , "do"
+       , "else"
+       , "end"
+       , "exception"
+       , "fn"
+       , "fun"
+       , "functor"
+       , "handle"
+       , "if"
+       , "in"
+       , "infix"
+       , "infixr"
+       , "include"
+       , "let"
+       , "local"
+       , "nonfix"
+       , "of"
+       , "op"
+       , "open"
+       , "orelse"
+       , "raise"
+       , "sharing"
+       , "sig"
+       , "signature"
+       , "struct"
+       , "structure"
+       , "then"
+       , "type"
+       , "val"
+       , "where"
+       , "while"
+       , "withtype"
 
-   "before",
-   "div",
-   "mod",
-   "o",
+       , "before"
+       , "div"
+       , "mod"
+       , "o"
 
-   "int",
-   "list",
-   "ord",
-   "symbol",
+       , "int"
+       , "list"
+       , "ord"
+       , "symbol"
 
-   "true",
-   "false",
-   "nil",
-   "ref"
-   ]
+       , "true"
+       , "false"
+       , "nil"
+       , "ref"])
 
 (* Some classifiers *)
 fun check_illegal pos x thing = 
@@ -89,26 +87,26 @@ fun check_illegal pos x thing =
 (* Avoid double definition for the namespace that is shared by everything
  * except for database declarations. *)
 fun tc_namespace pos syntax x = 
-   let 
-      fun doubledef s = 
-         syntax ^ " `" ^ Symbol.toValue x ^ "` already declared as a " ^ s
-      fun illegalId s = 
-         syntax ^ " identifier `" ^ Symbol.toValue x ^ "` contains " ^ s
-   in 
-      if Tab.member Tab.types x
-      then raise TypeError (pos, doubledef "type")
-      else if Tab.member Tab.worlds x
-      then raise TypeError (pos, doubledef "world")
-      else if Tab.member Tab.rels x
-      then raise TypeError (pos, doubledef "relation")
-      else if Tab.member Tab.consts x
-      then raise TypeError (pos, doubledef "term constructor")
-      else if String.isSubstring "_" (Symbol.toValue x)
-      then raise TypeError (pos, illegalId "underscore")
-      else if String.isSubstring "'" (Symbol.toValue x)
-      then raise TypeError (pos, illegalId "single-quote")
-      else ()
-   end
+let 
+   fun doubledef s = 
+      syntax ^ " `" ^ Symbol.toValue x ^ "` already declared as a " ^ s
+   fun illegalId s = 
+      syntax ^ " identifier `" ^ Symbol.toValue x ^ "` contains " ^ s
+in 
+   if Tab.member Tab.types x
+   then raise TypeError (pos, doubledef "type")
+   else if Tab.member Tab.worlds x
+   then raise TypeError (pos, doubledef "world")
+   else if Tab.member Tab.rels x
+   then raise TypeError (pos, doubledef "relation")
+   else if Tab.member Tab.consts x
+   then raise TypeError (pos, doubledef "term constructor")
+   else if String.isSubstring "_" (Symbol.toValue x)
+   then raise TypeError (pos, illegalId "underscore")
+   else if String.isSubstring "'" (Symbol.toValue x)
+   then raise TypeError (pos, illegalId "single-quote")
+   else ()
+end
 
 (* == Types == *)
 
@@ -122,15 +120,16 @@ fun tc_t pos t =
 (* Utility function for requiring two types to be equal *)
 fun require pos typ1 typ2 = 
    if Symbol.eq (typ1, typ2) then () 
-   else raise TypeError (pos, "Expected a term of type `" ^ Symbol.toValue typ1 
+   else raise TypeError (pos, ( "Expected a term of type `" 
+                              ^ Symbol.toValue typ1 
                               ^ "`, but found a constructor of type `" 
-                              ^ Symbol.toValue typ2 ^ "`")
+                              ^ Symbol.toValue typ2 ^ "`"))
 
 (*[ good_env: Pos.t -> env -> Type.env ]*)
 fun good_env pos env = 
    DictX.map
       (fn NONE => (* Shouldn't ever take this branch -rjs Oct 21 2011 *)
-          raise TypeError (pos, "Some types for free variables unknown")
+             raise TypeError (pos, "Some types for free variables unknown")
         | SOME t => t)
       env
 
@@ -164,106 +163,103 @@ fun good_env pos env =
           & Term.ground list -> env * Symbol.symbol * Term.ground list))]*)
 
 fun tc_term pos env typ term = 
-   case term of  
+  (case term of  
       Term.SymConst c => 
-      (case Tab.find Tab.consts c of 
-          NONE => (case Tab.lookup Tab.types typ of
-                      Class.Extensible =>  
-                         ( Tab.bind (Decl.Const (pos, c, Class.Base typ))
-                         ; (env, Term.SymConst c))
-                    | _ => raise TypeError (pos, "Constant `"
-                                                 ^ Symbol.toValue c
-                                                 ^ "` not declared and type `"
-                                                 ^ Symbol.toValue typ 
-                                                 ^ "` not extensible"))
-        | SOME (Class.Base typ') => 
-             if Symbol.eq (typ, typ') then (env, Term.SymConst c)
-             else raise TypeError (pos, "Constant `" ^ Symbol.toValue c 
-                                        ^ "` has type `" ^ Symbol.toValue typ'
-                                        ^ "`, but a term of type `" 
-                                        ^ Symbol.toValue typ
-                                        ^ "` was expected")
-        | SOME class => 
-             raise TypeError (pos, "Function symbol `" ^ Symbol.toValue c
-                                   ^ "` expected " 
-                                   ^ Int.toString (Class.arrows class) 
-                                   ^ " argument(s), was given none"))
+        (case Tab.find Tab.consts c of 
+            NONE => 
+              (case Tab.lookup Tab.types typ of
+                  Class.Extensible =>  
+                   ( Tab.bind (Decl.Const (pos, c, Class.Base typ))
+                   ; (env, Term.SymConst c))
+                | _ => raise TypeError (pos, ( "Constant `"
+                                             ^ Symbol.toValue c
+                                             ^ "` not declared and type `"
+                                             ^ Symbol.toValue typ 
+                                             ^ "` not extensible")))
+          | SOME (Class.Base typ') => 
+               if Symbol.eq (typ, typ') then (env, Term.SymConst c)
+               else raise TypeError (pos, ( "Constant `" ^ Symbol.toValue c 
+                                          ^ "` has type `" 
+                                          ^ Symbol.toValue typ'
+                                          ^ "`, but a term of type `" 
+                                          ^ Symbol.toValue typ
+                                          ^ "` was expected"))
+          | SOME class => 
+               raise TypeError (pos, ( "Function symbol `" ^ Symbol.toValue c
+                                     ^ "` expected " 
+                                     ^ Int.toString (Class.arrows class) 
+                                     ^ " argument(s), was given none")))
     | Term.NatConst n => (require pos typ Type.nat; (env, Term.NatConst n))
     | Term.StrConst s => (require pos typ Type.string; (env, Term.StrConst s))
     | Term.Root (f, spine) => 
-      (case Tab.find Tab.consts f of
-          NONE => raise TypeError (pos, "Function symbol `" ^ Symbol.toValue f
-                                        ^ "` not defined")
-        | SOME class => 
-          let 
-             val (env', typ', spine_t) = tc_spine pos env f class spine
-          in 
-             if Symbol.eq (typ, typ') 
-             then (env', Term.Root (f, spine_t))
-             else raise TypeError (pos, "Term `" ^ Symbol.toValue f 
-                                        ^ " ...` has type `" 
-                                        ^ Symbol.toValue typ'
-                                        ^ "`, but a term of type `" 
-                                        ^ Symbol.toValue typ
-                                        ^ "` was expected")
-          end)
+        (case Tab.find Tab.consts f of
+            NONE => raise TypeError (pos, ( "Function symbol `" 
+                                          ^ Symbol.toValue f
+                                          ^ "` not defined"))
+          | SOME class => 
+            let 
+               val (env', typ', spine_t) = tc_spine pos env f class spine
+            in 
+               if Symbol.eq (typ, typ') 
+               then (env', Term.Root (f, spine_t))
+               else raise TypeError (pos, ( "Term `" ^ Symbol.toValue f 
+                                          ^ " ...` has type `" 
+                                          ^ Symbol.toValue typ'
+                                          ^ "`, but a term of type `" 
+                                          ^ Symbol.toValue typ
+                                          ^ "` was expected"))
+            end)
     | Term.Var (NONE, NONE) => (env, Term.Var (NONE, SOME typ))
     | Term.Var (SOME x, NONE) => 
-      (case DictX.find env x of
-          NONE => 
-             (DictX.insert env x (SOME typ), Term.Var (SOME x, SOME typ))
-        | SOME NONE => 
-             (DictX.insert env x (SOME typ), Term.Var (SOME x, SOME typ))
-        | SOME (SOME typ') => 
-             if Symbol.eq (typ, typ') 
-             then (env, Term.Var (SOME x, SOME typ))
-             else raise TypeError (pos, "Variable `" ^ Symbol.toValue x
-                                        ^ "` elsewhere given type `" 
-                                        ^ Symbol.toValue typ' ^ "`, but here\
-                                        \ a term of type `" 
-                                        ^ Symbol.toValue typ 
-                                        ^ "` was expected"))
-    | Term.Mode (m, NONE) => (env, Term.Mode (m, SOME typ))
+        (case DictX.find env x of
+            NONE => 
+               (DictX.insert env x (SOME typ), Term.Var (SOME x, SOME typ))
+          | SOME NONE => 
+               (DictX.insert env x (SOME typ), Term.Var (SOME x, SOME typ))
+          | SOME (SOME typ') => 
+               if Symbol.eq (typ, typ') 
+               then (env, Term.Var (SOME x, SOME typ))
+               else raise TypeError (pos, ( "Variable `" ^ Symbol.toValue x
+                                          ^ "` elsewhere given type `" 
+                                          ^ Symbol.toValue typ' ^ "`, but here\
+                                          \ a term of type `" 
+                                          ^ Symbol.toValue typ 
+                                          ^ "` was expected")))
+    | Term.Mode (m, NONE) => (env, Term.Mode (m, SOME typ)))
 
-(* RJS Oct 18 2011 - is it okay that I'm leaving out the part where I 
- * substitue pi-bound types into the kind? This is, as a result, basically just
- * doing simple type checking, but I think that's what I want to be doing; 
- * the substitution bit will happen later on when I build atomic worlds from
- * atomic props in mode.sml. *)
 and tc_spine pos env f class terms = 
-   let fun toomany w = 
-         TypeError (pos, w ^ " `" ^ Symbol.toValue f 
-                         ^ "` given " ^ Int.toString (length terms) 
-                         ^ " too many arguments")
-   in 
-      case (class, terms) of 
-         (Class.Base t', []) => (env, t', [])
-       | (Class.World, []) => (env, Type.world, [])
-       | (Class.Rel _, []) => (env, Type.rel, [])
-       | (Class.Arrow (t, class), term1 :: terms) =>
-         let 
-            val (env', term1') = tc_term pos env t term1 
-            val (env'', t', terms') = tc_spine pos env' f class terms
-         in
-            (env'', t', term1' :: terms')
-         end
-       | (Class.Pi (_, SOME t, class), term1 :: terms) =>
-         let 
-            val (env', term1') = tc_term pos env t term1 
-            val (env'', t', terms') = tc_spine pos env' f class terms
-         in
-            (env'', t', term1' :: terms')
-         end
-       | (Class.Base _, _) => raise toomany "Function symbol" 
-       | (Class.World, _) => raise toomany "World "
-       | (Class.Rel _, _) => raise toomany "Predicate "
-       | (Class.Arrow (t, class), []) =>
-            raise TypeError (pos, "Not enough arguments for `" 
-                                  ^ Symbol.toValue f ^ "`")
-       | (Class.Pi (_, SOME t, class), []) =>
-            raise TypeError (pos, "Not enough arguments for `" 
-                                  ^ Symbol.toValue f ^ "`")
-   end
+let fun toomany w = 
+       TypeError (pos, ( w ^ " `" ^ Symbol.toValue f 
+                       ^ "` given " ^ Int.toString (length terms) 
+                       ^ " too many arguments"))
+in case (class, terms) of 
+      (Class.Base t', []) => (env, t', [])
+    | (Class.World, []) => (env, Type.world, [])
+    | (Class.Rel _, []) => (env, Type.rel, [])
+    | (Class.Arrow (t, class), term1 :: terms) =>
+      let 
+         val (env', term1') = tc_term pos env t term1 
+         val (env'', t', terms') = tc_spine pos env' f class terms
+      in
+         (env'', t', term1' :: terms')
+      end
+    | (Class.Pi (_, SOME t, class), term1 :: terms) =>
+      let 
+         val (env', term1') = tc_term pos env t term1 
+         val (env'', t', terms') = tc_spine pos env' f class terms
+      in
+         (env'', t', term1' :: terms')
+      end
+    | (Class.Base _, _) => raise toomany "Function symbol" 
+    | (Class.World, _) => raise toomany "World "
+    | (Class.Rel _, _) => raise toomany "Predicate "
+    | (Class.Arrow (t, class), []) =>
+         raise TypeError (pos, ( "Not enough arguments for `" 
+                               ^ Symbol.toValue f ^ "`"))
+    | (Class.Pi (_, SOME t, class), []) =>
+         raise TypeError (pos, ( "Not enough arguments for `" 
+                               ^ Symbol.toValue f ^ "`"))
+end
 
 (* Takes a list of terms and tries to figure out what their type must be.
  *
@@ -274,25 +270,25 @@ and tc_spine pos env f class terms =
 
 (*[ val seek_typ: Pos.t -> env -> Term.term list -> Symbol.symbol ]*)
 fun seek_typ pos env [] = 
-    raise TypeError (pos, "Could not infer types of terms in (in)equality")
+       raise TypeError (pos, "Could not infer types of terms in (in)equality")
   | seek_typ pos env (term :: terms) =
-    case term of
-       Term.SymConst c => 
-       (case Tab.find Tab.consts c of 
-           NONE => seek_typ pos env terms
-         | SOME typ => (Class.base typ))
-     | Term.NatConst _ => Type.nat
-     | Term.StrConst _ => Type.string
-     | Term.Root (f, _) =>
-       (case Tab.find Tab.consts f of
-           NONE => seek_typ pos env terms
-         | SOME typ => (Class.base typ))
-     | Term.Var (NONE, NONE) => seek_typ pos env terms
-     | Term.Var (SOME x, NONE) => 
-       (case DictX.find env x of
-           NONE => seek_typ pos env terms
-         | SOME NONE => seek_typ pos env terms
-         | SOME (SOME t) => t)
+      (case term of
+          Term.SymConst c => 
+            (case Tab.find Tab.consts c of 
+                NONE => seek_typ pos env terms
+              | SOME typ => (Class.base typ))
+        | Term.NatConst _ => Type.nat
+        | Term.StrConst _ => Type.string
+        | Term.Root (f, _) =>
+            (case Tab.find Tab.consts f of
+                NONE => seek_typ pos env terms
+              | SOME typ => (Class.base typ))
+        | Term.Var (NONE, NONE) => seek_typ pos env terms
+        | Term.Var (SOME x, NONE) => 
+            (case DictX.find env x of
+                NONE => seek_typ pos env terms
+              | SOME NONE => seek_typ pos env terms
+              | SOME (SOME t) => t))
        
 
 (* == Atoms - worlds and atomic propositions == *)
@@ -312,9 +308,10 @@ fun seek_typ pos env [] =
 ]*)
 
 fun tc_atom env class (pos, (w, terms)) = 
-   let 
-      val (env', _, terms') = tc_spine pos env w class terms
-   in (env', (pos, (w, terms'))) end
+let 
+   val (env', _, terms') = tc_spine pos env w class terms
+in (env', (pos, (w, terms'))) 
+end
 
 (*[ val tc_world: env ->
        ( Pos.t * Atom.world -> env * (Pos.t * Atom.world_t)
@@ -435,8 +432,8 @@ fun tc_prems env [] = (env, [])
 fun tc_class pos env class = 
    case class of 
       Class.Base t => 
-         ( tc_t pos t
-         ; (env, Class.Base t))
+       ( tc_t pos t
+       ; (env, Class.Base t))
     | Class.Rel (pos, (w, terms)) =>
       let val (env', _, terms') = 
              tc_spine pos env w (Tab.lookup Tab.worlds w) terms 
@@ -468,8 +465,7 @@ fun tc_class pos env class =
             case oldt of
                NONE => DictX.remove env x
              | SOME t => DictX.insert env x t
-      in 
-        (env, Class.Pi (x, SOME boundty, class))
+      in (env, Class.Pi (x, SOME boundty, class))
       end
 
 (*[ val tc_closed_class: Pos.t -> ( Class.world -> Class.world 
@@ -491,8 +487,8 @@ fun tc_closed_class pos class =
 fun check decl = 
    case decl of 
       Decl.World (pos, w, class) => 
-         ( tc_namespace pos "World" w
-         ; Decl.World (pos, w, tc_closed_class pos class))
+       ( tc_namespace pos "World" w
+       ; Decl.World (pos, w, tc_closed_class pos class))
 
     | Decl.Const (pos, c, class) => 
       let 
@@ -501,41 +497,42 @@ fun check decl =
          (*[ val knd: Class.knd ]*)
          val knd = Tab.lookup Tab.types (Class.base class)
       in
-         ( tc_namespace pos "Constant" c
-         ; case knd of
-              Class.Type => ()
-            | Class.Extensible => 
-              (case typ of Class.Base _ => ()
-                | _ => raise TypeError (pos, "Extensible type `" 
+       ( tc_namespace pos "Constant" c
+       ; case knd of
+            Class.Type => ()
+          | Class.Extensible => 
+              (case typ of 
+                  Class.Base _ => ()
+                | _ => raise TypeError (pos, ( "Extensible type `" 
                                              ^ Symbol.toValue (Class.base typ) 
                                              ^ "` cannot have a complex\
                                              \ constructor; only `" 
                                              ^ Symbol.toValue c ^ ": "
                                              ^ Symbol.toValue (Class.base typ) 
-                                             ^ "` is allowed"))
-            | Class.Builtin => 
-                 raise TypeError (pos, "Built-in type `"
-                                       ^ Symbol.toValue (Class.base typ) 
-                                       ^ "` cannot be given new constants")
-         ; Decl.Const (pos, c, typ))
+                                             ^ "` is allowed")))
+          | Class.Builtin => 
+               raise TypeError (pos, ( "Built-in type `"
+                                     ^ Symbol.toValue (Class.base typ) 
+                                     ^ "` cannot be given new constants"))
+       ; Decl.Const (pos, c, typ))
       end
 
     | Decl.Rel (pos, r, class) => 
-         ( tc_namespace pos "Relation" r
-         ; Decl.Rel (pos, r, tc_closed_class pos class))
+       ( tc_namespace pos "Relation" r
+       ; Decl.Rel (pos, r, tc_closed_class pos class))
 
     | Decl.Type (pos, t, class) => 
-         ( tc_namespace pos "Type" t
-         ; check_illegal pos t "type"
-         ; Decl.Type (pos, t, tc_closed_class pos class))
+       ( tc_namespace pos "Type" t
+       ; check_illegal pos t "type"
+       ; Decl.Type (pos, t, tc_closed_class pos class))
 
     | Decl.DB (pos, (db, props, world)) => 
       let  
          val (_, props') = tc_props DictX.empty props
          val (_, world') = tc_world DictX.empty world
       in
-         ( check_illegal pos db "database"
-         ; Decl.DB (pos, (db, props', world')))
+       ( check_illegal pos db "database"
+       ; Decl.DB (pos, (db, props', world')))
       end
 
     | Decl.Depend (pos, (world, worlds), NONE) => 
@@ -555,12 +552,13 @@ fun check decl =
       end
 
     | Decl.Query (pos, qry, mode as (r, _)) =>
-      (case Tab.find Tab.rels r of 
-          NONE => raise TypeError (pos, "Relation `" ^ Symbol.toValue r 
+        (case Tab.find Tab.rels r of 
+            NONE => raise TypeError (pos, "Relation `" ^ Symbol.toValue r 
                                         ^ "` never declared")
-        | SOME class => 
-          let val (_, (pos, mode')) = tc_atom DictX.empty class (pos, mode) in
+          | SOME class => 
+            let val (_, (pos, mode')) = tc_atom DictX.empty class (pos, mode) 
+            in
              ( check_illegal pos qry "query"
              ; Decl.Query (pos, qry, mode'))
-          end)
+            end)
 end
