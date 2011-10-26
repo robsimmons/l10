@@ -1,132 +1,57 @@
 (* Mode checking *)
 (* Robert J. Simmons *)
 
-structure Modes:> sig
+structure Modes:> 
+sig
+   exception ModeError of Pos.t * string
 
-   (* Takes a atomic propisition, pulls the underlying world *)
-   val pullWorld: Ast.atomic -> Ast.world
-
-   (* Takes a rule, pulls its implicit world dependency.
-    * Checkes that all conclusions are at the same world. *)
-   val pullDependency: Ast.rule -> Ast.dependency
-
-   (* Checks that a dependency is well-moded.
-    * Returns the free variables grounded by the world *)
-   val checkDependency: Ast.dependency -> SetX.set
-   (* TODO: if I have 
-    * w0: world.
-    * bar: nat -> rel @ w0.
-    * w1: nat -> world.
-    * foo: {N: nat} rel @ w1 N.
-    *
-    * foo N, bar M, N < M -> foo M.
-    * has the dependency w1 M <- w1 N, N < M: this fails dependency checking.
-    * Is that a bug? This is even more dramatic if the premise is N == M. *)
+   (* Checks that a dependency is well-moded. Returns the set of variables
+    * bound by the head world of the dependency. *)
+   (*[ val checkDepend: 
+          (Pos.t * Atom.world_t) * (Pos.t * Prem.wprem_t) list -> SetX.set ]*)
+   val checkDepend: (Pos.t * Atom.t) * (Pos.t * Prem.t) list -> SetX.set
 
    (* Checks that a rule is well-moded given variables known to be ground.
-    * Pulls one trick: swaps the order of equality judgments so that the first
+    * While it's at it, swaps the order of equality judgments so that the first
     * one is always ground. This is the only change it makes to the premeses *)
-   val checkRule: Ast.rule * SetX.set -> Ast.rule
-
+   (*[ val checkRule: Rule.rule_t * SetX.set -> Rule.rule_t ]*)
+   val checkRule: Rule.t * SetX.set -> Rule.t
 end = 
 struct
 
-structure A = Ast
-open Symbol
-  
-(* pullWorld uses RelTab; takes an atomic proposition and gets a world *)
-fun pullWorld (a, terms) = 
-   let 
-      val (args, (w, worldterms)) = RelTab.lookup a 
+exception ModeError of Pos.t * string
 
-      fun folder ((arg, _), term, map) =
-         case arg of 
-            NONE => map
-          | SOME x => MapX.insert (map, x, term)
-      val map = ListPair.foldl folder MapX.empty (args, terms)
+(*[ val checkDepend: 
+       (Pos.t * Atom.world_t) * (Pos.t * Prem.wprem_t) list -> SetX.set ]*)
+fun checkDepend ((pos, world), worlds) = 
+let
+   val headFV = Atom.fv world
+
+   (*[ val hasUscore: Prem.wprem_t -> bool ]*)
+   fun hasUscore (Prem.Normal (Pat.Atom atom)) = Atom.hasUscore atom
+     | hasUscore (Prem.Negated (Pat.Atom atom)) = Atom.hasUscore atom
+
+   (*[ val checkprem: Pos.t * Prem.wprem_t -> unit ]*)
+   fun checkprem (pos, prem) =
+      case SetX.toList (SetX.difference (Prem.fv prem) headFV) of
+         [] => 
+            if not (hasUscore prem) then ()
+            else raise ModeError (pos, ( "Underscore present where argument \
+                                       \ is needed to determine world"))
+       | (x :: _) => 
+            raise ModeError (pos, ( "Variable " ^ Symbol.toValue x 
+                                  ^ ", which determines world, bound in\
+                                  \ premise and not in conclusion"))
    in
-      (w, valOf (A.subTerms (map, worldterms)))
-   end
-
-(* pullConcs checks that all conclusions are at the same world
- * and returns that world. *)
-fun pullConcs [] = raise Fail "Invariant"
-  | pullConcs [ conc ] = pullWorld conc
-  | pullConcs (conc :: concs) = 
-    let val world = pullConcs concs in
-       if A.eqWorld world (pullWorld conc) then world
-       else raise Fail ("Conclusion " ^ A.strAtomic conc ^ " at world " 
-                        ^ A.strWorld (pullWorld conc) 
-                        ^ ", but earlier conclusions were at world " 
-                        ^ A.strWorld world)
-    end
-
-fun pullPrems concWorld prems = 
-   let
-      fun pullPat pat = 
-         case pat of 
-            A.Atomic atomic => [ pullWorld atomic ]
-          | A.Exists (x, pat1) => 
-            let val worlds = pullPat pat1 in
-               if SetX.member (A.fvWorlds worlds, x)
-               then raise Fail ("Local variable " ^ Symbol.name x ^ 
-                                " used in world-sensitive position")
-               else worlds
-            end
-          | A.Conj (pat1, pat2) => pullPat pat1 @ pullPat pat2
-          | A.One => []
-
-      fun pullPrem prem = 
-         case prem of 
-            A.Normal pat => pullPat pat
-          | A.Negated pat => 
-            let val worlds = pullPat pat in
-               (* XXX this check alone is not, I think, enough; 
-                * the variables could be different and substituted for the
-                * same terms. - RJS 4/21/11 *)
-               (* I think the above comment is only relevant if we're using
-                * Ast.Conj, which is currently not part of the parsed
-                * language. - RJS 5/5/11 *)
-               if List.exists (A.eqWorld concWorld) worlds
-               then raise Fail "Negated premise at the same world as conclusion"
-               else worlds
-            end
-          | A.Count _ => raise Fail "Count not supported yet"
-          | A.Binrel _ => []
-   in List.concat (map pullPrem prems) end
-
-(* pullDependency takes a rule and produces a dependency; checks
- * that all the conclusions are at the same world. *)
-fun pullDependency (prems, concs) = 
-   let val concWorld = pullConcs concs
-   in (concWorld, pullPrems concWorld prems) end
-
-(* Checks that a dependency is well-moded *)
-(* Returns the free variables grounded by the world *)
-fun checkDependency (world, worlds) = 
-   let
-      val headFV = A.fvWorld world
-
-      fun checkprem world =
-         case SetX.listItems (SetX.difference (A.fvWorld world, headFV)) of
-            [] => ()
-          | (x :: _) => 
-            raise Fail ("Variable " ^ Symbol.name x 
-                        ^ ", which determines world, bound in premise and not "
-                        ^ " conclusion.")
-   in
-      if List.exists A.uscoresInWorld worlds
-      then raise Fail ("Underscore present where are argument is needed"
-                       ^ " to determine world")
-      else ()
-      ; app checkprem worlds
-      ; headFV
+    ( app checkprem worlds
+    ; headFV)
    end
 
 (* Checks that a rule is well-moded given variables known to be ground *)
 (* Pulls one trick: swaps the order of equality judgments so that the first
  * one is always ground. This is the only change it makes to the premeses *)
-fun checkRule ((prems, concs), groundedByWorld) =
+fun checkRule ((prems, concs), groundedByWorld) = raise Match
+(*
    let
       fun checkNormalPrem (pat, ground) =
          case pat of 
@@ -195,5 +120,6 @@ fun checkRule ((prems, concs), groundedByWorld) =
       val () = List.app (checkConc ground) concs
 
    in (checked_prems, concs) end
+*)
 
 end

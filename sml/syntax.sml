@@ -146,7 +146,6 @@ struct
        | Root (f, terms) => 
          Root (f, map (sub (term', x)) terms)
 
-   (*[ val hasUscore: term -> bool ]*)
    fun hasUscore term = 
       case term of 
          Var (NONE, _) => true  
@@ -172,7 +171,6 @@ structure Atom = struct
    fun fvs atoms = 
       List.foldr (fn (atom, set) => SetX.union (fv atom) set) SetX.empty atoms
 
-   (*[ val hasUscore: (world & prop) -> bool ]*)
    fun hasUscore (_, terms) = List.exists Term.hasUscore terms
 
    (*[ val eq: (t * t) -> bool ]*)
@@ -188,6 +186,8 @@ structure Atom = struct
           ^ String.concat (map (fn term => " " ^ Term.toString term) terms)
           ^ (if parens then ")" else "")
    val toString = toString' false
+
+   fun hasUscore (_, term) = List.exists Term.hasUscore term 
 end
 
 structure Pat = struct

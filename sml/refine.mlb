@@ -7,6 +7,7 @@ syntax.sml
 tab.sml
 types.sml
 worlds.sml
+modes.sml
 
 l10.cmlex.sml
 lexer.sml
