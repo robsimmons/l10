@@ -1,0 +1,5 @@
+w: nat -> world.
+w2: world.
+b: nat -> rel @ w2.
+a: {X: nat} {Y: nat} rel @ w X.
+a X Y, not (b Z) -> a X Y.

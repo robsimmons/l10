@@ -1,0 +1,3 @@
+w: nat -> world.
+r: {X: nat} {Y: nat} rel @ w Y.
+r X Y -> r Z Y.

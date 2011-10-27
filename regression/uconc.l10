@@ -1,0 +1,5 @@
+t: type.
+node: t -> t -> t.
+w: t -> world.
+r: {X: t} {Y: t} rel @ w Y.
+r X Y -> r X (node _ Y).

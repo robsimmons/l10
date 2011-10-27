@@ -1,0 +1,2 @@
+w: nat -> world.
+w Y -> w X.
