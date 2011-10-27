@@ -1,5 +1,4 @@
 Group is
-   $/basis.cm
    sources.cm
 
    compile/fv.sml

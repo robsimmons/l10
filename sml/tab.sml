@@ -58,8 +58,8 @@ struct
    val consts: Class.t tab = SymbolHashTable.table 1
 
    (* Reverse lookup: all the constructors used to make a term of a type *)
-   (*[ val typecon: Symbol.symbol list tab ]*)
-   val typecon: Symbol.symbol list tab = SymbolHashTable.table 1
+   (*[ val typecon: SetX.set tab ]*)
+   val typecon: SetX.set tab = SymbolHashTable.table 1
 
    (*[ val dbs: Decl.db tab ]*)
    val dbs: (Symbol.symbol * (Pos.t * Atom.t) list * (Pos.t * Atom.t)) tab =
@@ -106,7 +106,9 @@ struct
        let val t = Class.base class 
        in  
         ( SymbolHashTable.insert consts c class
-        ; merge typecon t c)
+        ; SymbolHashTable.insertMerge typecon t 
+             (SetX.singleton c)
+             (fn set => SetX.insert set c))
        end
      | bind (Decl.Rel (_, r, class)) = 
         ( SymbolHashTable.insert rels r class 

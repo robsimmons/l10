@@ -3,12 +3,14 @@
 
 structure Type = 
 struct
+   type t = Symbol.symbol
+
    val nat = Symbol.fromValue "nat"
    val string = Symbol.fromValue "string"
    val world = Symbol.fromValue "world" (* Pseudo-type for world names *)
    val rel = Symbol.fromValue "rel" (* Pseudo-type for predicates *)
 
-   type env = Symbol.symbol DictX.dict
+   type env = t DictX.dict
 end
 
 structure Mode = 
@@ -26,21 +28,21 @@ struct
     | NatConst of IntInf.int
     | StrConst of string
     | Root of Symbol.symbol * t list
-    | Var of Symbol.symbol option * Symbol.symbol option
-    | Mode of Mode.t * Symbol.symbol option
+    | Var of Symbol.symbol option * Type.t option
+    | Mode of Mode.t * Type.t option
 (*[
    datasort term = 
       SymConst of Symbol.symbol 
     | NatConst of IntInf.int
     | StrConst of string
-    | Var of Symbol.symbol option * Symbol.symbol none
+    | Var of Symbol.symbol option * Type.t none
     | Root of Symbol.symbol * term conslist
 
    datasort term_t = 
       SymConst of Symbol.symbol 
     | NatConst of IntInf.int
     | StrConst of string
-    | Var of Symbol.symbol option * Symbol.symbol some
+    | Var of Symbol.symbol option * Type.t some
     | Root of Symbol.symbol * term_t conslist
 
    datasort ground = 
@@ -53,21 +55,21 @@ struct
       SymConst of Symbol.symbol 
     | NatConst of IntInf.int
     | StrConst of string
-    | Var of Symbol.symbol none * Symbol.symbol none
+    | Var of Symbol.symbol none * Type.t none
     | Root of Symbol.symbol * shape conslist
 
    datasort moded = 
       SymConst of Symbol.symbol 
     | NatConst of IntInf.int
     | StrConst of string
-    | Mode of Mode.t * Symbol.symbol none
+    | Mode of Mode.t * Type.t none
     | Root of Symbol.symbol * moded conslist
 
    datasort moded_t = 
       SymConst of Symbol.symbol 
     | NatConst of IntInf.int
     | StrConst of string
-    | Mode of Mode.t * Symbol.symbol some
+    | Mode of Mode.t * Type.t some
     | Root of Symbol.symbol * moded_t conslist
 ]*)
 
@@ -191,17 +193,17 @@ end
 structure Pat = struct
    datatype t =
       Atom of Atom.t
-    | Exists of Symbol.symbol * Symbol.symbol option * t
+    | Exists of Symbol.symbol * Type.t option * t
     | Conj of t * t (* Should be implemented, difficult - rjs Oct 12 2011 *)
     | One (* Could be implemented without much trouble *)
 (*[
    datasort pat = 
       Atom of Atom.prop
-    | Exists of Symbol.symbol * Symbol.symbol none * pat
+    | Exists of Symbol.symbol * Type.t none * pat
 
    datasort pat_t = 
       Atom of Atom.prop_t
-    | Exists of Symbol.symbol * Symbol.symbol some * pat_t
+    | Exists of Symbol.symbol * Type.t some * pat_t
 
    datasort wpat = Atom of Atom.world
 
@@ -246,17 +248,17 @@ structure Prem = struct
    datatype t = 
       Normal of Pat.t
     | Negated of Pat.t
-    | Binrel of Binrel.t * Term.t * Term.t * Symbol.symbol option
+    | Binrel of Binrel.t * Term.t * Term.t * Type.t option
 (*[ 
    datasort prem = 
       Normal of Pat.pat
     | Negated of Pat.pat
-    | Binrel of Binrel.t * Term.term * Term.term * Symbol.symbol none
+    | Binrel of Binrel.t * Term.term * Term.term * Type.t none
 
    datasort prem_t = 
       Normal of Pat.pat_t
     | Negated of Pat.pat_t
-    | Binrel of Binrel.t * Term.term_t * Term.term_t * Symbol.symbol some
+    | Binrel of Binrel.t * Term.term_t * Term.term_t * Type.t some
 
    datasort wprem = Normal of Pat.wpat | Negated of Pat.wpat
    
@@ -300,32 +302,32 @@ end
 structure Class = 
 struct
    datatype t = 
-      Base of Symbol.symbol 
+      Base of Type.t 
     | Rel of Pos.t * Atom.t
     | World
     | Type
     | Builtin
     | Extensible
-    | Arrow of Symbol.symbol * t
-    | Pi of Symbol.symbol * Symbol.symbol option * t
+    | Arrow of Type.t * t
+    | Pi of Symbol.symbol * Type.t option * t
 (*[
    datasort world = 
       World
-    | Arrow of Symbol.symbol * world
+    | Arrow of Type.t * world
 
    datasort typ =
-      Base of Symbol.symbol
-    | Arrow of Symbol.symbol * typ
+      Base of Type.t
+    | Arrow of Type.t * typ
 
    datasort rel = 
       Rel of Pos.t * Atom.world
-    | Arrow of Symbol.symbol * rel
-    | Pi of Symbol.symbol * Symbol.symbol option * rel
+    | Arrow of Type.t * rel
+    | Pi of Symbol.symbol * Type.t option * rel
 
    datasort rel_t = 
       Rel of Pos.t * Atom.world_t
-    | Arrow of Symbol.symbol * rel_t
-    | Pi of Symbol.symbol * Symbol.symbol some * rel_t
+    | Arrow of Type.t * rel_t
+    | Pi of Symbol.symbol * Type.t some * rel_t
 
    datasort knd = 
       Type
@@ -352,7 +354,7 @@ struct
          World => Base Type.world
        | Arrow (t, class) => Arrow (t, worldToTyp class)
 
-   (*[ val base: typ -> Symbol.symbol ]*)
+   (*[ val base: typ -> Type.t ]*)
    fun base class = 
       case class of 
           Arrow (_, class) => base class
