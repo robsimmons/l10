@@ -14,22 +14,3 @@ Group is
    parser.sml
    read.sml
 
-(*
-   util/symbol.sml
-   util/symtab.sml
-   util/multitab.sml
-   util/sets-maps.sml
-
-   syntax/ast-sig.sml
-   syntax/ast.sml
-   syntax/l10.lex
-   syntax/l10.grm
-   syntax/parse.sml
-
-   check/tabs.sml
-   check/types.sml
-   check/mode.sml
-   check/load.sml
-
-   frontend/read.sml 
-*)
