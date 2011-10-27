@@ -64,10 +64,8 @@ in case term of
     | Term.Var (_, SOME t) => Unsplit t
 end
 
-and singletonList terms = 
-  (map (*[ <: (Term.term_t -> t) -> Term.term_t conslist -> t conslist
-            & (Term.term_t -> t) -> Term.term_t list -> t list ]*))
-      singleton terms
+and singletonList [] = []
+  | singletonList (term :: terms) = singleton term :: singletonList terms 
 
 (*[ val insert: t -> Term.term_t -> t ]*)
 (*[ val insertList: t list -> Term.term_t list -> t list ]*)
