@@ -316,14 +316,15 @@ end = struct
                    -> Decl.class ]*)
             fun pi pos (arg, class) = 
                 let 
-                   fun p_arg (Ucid (_, x)) = (x, NONE)
-                     | p_arg (Ascribe ((_, x), syn)) = (x, SOME (p_t syn))
+                   fun p_arg (Ucid (_, x)) = (Symbol.fromValue x, NONE)
+                     | p_arg (Ascribe ((_, x), syn)) = 
+                          (Symbol.fromValue x, SOME (p_t syn))
                      | p_arg syn = 
-                       (* Think this is dead code -rjs Oct 21 2011 *)
-                       raise SyntaxError 
-                          (SOME pos,
-                           "Pi-bindings `{...}` must be of the form `{x:t}`\
-                           \. got `" ^ str syn ^ "`")
+                          (* Think this is dead code -rjs Oct 21 2011 *)
+                          raise SyntaxError 
+                             ( SOME pos
+                             , "Pi-bindings `{...}` must be of the form\
+                               \ `{x:t}`, got `" ^ str syn ^ "`")
 
                    val (x, t) = p_arg arg 
                    fun ty () = 
@@ -332,21 +333,26 @@ end = struct
                          raise SyntaxError 
                                  (SOME pos, 
                                   "Cannot infer type of bound variable `" 
-                                  ^ x ^ "`")
+                                  ^ Symbol.toValue x ^ "`")
                        | SOME t => t
                 in 
                    case class of 
                       Decl.World (p, w, class) => 
-                      Decl.World (p, w, Class.Arrow (ty (), class))
+                         Decl.World (p, w, Class.Arrow (ty (), class))
                     | Decl.Const (p, c, class) => 
-                      Decl.Const (p, c, Class.Arrow (ty (), class))
-                    | Decl.Rel (p, r, class) => 
-                      Decl.Rel (p, r, Class.Pi (Symbol.fromValue x, t, class))
+                         Decl.Const (p, c, Class.Arrow (ty (), class))
+                    | Decl.Rel (p, r, class) =>   
+                        (case t of 
+                            NONE => Decl.Rel (p, r, Class.Pi (x, t, class))
+                          | SOME t' => 
+                               if SetX.member (Class.fv class) x 
+                               then Decl.Rel (p, r, Class.Pi (x, t, class))
+                               else Decl.Rel (p, r, Class.Arrow (t', class)))
                     | Decl.Type _ => 
-                      raise SyntaxError 
-                         (SOME pos,
-                          "Declared types can only be classified by `type` or\
-                          \ `extensible`")
+                         raise SyntaxError 
+                            ( SOME pos
+                            , "Declared types can only be classified by `type`\
+                              \ or `extensible`")
                end
 
             (*[ val arrow: 

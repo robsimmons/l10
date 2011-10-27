@@ -121,14 +121,10 @@ struct
                case match of 
                   [] => 
                      raise Invariant (* Don't call extent on epsilon match! *)
-                | [ (c, next) ] => (* Only for a length-1 string *)
-                     (Pos.pos left left, 
-                      next, 
-                      str c)
-                | [ (c, right), (c', next) ] => (* Common base case *)
-                     (Pos.pos right left, 
-                      next, 
-                      String.implode (rev (c' :: c :: accum)))
+                | [ (c, right) ] => (* Base case *)
+                   ( Pos.pos left right
+                   , right
+                   , String.implode (rev (c :: accum)))
                 | ((c, _) :: match) =>
                      loop (c :: accum) match
          in
@@ -253,9 +249,21 @@ struct
  
    fun lex name stream = 
       let 
-         val (coord, stream') = MarkCharStream.mark name stream
+         fun eol stream = 
+            case Stream.front stream of
+               Stream.Cons (#"\n", _) => true
+             | Stream.Cons (#"\v", _) => true
+             | Stream.Cons (#"\f", _) => true
+             | Stream.Cons (#"\r", stream) => 
+                 (case Stream.front stream of
+                     Stream.Cons (#"\n", _) => false
+                   | _ => true)
+             | _ => false
+
+         val coord = Coord.init name
+         val stream' = 
+            CoordinatedStream.coordinate eol coord stream
       in  
          lazy (fn () => Lex.lexmain stream' coord)
       end
-
 end

@@ -30,9 +30,21 @@ fun load stream =
    case stream_front stream of
       Stream.Nil => ()
     | Stream.Cons (decl as (Decl.Rule (pos, rule, fv)), stream) => 
-         ( Tab.bind (Decl.Depend (pos, Worlds.ofRule rule, fv))
+      let 
+         val depend = Worlds.ofRule rule 
+         val fvWorld = Atom.fv (#2 (#1 depend))
+      in 
+         ( Modes.checkDepend depend
+         ; Modes.checkRule rule fvWorld 
+         ; Tab.bind (Decl.Depend (pos, depend, fv))
          ; Tab.bind decl
          ; Decl.print decl 
+         ; load stream)
+      end
+    | Stream.Cons (decl as (Decl.Depend (_, depend, _)), stream) => 
+         ( Modes.checkDepend depend
+         ; Tab.bind decl
+         ; Decl.print decl
          ; load stream)
     | Stream.Cons (decl, stream) => 
          ( Tab.bind decl
@@ -86,6 +98,8 @@ handle Lexer.LexError (c, s) =>
           print ("Type error at " ^ Pos.toString pos ^ "\n" ^ s ^ ".\n")
      | Worlds.WorldsError (pos, s) =>
           print ("World error at " ^ Pos.toString pos ^ "\n" ^ s ^ ".\n")
+     | Modes.ModeError (pos, s) =>
+          print ("Mode error at " ^ Pos.toString pos ^ "\n" ^ s ^ ".\n")
      | IO.Io {cause, function, name} =>
           print ( "I/O error trying to " ^ function ^ " " ^ name ^ "\n"
                 ^ exnMessage cause ^ "\n")

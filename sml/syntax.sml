@@ -164,10 +164,8 @@ structure Atom = struct
    (*[ sortdef moded = Symbol.symbol * Term.moded list ]*) 
    (*[ sortdef moded_t = Symbol.symbol * Term.moded_t list ]*) 
 
-   (*[ val fv: (world_t & prop_t) -> SetX.set ]*)
    fun fv (_, terms) = Term.fvs terms
 
-   (*[ val fvs: (world_t & prop_t) list -> SetX.set ]*)
    fun fvs atoms = 
       List.foldr (fn (atom, set) => SetX.union (fv atom) set) SetX.empty atoms
 
@@ -381,6 +379,13 @@ struct
        | Pi (x, SOME t, typ) => 
           ( "{" ^ Symbol.toValue x ^ ": " ^ Symbol.toValue t ^ "} " 
           ^ toString typ)
+
+   fun fv class =
+      case class of 
+         Pi (x, t, class) => SetX.remove (fv class) x
+       | Arrow (_, class) => fv class
+       | Rel (_, world) => Atom.fv world
+       | _ => SetX.empty
 end
 
 structure Decl = struct

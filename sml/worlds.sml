@@ -1,8 +1,8 @@
 (* Managing the relationship between worlds and relations *)
 (* Robert J. Simmons *)
 
-structure Worlds:> sig
-
+structure Worlds:> 
+sig
    exception WorldsError of Pos.t * string
 
    (*[ val ofProp: Pos.t * Atom.prop_t -> Pos.t * Atom.world_t ]*)
@@ -10,7 +10,6 @@ structure Worlds:> sig
   
    (*[ val ofRule: Rule.rule_t -> Decl.depend_t ]*)
    val ofRule: Rule.t -> ((Pos.t * Atom.t) * (Pos.t * Prem.t) list)
-
 end = 
 struct
 
