@@ -561,4 +561,29 @@ fun check decl =
              ( check_illegal pos qry "query"
              ; Decl.Query (pos, qry, mode'))
             end)
+    | (decl as Decl.Representation (pos, t, rep)) =>
+        (case Tab.find Tab.types t of
+            NONE => raise TypeError (pos, ( "Cannot give a TYPE declaration\ 
+                                          \ for `" ^ Symbol.toValue t ^ "`\
+                                          \, which was never declared"))
+          | SOME Class.Type => 
+            let 
+               fun msg rep' = 
+                  ( "Type `" ^ Symbol.toValue t ^ "` already " 
+                  ^ Type.repToString rep' ^ " and can't also be " 
+                  ^ Type.repToString rep)
+            in case Tab.find Tab.representations t of 
+                  NONE => decl 
+                | SOME rep' => 
+                     if rep = rep' then decl
+                     else raise TypeError (pos, msg rep')
+            end
+          | SOME Class.Builtin => 
+               raise TypeError (pos, ( "Cannot give a TYPE declaration for\
+                                     \ builtin type `" ^ Symbol.toValue t 
+                                     ^ "`"))
+          | SOME Class.Extensible => 
+               raise TypeError (pos, ( "Cannot give a TYPE declaration for\
+                                     \ extensible type `" ^ Symbol.toValue t 
+                                     ^ "`")))
 end

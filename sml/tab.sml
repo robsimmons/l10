@@ -87,6 +87,8 @@ struct
    (*[ val queries: (Pos.t * Atom.moded_t) tab ]*)
    val queries: (Pos.t * Atom.t) tab = SymbolHashTable.table 1
 
+   (* This one is populated directly from the parser *)
+   val representations: Type.representation tab = SymbolHashTable.table 1
 
    (* WRITING *)
 
@@ -129,7 +131,8 @@ struct
        end
      | bind (Decl.Query (pos, m, mode)) = 
           SymbolHashTable.insert queries m (pos, mode)
-            
+     | bind (Decl.Representation (pos, t, rep)) =
+          SymbolHashTable.insert representations t rep
    local 
       val coord = Coord.init "?"
       val pos = Pos.pos coord coord

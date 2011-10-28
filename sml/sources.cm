@@ -2,6 +2,7 @@ Group is
    $SMACKAGE/cmlib/v0/cmlib.cm
    cmlib-defaults.sml
 
+   (* Language stuff *)
    syntax.sml
    tab.sml
    types.sml
@@ -9,6 +10,11 @@ Group is
    modes.sml
    splitting.sml
 
+   (* SML compiler stuff *)
+   compile-sml/strings.sml
+   compile-sml/disctree.sml
+
+   (* Parser stuff *)
    l10.cmlex.sml
    lexer.sml
    l10.cmyacc.sml

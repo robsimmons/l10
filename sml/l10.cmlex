@@ -64,6 +64,7 @@ function anno : tok =
    (+ white) => anno_space
 
    "QUERY"   => anno_query
+   "TYPE"    => anno_type
 
    '(        => anno_lparen
    ')        => anno_rparen

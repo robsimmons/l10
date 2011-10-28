@@ -3,20 +3,23 @@ cmlib-defaults.sml
 
 $(SML_LIB)/refined-basis/basis.mlb
 
-(* Core language and analysis *)
-syntax.sml
-tab.sml
-types.sml
-worlds.sml
-modes.sml
-splitting.sml
+   (* Language stuff *)
+   syntax.sml
+   tab.sml
+   types.sml
+   worlds.sml
+   modes.sml
+   splitting.sml
 
-(* *)
+   (* SML compiler stuff *)
+   compile-sml/strings.sml
+   compile-sml/disctree.sml
 
-(* External syntax, lexing, parsing *)
-l10.cmlex.sml
-lexer.sml
-l10.cmyacc.sml
-parser.sml
-read.sml
+   (* Parser stuff *)
+   l10.cmlex.sml
+   lexer.sml
+   l10.cmyacc.sml
+   parser.sml
+   read.sml
+
 

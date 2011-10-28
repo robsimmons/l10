@@ -45,7 +45,8 @@ start Decl
 
 nonterminal Decl : decl = => Done
    1:Syn 2:PERIOD 3:Decl => Syn
-   1:LANNO ANNO_QUERY 2:LCID 3:LCID 4:Modes 5:RANNO 6:Decl => Query
+   1:LANNO ANNO_QUERY 2:LCID 3:LCID 4:Modes 5:RANNO 6:Decl => AnnoQuery
+   1:LANNO ANNO_TYPE 2:LCID 3:LCID 4:RANNO 5:Decl => AnnoType
 
 nonterminal Bind : syn =
    1:UCID                         => Ucid
@@ -92,9 +93,10 @@ nonterminal Sings : sings =       => sings_end
 /* Extensions for the annotation language */
 
 terminal ANNO_QUERY of pos
+terminal ANNO_TYPE of pos
 
 nonterminal Modes : modes =       => mode_end
    PLUS 1:Modes                   => mode_input
    MINUS 1:Modes                  => mode_output
    USCORE 1: Modes                => mode_ignore
-
+   

@@ -9,4 +9,9 @@ fun toString path = String.concatWith "_" (map Int.toString path)
 
 fun toVar path = "x_" ^ toString path
 
+structure Set =
+   SplaySetFun (structure Elem = ListOrdered (IntOrdered))
+structure Dict = 
+   SplayDictFun (structure Key = ListOrdered (IntOrdered))
+
 end

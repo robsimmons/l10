@@ -3,12 +3,18 @@ cmlib-defaults.sml
 
 ann "nonexhaustiveMatch ignore" in 
 
+   (* Language stuff *)
    syntax.sml
    tab.sml
    types.sml
    worlds.sml
    modes.sml
 
+   (* SML compiler stuff *)
+   splitting.sml
+   disctree.sml
+
+   (* Parser stuff *)
    l10.cmlex.sml
    lexer.sml
    l10.cmyacc.sml

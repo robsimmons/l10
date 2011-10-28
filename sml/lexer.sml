@@ -41,6 +41,7 @@ struct
     | LANNO of Pos.t
     | RANNO of Pos.t
     | ANNO_QUERY of Pos.t
+    | ANNO_TYPE of Pos.t
   
    fun pos tok = 
       case tok of
@@ -83,6 +84,7 @@ struct
        | LANNO pos => pos
        | RANNO pos => pos
        | ANNO_QUERY pos => pos
+       | ANNO_TYPE pos => pos
 end
 
 structure Lexer:> 
@@ -204,6 +206,7 @@ struct
 
       val anno_space = fastforward #anno
       val anno_query = simple #anno ANNO_QUERY
+      val anno_type = simple #anno ANNO_TYPE
       val anno_lparen = simple #anno LPAREN
       val anno_rparen = simple #anno RPAREN
       val anno_plus = simple #anno PLUS

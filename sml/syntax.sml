@@ -11,6 +11,13 @@ struct
    val rel = Symbol.fromValue "rel" (* Pseudo-type for predicates *)
 
    type env = t DictX.dict
+
+   datatype representation = Transparent | HashConsed | External | Sealed
+   
+   fun repToString Transparent = "transparent"
+     | repToString HashConsed = "hashconsed"
+     | repToString External = "external"
+     | repToString Sealed = "sealed"
 end
 
 structure Mode = 
@@ -153,6 +160,8 @@ struct
          Var (NONE, _) => true  
        | Root (_, terms) => List.exists hasUscore terms
        | _ => false
+
+   val plus = Symbol.fromValue "_plus"
 end
 
 structure Atom = struct
@@ -414,6 +423,7 @@ structure Decl = struct
          * Type.env option
     | Rule of Pos.t * Rule.t * Type.env option
     | Query of Pos.t * Symbol.symbol * Atom.t
+    | Representation of Pos.t * Symbol.symbol * Type.representation
 (*[
    datasort decl = 
       World of Pos.t * Symbol.symbol * Class.world
@@ -424,6 +434,7 @@ structure Decl = struct
     | Depend of Pos.t * depend * Type.env none
     | Rule of Pos.t * Rule.rule * Type.env none
     | Query of Pos.t * Symbol.symbol * Atom.moded
+    | Representation of Pos.t * Symbol.symbol * Type.representation
 
    datasort decl_t = 
       World of Pos.t * Symbol.symbol * Class.world
@@ -434,6 +445,7 @@ structure Decl = struct
     | Depend of Pos.t * depend_t * Type.env some
     | Rule of Pos.t * Rule.rule_t * Type.env some
     | Query of Pos.t * Symbol.symbol * Atom.moded_t
+    | Representation of Pos.t * Symbol.symbol * Type.representation
 
    datasort class = 
       World of Pos.t * Symbol.symbol * Class.world
@@ -467,5 +479,8 @@ val print =
   | Query (_, qry, mode) =>
      ( print ("{-# QUERY " ^ Symbol.toValue qry ^ " ")
      ; print (Atom.toString mode ^ " #-}\n"))
+  | Representation (_, t, rep) => 
+     ( print ("{-# TYPE " ^ Symbol.toValue t ^ " " ^ Type.repToString rep)
+     ; print " #-}\n") 
 end
 

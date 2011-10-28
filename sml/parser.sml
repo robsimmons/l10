@@ -94,12 +94,19 @@ end = struct
       type sings = syn list      
       datatype decl = 
           Syn of syn * Pos.t * decl
-        | Query of Pos.t 
-                   * (Pos.t * string)  
-                   * (Pos.t * string) 
-                   * Mode.t list
-                   * Pos.t
-                   * decl
+        | AnnoQuery of
+             Pos.t 
+             * (Pos.t * string)  
+             * (Pos.t * string) 
+             * Mode.t list
+             * Pos.t
+             * decl
+        | AnnoType of
+             Pos.t 
+             * (Pos.t * string)  
+             * (Pos.t * string) 
+             * Pos.t
+             * decl
         | Done of unit
 
       fun error s = 
@@ -468,7 +475,7 @@ end = struct
       in 
          case decl of 
             Done () => Stream.Nil
-          | Query (left, (_, name), (_, a), modes, right, decl') => 
+          | AnnoQuery (left, (_, name), (_, a), modes, right, decl') => 
             let 
                val name = Symbol.fromValue name
                val modes = (Symbol.fromValue a,
@@ -476,6 +483,26 @@ end = struct
                val decl = Decl.Query (Pos.union left right, name, modes) 
             in 
                stream_cons (decl, stream_lazy (parse' decl' psig))
+            end
+          | AnnoType (left, (_, typ), (_, directive), right, decl') =>
+            let
+               fun msg () =  
+                  ( "Types can be transparent, hashconsed, external, or\
+                  \ sealed, I don't know how to make them `" ^ directive ^ "`")
+               val directive = 
+                   case directive of
+                      "transparent" => Type.Transparent
+                    | "hashconsed" => Type.HashConsed
+                    | "external" => Type.External
+                    | "sealed" => Type.Sealed
+                    | _ => raise SyntaxError 
+                              (SOME (Pos.union left right), msg ())
+            in
+               stream_cons ( Decl.Representation 
+                                ( Pos.union left right
+                                , Symbol.fromValue typ
+                                , directive)
+                           , stream_lazy (parse' decl' psig))
             end
           | Syn (syn, pos, decl') => 
             let
