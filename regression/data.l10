@@ -1,0 +1,21 @@
+typ: extensible.
+sym: extensible.
+var: extensible.
+
+mode: type. {-# TYPE mode external #-}
+input: mode.
+output: mode.
+ignore: mode.
+
+term: type. {-# TYPE term sealed #-}
+terms: type. {-# TYPE terms transparent #-}
+
+symConst: sym -> term.
+natConst: nat -> term.
+strConst: string -> term.
+root: sym -> terms -> term.
+vr: var -> typ -> term.
+md: mode -> typ -> term. 
+
+nil: terms.
+cons: term -> terms -> terms.

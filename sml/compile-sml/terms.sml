@@ -8,7 +8,7 @@ struct
 
 open Util
 
-type dtype = bool * string * (string * string list) list
+type dtype = Symbol.symbol * bool * string * (string * string list) list
 
 (*[ val makeDtyps: 
        SetX.set -> Type.t * dtype list -> dtype list ]*)
@@ -25,10 +25,11 @@ fun makeDtypes rc (t, accum): dtype list =
           (Strings.symbol c, typtyp (Tab.lookup Tab.consts c) []) :: constrs
 
        fun dtype s: dtype =   
-          (not (null accum), s, SetX.foldl cons [] (Tab.lookup Tab.typecon t))
+          (t, not (null accum), s
+           , SetX.foldl cons [] (Tab.lookup Tab.typecon t))
 
        fun stype s: dtype = 
-          (true, "t_" ^ s, [("inj_" ^ s, [s ^ "_view"])])
+          (t, true, "t_" ^ s, [("inj_" ^ s, [s ^ "_view"])])
 
        fun sealed () = 
           stype (Symbol.toValue t)
@@ -41,12 +42,12 @@ fun makeDtypes rc (t, accum): dtype list =
         | SOME Type.Transparent => dtype ("t_" ^ Symbol.toValue t) :: accum
     end
 
-fun emitDatatype ((isAnd, name, arms): dtype) =
+fun emitDatatype ((sym, isAnd, name, arms): dtype) =
 let
 in
  ( emit ((if isAnd then "and " else "datatype ") ^ name ^ " = ")
  ; appFirst 
-      (fn () => emit ("   Fake of " ^ name))
+      (fn () => emit ("   Fake" ^ Strings.symbol sym ^ " of " ^ name))
       (fn (str', (constructor, [])) =>
              emit (str' ^ constructor)
         | (str', (constructor, data)) =>
@@ -67,8 +68,8 @@ let
        | SOME Type.HashConsed => true
        | SOME Type.External => raise Fail "emitDatastructure"
 in
- ( emit ("structure " ^ Strings.symbol t ^ ":>")
- ; emit "sig"
+ ( emit ("structure " ^ Strings.symbol t ^ " = ")
+ (* ; emit "sig" (* The signature doesn't add much of anything *)
  ; incr ()
     ; if sealed 
       then emit ("type t = L10Terms.t_" ^ tstr)
@@ -79,7 +80,7 @@ in
     ; if sealed then emit ("val inj: view -> t") else ()
     ; if sealed then emit ("val prj: t -> view") else ()
  ; decr ()
- ; emit "end = "
+ ; emit "end = " *)
  ; emit "struct"
  ; incr ()
     ; if sealed 
@@ -89,11 +90,25 @@ in
       then emit ("datatype view = datatype L10Terms." ^ tstr ^ "_view")
       else ()
     ; if sealed 
-      then emit ("val inj = L10Terms.inj_" ^ tstr)
+      then emit ("fun inj (x: view): t = L10Terms.inj_" ^ tstr ^ " x")
       else ()
     ; if sealed
-      then emit ("fun prj (L10Terms.inj_" ^ tstr ^ " x) = x")
+      then emit ("fun prj (L10Terms.inj_" ^ tstr ^ " x): view = x")
       else ()
+    ; if sealed
+      then SetX.app 
+              (fn c => 
+               let val cstr = Strings.symbol c in
+                 (case Tab.lookup Tab.consts c of
+                     Class.Base _ =>
+                        emit ("val " ^ cstr ^ "': t\
+                              \ = inj " ^ cstr)
+                   | _ => 
+                        emit ("fun " ^ cstr ^ "' x: t\
+                              \ = inj (" ^ cstr ^ " x)"))
+               end)
+              (Tab.lookup Tab.typecon t)
+      else ()            
  ; decr ()
  ; emit "end"
  ; emit "")
@@ -114,12 +129,14 @@ let
      | folder (_, set) = set
  
    val types_to_create = List.foldr folder SetX.empty all_types
+ 
+   val datatypes = 
+      rev (SetX.foldr (makeDtypes types_to_create) [] types_to_create)
 in
  ( emit "structure L10Terms = "
  ; emit "struct"
  ; incr ()
-    ; app emitDatatype 
-         (rev (SetX.foldr (makeDtypes types_to_create) [] types_to_create))
+    ; app emitDatatype datatypes
  ; decr ()
  ; emit "end"
  ; emit ""
