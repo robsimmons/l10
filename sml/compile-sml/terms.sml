@@ -8,11 +8,9 @@ struct
 
 open Util
 
-type dtype = Symbol.symbol * bool * string * (string * string list) list
+type dtype = {arms: (string * string list) list, isPrj: bool}
 
-(*[ val makeDtyps: 
-       SetX.set -> Type.t * dtype list -> dtype list ]*)
-fun makeDtypes rc (t, accum): dtype list = 
+fun makeDtypes rc (t, dict): dtype DictX.dict = 
     let 
        (*[ typtyp: Class.typ -> string list -> string list ]*)
        fun typtyp (Class.Base _) accum = rev accum
@@ -24,49 +22,45 @@ fun makeDtypes rc (t, accum): dtype list =
        fun cons (c, constrs): (string * string list) list =
           (Strings.symbol c, typtyp (Tab.lookup Tab.consts c) []) :: constrs
 
-       fun dtype s: dtype =   
-          (t, not (null accum), s
-           , SetX.foldl cons [] (Tab.lookup Tab.typecon t))
-
-       fun stype s: dtype = 
-          (t, true, "t_" ^ s, [("inj_" ^ s, [s ^ "_view"])])
-
-       fun sealed () = 
-          stype (Symbol.toValue t)
-          :: dtype (Symbol.toValue t ^ "_view") 
-          :: accum
+       val arms = SetX.foldl cons [] (Tab.lookup Tab.typecon t)
     in case Tab.find Tab.representations t of 
-          NONE => sealed ()
-        | SOME Type.Sealed => sealed ()
-        | SOME Type.HashConsed => raise Fail "Don't know how to hashcons yet"
-        | SOME Type.Transparent => dtype ("t_" ^ Symbol.toValue t) :: accum
+          NONE => 
+             DictX.insert dict t {arms = arms, isPrj = true}
+        | SOME Type.Sealed =>
+             DictX.insert dict t {arms = arms, isPrj = true}
+        | SOME Type.HashConsed => 
+             raise Fail "Don't know how to hashcons yet"
+        | SOME Type.Transparent =>
+             DictX.insert dict t {arms = arms, isPrj = false}
     end
 
-fun emitDatatype ((sym, isAnd, name, arms): dtype) =
+fun emitDatatype (isAnd, (t, {arms, isPrj})) =
 let
+   val ty = (if isPrj then "view_" else "t_") ^ Symbol.toValue t
+   val prelude = 
+      (if isAnd then "and" else "datatype")
+      ^ " " ^ ty ^ " = "
+      ^ (if not (null arms) then ""
+         else ("Fake" ^ Strings.symbol t ^ " of " ^ ty))
 in
- ( emit ((if isAnd then "and " else "datatype ") ^ name ^ " = ")
- ; appFirst 
-      (fn () => emit ("   Fake" ^ Strings.symbol sym ^ " of " ^ name))
+ ( emit prelude
+ ; appFirst (fn () => ())
       (fn (str', (constructor, [])) =>
              emit (str' ^ constructor)
         | (str', (constructor, data)) =>
              emit (str' ^ constructor ^ " of " ^ String.concatWith " * " data))
       ("   ", " | ")
       arms
+ ; if isPrj 
+   then emit ("and t_" ^ Symbol.toValue t ^ " = inj_"
+              ^ Symbol.toValue t ^ " of view_" ^ Symbol.toValue t)
+   else ()
  ; emit "")
 end
 
-fun emitDatastructure t = 
+fun emitDatastructure (t, {arms, isPrj = sealed}) = 
 let 
    val tstr = Symbol.toValue t
-   val sealed = 
-      case Tab.find Tab.representations t of 
-         NONE => true
-       | SOME Type.Sealed => true
-       | SOME Type.Transparent => false
-       | SOME Type.HashConsed => true
-       | SOME Type.External => raise Fail "emitDatastructure"
 in
  ( emit ("structure " ^ Strings.symbol t ^ " = ")
  (* ; emit "sig" (* The signature doesn't add much of anything *)
@@ -87,7 +81,7 @@ in
       then emit ("type t = L10Terms.t_" ^ tstr)
       else emit ("datatype t = datatype L10Terms.t_" ^ tstr)
     ; if sealed 
-      then emit ("datatype view = datatype L10Terms." ^ tstr ^ "_view")
+      then emit ("datatype view = datatype L10Terms.view_" ^ tstr)
       else ()
     ; if sealed 
       then emit ("fun inj (x: view): t = L10Terms.inj_" ^ tstr ^ " x")
@@ -96,18 +90,12 @@ in
       then emit ("fun prj (L10Terms.inj_" ^ tstr ^ " x): view = x")
       else ()
     ; if sealed
-      then SetX.app 
-              (fn c => 
-               let val cstr = Strings.symbol c in
-                 (case Tab.lookup Tab.consts c of
-                     Class.Base _ =>
-                        emit ("val " ^ cstr ^ "': t\
-                              \ = inj " ^ cstr)
-                   | _ => 
-                        emit ("fun " ^ cstr ^ "' x: t\
-                              \ = inj (" ^ cstr ^ " x)"))
-               end)
-              (Tab.lookup Tab.typecon t)
+      then List.app 
+              (fn (cstr, []) => 
+                     emit ("val " ^ cstr ^ "': t = inj " ^ cstr)
+                | (cstr, _) => 
+                     emit ("fun " ^ cstr ^ "' x: t = inj (" ^ cstr ^ " x)"))
+              arms
       else ()            
  ; decr ()
  ; emit "end"
@@ -131,16 +119,17 @@ let
    val types_to_create = List.foldr folder SetX.empty all_types
  
    val datatypes = 
-      rev (SetX.foldr (makeDtypes types_to_create) [] types_to_create)
+      DictX.toList 
+         (SetX.foldr (makeDtypes types_to_create) DictX.empty types_to_create)
 in
  ( emit "structure L10Terms = "
  ; emit "struct"
  ; incr ()
-    ; app emitDatatype datatypes
+    ; appFirst (fn () => raise Match) emitDatatype (false, true) datatypes
  ; decr ()
  ; emit "end"
  ; emit ""
- ; SetX.app emitDatastructure types_to_create
+ ; app emitDatastructure datatypes
  ; emit "structure L10Terms = struct end (* Poor type theorist's sealing *)")
 end
 
