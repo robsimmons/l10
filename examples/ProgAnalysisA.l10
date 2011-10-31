@@ -1,7 +1,7 @@
 // Commands
 
 t: extensible.
-inst: type.
+inst: type. {- # TYPE inst transparent #-}
 binop:  t -> t -> t -> t -> inst.
 move:   t -> t -> inst.
 loadc:  t -> t -> inst.

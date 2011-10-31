@@ -99,23 +99,32 @@ struct
       SymbolHashTable.insertMerge tab key [ value ] 
          (fn values => value :: values)
 
+   local 
+      fun mergeTypecon t c = 
+         SymbolHashTable.insertMerge typecon t
+            (SetX.singleton c) (* Shouldn't ever be used *)
+            (fn set => SetX.insert set c)
+   in
+
    (*[ val bind: Decl.decl_t -> unit ]*)
    (* Loads a (presumed to be fully checked) declaration into the database. *)
    fun bind (Decl.World (_, w, class)) = 
         ( SymbolHashTable.insert worlds w class
-        ; SymbolHashTable.insert consts w (Class.worldToTyp class))
+        ; SymbolHashTable.insert consts w (Class.worldToTyp class)
+        ; mergeTypecon Type.world w)
      | bind (Decl.Const (_, c, class)) =
        let val t = Class.base class 
        in  
         ( SymbolHashTable.insert consts c class
-        ; SymbolHashTable.insertMerge typecon t 
-             (SetX.singleton c)
-             (fn set => SetX.insert set c))
+        ; mergeTypecon t c)
        end
      | bind (Decl.Rel (_, r, class)) = 
         ( SymbolHashTable.insert rels r class 
-        ; SymbolHashTable.insert consts r (Class.relToTyp class))
-     | bind (Decl.Type (_, a, class)) = SymbolHashTable.insert types a class
+        ; SymbolHashTable.insert consts r (Class.relToTyp class)
+        ; mergeTypecon Type.rel r)
+     | bind (Decl.Type (_, a, class)) = 
+        ( SymbolHashTable.insert types a class
+        ; SymbolHashTable.insert typecon a SetX.empty)
      | bind (Decl.DB (pos, (db as (d, _, _)))) = SymbolHashTable.insert dbs d db
      | bind (Decl.Depend (depend as (_, ((_, (w, _)), _), _))) =
          (merge (*[ <: depend list tab -> Symbol.symbol -> depend -> unit ]*)) 
@@ -133,6 +142,8 @@ struct
           SymbolHashTable.insert queries m (pos, mode)
      | bind (Decl.Representation (pos, t, rep)) =
           SymbolHashTable.insert representations t rep
+   end
+
    local 
       val coord = Coord.init "?"
       val pos = Pos.pos coord coord
@@ -153,11 +164,14 @@ struct
     ; SymbolHashTable.reset rels n
     ; SymbolHashTable.reset consts n
     ; SymbolHashTable.reset typecon n
+    ; SymbolHashTable.reset representations n
     ; bind plus
     ; bind (Decl.Type (pos, Type.nat, Class.Builtin))
     ; bind (Decl.Type (pos, Type.string, Class.Builtin))
     ; bind (Decl.Type (pos, Type.world, Class.Type))
-    ; bind (Decl.Type (pos, Type.rel, Class.Type)))
+    ; bind (Decl.Type (pos, Type.rel, Class.Type))
+    ; bind (Decl.Representation (pos, Type.world, Type.Transparent))
+    ; bind (Decl.Representation (pos, Type.rel, Type.Transparent)))
    end
 
    val () = reset ()

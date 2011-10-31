@@ -11,8 +11,10 @@ ann "nonexhaustiveMatch ignore" in
    modes.sml
 
    (* SML compiler stuff *)
+   util.sml
    splitting.sml
-   disctree.sml
+   compile-sml/strings.sml
+   compile-sml/disctree.sml
 
    (* Parser stuff *)
    l10.cmlex.sml

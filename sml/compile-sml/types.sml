@@ -1,5 +1,13 @@
 (* Compilation *)
 
+struct Types = 
+struct
+
+
+end
+
+
+(* 
 structure SMLCompileTypes:> sig
    
    (* Symbols corresponding to built-in types *)
@@ -138,3 +146,4 @@ fun caseConstructor f pathtree =
 
 
 end
+*)

@@ -103,7 +103,6 @@ val s =
 \        | prj (SOME (D x)) = x\n\
 \        | prj _ = raise Invariant\n\
 \\n\
-\      (* XXX Uses Unsafe.Vector.sub *)\n\
 \      fun sub n map =\n\
 \         case map of \n\
 \            NONE => raise NotThere\n\
@@ -128,7 +127,6 @@ val s =
 \          | SOME (MS map) => MapS.find (map, s)\n\
 \          | _ => raise Invariant\n\
 \\n\
-\      (* XXX Uses Unsafe.Vector.sub *)\n\
 \      fun unzip (n, typ) (zipper, map) = \n\
 \         case map of \n\
 \             NONE => \n\

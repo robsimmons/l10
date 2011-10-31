@@ -1,7 +1,181 @@
 (* Copyright (C) 2011 Robert J. Simmons *)
 
-structure SMLCompileTerms:> sig
+structure EmitTerms:>
+sig
+   val emit: unit -> unit
+end =
+struct
 
+open Util
+
+type dtype = bool * string * (string * string list) list
+
+(*[ val makeDtyps: 
+       SetX.set -> Type.t * dtype list -> dtype list ]*)
+fun makeDtypes rc (t, accum): dtype list = 
+    let 
+       (*[ typtyp: Class.typ -> string list -> string list ]*)
+       fun typtyp (Class.Base _) accum = rev accum
+         | typtyp (Class.Arrow (t, class)) accum = 
+             if SetX.member rc t
+             then typtyp class (("t_" ^ Symbol.toValue t) :: accum)
+             else typtyp class (Strings.typ t :: accum)
+
+       fun cons (c, constrs): (string * string list) list =
+          (Strings.symbol c, typtyp (Tab.lookup Tab.consts c) []) :: constrs
+
+       fun dtype s: dtype =   
+          (not (null accum), s, SetX.foldl cons [] (Tab.lookup Tab.typecon t))
+
+       fun stype s: dtype = 
+          (true, "t_" ^ s, [("inj_" ^ s, [s ^ "_view"])])
+
+       fun sealed () = 
+          stype (Symbol.toValue t)
+          :: dtype (Symbol.toValue t ^ "_view") 
+          :: accum
+    in case Tab.find Tab.representations t of 
+          NONE => sealed ()
+        | SOME Type.Sealed => sealed ()
+        | SOME Type.HashConsed => raise Fail "Don't know how to hashcons yet"
+        | SOME Type.Transparent => dtype ("t_" ^ Symbol.toValue t) :: accum
+    end
+
+fun emitDatatype ((isAnd, name, arms): dtype) =
+let
+in
+ ( emit ((if isAnd then "and " else "datatype ") ^ name ^ " = ")
+ ; appFirst 
+      (fn () => emit ("   Fake of " ^ name))
+      (fn (str', (constructor, [])) =>
+             emit (str' ^ constructor)
+        | (str', (constructor, data)) =>
+             emit (str' ^ constructor ^ " of " ^ String.concatWith " * " data))
+      ("   ", " | ")
+      arms
+ ; emit "")
+end
+
+fun emitDatastructure t = 
+let 
+   val tstr = Symbol.toValue t
+   val sealed = 
+      case Tab.find Tab.representations t of 
+         NONE => true
+       | SOME Type.Sealed => true
+       | SOME Type.Transparent => false
+       | SOME Type.HashConsed => true
+       | SOME Type.External => raise Fail "emitDatastructure"
+in
+ ( emit ("structure " ^ Strings.symbol t ^ ":>")
+ ; emit "sig"
+ ; incr ()
+    ; if sealed 
+      then emit ("type t = L10Terms.t_" ^ tstr)
+      else emit ("datatype t = datatype L10Terms.t_" ^ tstr)
+    ; if sealed 
+      then emit ("datatype view = datatype L10Terms." ^ tstr ^ "_view")
+      else ()
+    ; if sealed then emit ("val inj: view -> t") else ()
+    ; if sealed then emit ("val prj: t -> view") else ()
+ ; decr ()
+ ; emit "end = "
+ ; emit "struct"
+ ; incr ()
+    ; if sealed 
+      then emit ("type t = L10Terms.t_" ^ tstr)
+      else emit ("datatype t = datatype L10Terms.t_" ^ tstr)
+    ; if sealed 
+      then emit ("datatype view = datatype L10Terms." ^ tstr ^ "_view")
+      else ()
+    ; if sealed 
+      then emit ("val inj = L10Terms.inj_" ^ tstr)
+      else ()
+    ; if sealed
+      then emit ("fun prj (L10Terms.inj_" ^ tstr ^ " x) = x")
+      else ()
+ ; decr ()
+ ; emit "end"
+ ; emit "")
+end
+
+fun terms () = 
+let
+   val all_types = Tab.list Tab.types
+
+   (*[ val folder: (Symbol.symbol * Class.knd) * SetX.set -> SetX.set ]*)
+   fun folder ((t, Class.Type), set) = 
+         (case Tab.find Tab.representations t of 
+             NONE => SetX.insert set t
+           | SOME Type.Sealed => SetX.insert set t
+           | SOME Type.Transparent => SetX.insert set t
+           | SOME Type.HashConsed => SetX.insert set t
+           | SOME Type.External => set)
+     | folder (_, set) = set
+ 
+   val types_to_create = List.foldr folder SetX.empty all_types
+in
+ ( emit "structure L10Terms = "
+ ; emit "struct"
+ ; incr ()
+    ; app emitDatatype 
+         (rev (SetX.foldr (makeDtypes types_to_create) [] types_to_create))
+ ; decr ()
+ ; emit "end"
+ ; emit ""
+ ; SetX.app emitDatastructure types_to_create
+ ; emit "structure L10Terms = struct end (* Poor type theorist's sealing *)")
+end
+
+fun emit () = terms ()
+(*
+
+      emit ("structure " ^ getPrefix true "" ^ "Terms:> " 
+              ^ String.map Char.toUpper (getPrefix true "_") ^ "TERMS =")
+      ; emit "struct"
+      ; incr ()
+      ; emit "(* Datatype views *)\n"
+      ; emit "datatype fake_ = Fake_ of fake_"
+      ; app (fn x => 
+               (emitView true x
+                ; emit ("and " ^ nameOfType x 
+                        ^ " = inj" ^ NameOfType x
+                        ^ " of " ^ nameOfView x)))
+           encodedTypes
+      ; emit "\n"
+      ; emit "(* Constructor-specific projections, injections, and aborts *)\n"
+      ; app emitPrj encodedTypes
+      ; app emitInj encodedTypes
+      ; app emitAbort encodedTypes
+
+      ; emit "\n"
+      ; emit "(* String encoding functions *)\n"
+      ; emit "fun strFake_ (Fake_ x) = strFake_ x"
+      ; app emitStr encodedTypes
+
+      ; emit "\n"
+      ; emit "(* Equality *)\n"
+      ; app emitEq encodedTypes
+      ; emit ""
+      ; emitMapHeader "sub"
+
+      ; app (emitMapHelper "sub") encodedTypes
+      ; emitMapHeader "unzip"
+      ; app (emitMapHelper "unzip") encodedTypes
+
+      ; emit ""
+      ; emit ("(* Maps *)\n")
+      ; app emitMap encodedTypes
+      ; decr ()
+      ; emit "end\n"
+   end
+*)
+
+end
+
+(*
+structure SMLCompileTerms:> 
+sig
    val termsSig: unit -> unit (* signature FOO_TERMS *)
    val terms: unit -> unit    (* structure FooTerms *) 
 
@@ -27,7 +201,6 @@ structure SMLCompileTerms:> sig
       -> 'a pathvar                         (* Current path *)
       -> Symbol.symbol                      (* New constructor *)
       -> (String.string * 'b pathvar list) 
-
 end = 
 struct
 
@@ -401,3 +574,4 @@ fun terms () =
    end
 
 end
+*)

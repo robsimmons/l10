@@ -9,9 +9,10 @@ $(SML_LIB)/refined-basis/basis.mlb
    types.sml
    worlds.sml
    modes.sml
-   splitting.sml
 
    (* SML compiler stuff *)
+   util.sml
+   splitting.sml
    compile-sml/strings.sml
    compile-sml/disctree.sml
 

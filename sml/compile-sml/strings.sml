@@ -1,5 +1,8 @@
-structure SMLStrings:> 
+structure Strings:> 
 sig
+   (* Get the name of the type *)
+   val typ: Type.t -> string
+
    (* Given and a string representing an SML expression of that type, mediate
     * between the type and the standard view of that type. *)
    val prj: Type.t -> string -> string (* prj: type -> view *)
@@ -9,6 +12,16 @@ sig
    (* Given a constructor, return the pattern constructor (an injection). *)
    val pattern: Symbol.symbol -> string
    val builder: Symbol.symbol -> string 
+
+   (* Gives a string comparing two things for equality *)
+   val eq: Type.t -> string -> string -> string
+
+   (* Create a tuple: optTuple emits nothing on unit *)
+   val tuple: string list -> string
+   val optTuple: string list -> string
+
+   (* Outputs a first-letter-capitalized version of the symbol *)
+   val symbol: Symbol.symbol -> string
 end =
 struct
 
@@ -24,6 +37,19 @@ in
                     ^ "first character '" ^ str fst ^ "'")
    else str (Char.toUpper fst) ^ rest
 end
+
+val symbol = embiggen
+
+fun typ t = 
+   case Tab.lookup Tab.types t of
+      Class.Type => embiggen t ^ ".t"
+    | Class.Extensible => "Symbol.symbol"
+    | Class.Builtin =>
+         if Symbol.eq (t, Type.nat)
+         then "IntInf.int"
+         else if Symbol.eq (t, Type.string)
+         then "String.string"
+         else raise Fail ("Dunno about builtin `" ^ Symbol.toValue t ^ "`")
 
 fun prjOrInj which t s = 
    case Tab.lookup Tab.types t of 
@@ -65,5 +91,22 @@ end
 
 val pattern = patternOrBuilder false
 val builder = patternOrBuilder true
+
+fun eq t thing1 thing2 =
+   case Tab.lookup Tab.types t of
+      Class.Type => "(" ^ embiggen t ^ ".eq (" ^ thing1 ^ ", " ^ thing2 ^ ")"
+    | Class.Extensible => "(Symbol.eq (" ^ thing1 ^ ", " ^ thing2 ^ ")"
+    | Class.Builtin => 
+         if Symbol.eq (t, Type.nat)
+         then "(EQUAL = IntInf.compare (" ^ thing1 ^ ", " ^ thing2 ^ "))"
+         else if Symbol.eq (t, Type.string)
+         then "(EQUAL = String.compare (" ^ thing1 ^ ", " ^ thing2 ^ "))"
+         else raise Fail ("Dunno about builtin `" ^ Symbol.toValue t ^ "`")
+
+fun tuple [ x ] = x
+  | tuple xs = "(" ^ String.concatWith ", " xs ^ ")"
+
+fun optTuple [] = ""
+  | optTuple xs = " " ^ tuple xs
 
 end
