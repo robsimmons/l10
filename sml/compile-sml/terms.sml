@@ -2,135 +2,279 @@
 
 structure EmitTerms:>
 sig
+   type subterm = {t: Symbol.symbol, ts: string, mutual: bool, n: int}
+   datatype dtype =
+      DT of 
+       { ts: string 
+       , tS: string
+       , arms: (string * subterm list) list
+       , rep: Type.representation}
+   val dtype: Type.t -> dtype
    val emit: unit -> unit
 end =
 struct
 
 open Util
 
-type dtype = {arms: (string * string list) list, isPrj: bool}
-
-fun makeDtypes rc (t, dict): dtype DictX.dict = 
+(* A representation of the initial datatype *)
+type subterm = {t: Symbol.symbol, ts: string, mutual: bool, n: int}
+datatype dtype =
+   DT of 
+    { ts: string 
+    , tS: string
+    , arms: (string * subterm list) list
+    , rep: Type.representation}
+fun makeDatatype mutually_defined (t, rep): dtype = 
     let 
-       (*[ typtyp: Class.typ -> string list -> string list ]*)
-       fun typtyp (Class.Base _) accum = rev accum
-         | typtyp (Class.Arrow (t, class)) accum = 
-             if SetX.member rc t
-             then typtyp class (("t_" ^ Symbol.toValue t) :: accum)
-             else typtyp class (Strings.typ t :: accum)
+       (*[ subterms: Class.typ -> int -> subterm list -> subterm list ]*)
+       fun subterms (Class.Base _) n accum: subterm list = rev accum
+         | subterms (Class.Arrow (t, class)) n accum = 
+           let 
+              val mutual = mutually_defined t
+              val subterm =
+                 {t = t, ts = Symbol.toValue t, mutual = mutual, n=n}
+           in subterms class (n+1) (subterm :: accum)
+           end
 
-       fun cons (c, constrs): (string * string list) list =
-          (Strings.symbol c, typtyp (Tab.lookup Tab.consts c) []) :: constrs
+       fun armfolder (c, constrs): (string * subterm list) list =
+          (Strings.symbol c, subterms (Tab.lookup Tab.consts c) 0 []) 
+          :: constrs
 
-       val arms = SetX.foldl cons [] (Tab.lookup Tab.typecon t)
-    in case Tab.find Tab.representations t of 
-          NONE => 
-             DictX.insert dict t {arms = arms, isPrj = true}
-        | SOME Type.Sealed =>
-             DictX.insert dict t {arms = arms, isPrj = true}
-        | SOME Type.HashConsed => 
-             raise Fail "Don't know how to hashcons yet"
-        | SOME Type.Transparent =>
-             DictX.insert dict t {arms = arms, isPrj = false}
+       val arms = SetX.foldl armfolder [] (Tab.lookup Tab.typecon t)
+    in 
+       DT {ts = Symbol.toValue t
+           , tS = Strings.symbol t
+           , arms = arms
+           , rep = rep}
     end
 
-fun emitDatatype (isAnd, (t, {arms, isPrj})) =
+fun dtype t = 
+let 
+   val rep = 
+      case Tab.find Tab.representations t of NONE => Type.Sealed | SOME r => r
+in makeDatatype (fn _ => false) (t, rep)
+end
+
+(* Emit the "datatype" portion *)
+fun isPrj rep = 
+   case rep of 
+      Type.Transparent => false
+    | Type.Sealed => true
+    | Type.HashConsed => true
+    | Type.External => false
+
+exception Skip
+fun emitDatatype (isAnd, (t, DT {ts, tS, arms, rep})) =
 let
-   val ty = (if isPrj then "view_" else "t_") ^ Symbol.toValue t
+   val () = if rep = Type.External then raise Skip else ()
+
+   val ty = (if isPrj rep then "view_" else "t_") ^ ts
    val prelude = 
       (if isAnd then "and" else "datatype")
       ^ " " ^ ty ^ " = "
       ^ (if not (null arms) then ""
-         else ("Fake" ^ Strings.symbol t ^ " of " ^ ty))
+         else ("Fake" ^ tS ^ " of " ^ ty))
+   fun typ {t, ts, mutual, n}= 
+      if mutual then ("t_" ^ ts) else Strings.typ t
 in
- ( emit prelude
+ ( emit [ prelude ]
  ; appFirst (fn () => ())
-      (fn (str', (constructor, [])) =>
-             emit (str' ^ constructor)
-        | (str', (constructor, data)) =>
-             emit (str' ^ constructor ^ " of " ^ String.concatWith " * " data))
+      (fn (str', (constructor, [])) => emit [str' ^ constructor]
+        | (str', (constructor, subterms)) =>
+             emit [str' ^ constructor ^ " of " 
+                   ^ String.concatWith " * " (map typ subterms)])
       ("   ", " | ")
       arms
- ; if isPrj 
-   then emit ("and t_" ^ Symbol.toValue t ^ " = inj_"
-              ^ Symbol.toValue t ^ " of view_" ^ Symbol.toValue t)
-   else ()
- ; emit "")
+ ; if isPrj rep 
+   then emit ["and t_" ^ ts ^ " = inj_" ^ ts ^ " of view_" ^ ts, ""]
+   else emit [""])
+end 
+handle Skip => (emit ["datatype t_" ^ ts ^ " = datatype " ^ tS ^ ".t", ""])
+
+fun emitEq (isAnd, (t, DT {ts, tS, arms, rep})) =
+let
+   fun emitCase pre post (c, (xs: subterm list)) =
+   let 
+      fun geteq {t, ts, mutual, n} = 
+      let val n = Int.toString n 
+      in
+         if mutual then "eq_" ^ ts ^ " (x_" ^ n ^ ", y_" ^ n ^ ")" 
+         else Strings.eq t ("x_" ^ n) ("y_" ^ n)
+      end
+   in
+    ( emit [pre ^ "(" ^ c 
+            ^ Strings.optTuple (map (fn x => "x_" ^ Int.toString (#n x)) xs)
+            ^ ", " ^ c
+            ^ Strings.optTuple (map (fn x => "y_" ^ Int.toString (#n x)) xs)
+            ^ ") => " ]
+    ; incr ()
+    ; appSuper
+         (fn () => emit ["   true" ^ post])
+         (fn x => emit ["   " ^ geteq x ^ post])
+         ((fn x => (incr (); emit [geteq x]))
+          , (fn x => emit ["andalso " ^ geteq x])
+          , (fn x => (emit ["andalso " ^ geteq x ^ post]; decr ())))
+         xs
+    ; decr ())
+   end
+ 
+   val prefix = 
+      (if isAnd then "and" else "fun")  
+      ^ " eq_" ^ ts ^ " "
+      ^ (if isPrj rep then ("(inj_" ^ ts ^ " x, inj_" ^ ts ^ " y) =") 
+         else "(x, y) =")
+in
+   appSuper
+      (fn () => emit [prefix ^ " raise Match (* Impossible *)"])
+      (fn x => (emit [prefix ^ " true"]))
+      ((fn x => 
+         ( emit [prefix, "  (case (x, y) of"]
+         ; incr ()
+         ; emitCase "   " "" x))
+       , (fn x => (emitCase " | " "" x))
+       , (fn x => (emitCase " | " "" x; emit [" | _ => false)"]; decr ())))
+      arms
 end
 
-fun emitDatastructure (t, {arms, isPrj = sealed}) = 
-let 
-   val tstr = Symbol.toValue t
+fun emitStr (isAnd, (t, DT {ts, tS, arms, rep})) = 
+let
+   fun emitCase pre post (c, (xs: subterm list)) =
+   let 
+      fun getstr {t, ts, mutual, n} = 
+         if mutual then "str_" ^ ts ^ " x_" ^ Int.toString n 
+         else Strings.str t ("x_" ^ Int.toString n)
+   in
+    ( emit [pre ^ c 
+            ^ Strings.optTuple (map (fn x => "x_" ^ Int.toString (#n x)) xs)
+            ^ " => " ]
+    ; incr ()
+    ; appSuper
+         (fn () => emit ["   \"" ^ c ^ "\"" ^ post])
+         (fn x => emit ["   \"(" ^ c ^ " \" ^ " ^ getstr x ^ " ^ \")\"" ^ post])
+         ((fn x => (incr (); emit ["\"(" ^ c ^ " \" ^ " ^ getstr x]))
+          , (fn x => emit ["^ " ^ getstr x])
+          , (fn x => (emit ["^ " ^ getstr x ^ " ^ \")\"" ^ post]; decr ())))
+         xs
+    ; decr ())
+   end
+ 
+   val prefix = 
+      (if isAnd then "and" else "fun")  
+      ^ " str_" ^ ts ^ " "
+      ^ (if isPrj rep then ("(inj_" ^ ts ^ " x) =") else "x =")
 in
- ( emit ("structure " ^ Strings.symbol t ^ " = ")
- (* ; emit "sig" (* The signature doesn't add much of anything *)
+   appSuper
+      (fn () => emit [prefix ^ " raise Match (* Impossible *)"])
+      (fn x => (emit [prefix]; emitCase "  (case x of " ")" x))
+      ((fn x => 
+         ( emit [prefix, "  (case x of"]
+         ; incr ()
+         ; emitCase "   " "" x))
+       , (fn x => (emitCase " | " "" x))
+       , (fn x => (emitCase " | " ")" x; decr ())))
+      arms
+end
+
+(* Emit the structure which will be externally viewable *)
+fun emitDatastructure (t, DT {ts, tS, arms, rep}) = 
+let 
+   val sealed = 
+      case rep of 
+         Type.Transparent => false
+       | Type.Sealed => true
+       | Type.HashConsed => true
+       | Type.External => false
+in
+ ( emit ["structure " ^ tS ^ " = ", "struct"]
  ; incr ()
     ; if sealed 
-      then emit ("type t = L10Terms.t_" ^ tstr)
-      else emit ("datatype t = datatype L10Terms.t_" ^ tstr)
+      then emit ["type t = L10_Terms.t_" ^ ts]
+      else emit ["datatype t = datatype L10_Terms.t_" ^ ts]
     ; if sealed 
-      then emit ("datatype view = datatype L10Terms." ^ tstr ^ "_view")
-      else ()
-    ; if sealed then emit ("val inj: view -> t") else ()
-    ; if sealed then emit ("val prj: t -> view") else ()
- ; decr ()
- ; emit "end = " *)
- ; emit "struct"
- ; incr ()
-    ; if sealed 
-      then emit ("type t = L10Terms.t_" ^ tstr)
-      else emit ("datatype t = datatype L10Terms.t_" ^ tstr)
-    ; if sealed 
-      then emit ("datatype view = datatype L10Terms.view_" ^ tstr)
+      then emit ["datatype view = datatype L10_Terms.view_" ^ ts]
       else ()
     ; if sealed 
-      then emit ("fun inj (x: view): t = L10Terms.inj_" ^ tstr ^ " x")
+      then emit ["fun inj (x: view): t = L10_Terms.inj_" ^ ts ^ " x"]
       else ()
     ; if sealed
-      then emit ("fun prj (L10Terms.inj_" ^ tstr ^ " x): view = x")
+      then emit ["fun prj (L10_Terms.inj_" ^ ts ^ " x: t): view = x"]
       else ()
+    ; emit ["val toString: t -> string = L10_Terms.str_" ^ ts]
+    ; emit ["val eq: t * t -> bool = L10_Terms.eq_" ^ ts]
     ; if sealed
       then List.app 
               (fn (cstr, []) => 
-                     emit ("val " ^ cstr ^ "': t = inj " ^ cstr)
+                     emit ["val " ^ cstr ^ "': t = inj " ^ cstr]
                 | (cstr, _) => 
-                     emit ("fun " ^ cstr ^ "' x: t = inj (" ^ cstr ^ " x)"))
+                     emit ["fun " ^ cstr ^ "' x: t = inj (" ^ cstr ^ " x)"])
               arms
       else ()            
  ; decr ()
- ; emit "end"
- ; emit "")
+ ; emit ["end", ""])
+end 
+
+(* This function splits the datatypes into sections that aren't mutually
+ * recursive. The only necessary property of this function, and indeed the
+ * only property that this function currently has at all, is to make sure that
+ * "external" types are all defined prior to other types, because otherwise
+ * the datatype definitions won't refer to each other correctly. *)
+fun partition_types (): ((Type.t * dtype) list * SetX.set) list = 
+let
+   fun folder ((t, Class.Type (* <: Class.knd *)), (dict1, dict2)) = 
+         (case Tab.find Tab.representations t of 
+             NONE => 
+                (dict1, DictX.insert dict2 t (t, Type.Sealed))
+           | SOME Type.Sealed => 
+                (dict1, DictX.insert dict2 t (t, Type.Sealed))
+           | SOME Type.Transparent => 
+                (dict1, DictX.insert dict2 t (t, Type.Transparent))
+           | SOME Type.HashConsed => raise Fail "Dunno about hashconsing"
+           | SOME Type.External => 
+                (DictX.insert dict1 t (t, Type.External), dict2))
+     | folder (_, x) = x
+
+   val (dict1, dict2) = 
+      List.foldr folder (DictX.empty, DictX.empty) (Tab.list Tab.types)
+
+   fun mapper dict = 
+      DictX.toList (DictX.map (makeDatatype (DictX.member dict)) dict)
+
+   fun dependency (dtypes: (Type.t * dtype) list) = 
+   let 
+      val defs = 
+         foldr (fn ((t, _), set) => SetX.insert set t) SetX.empty dtypes
+      val uses = 
+         foldr (fn ((_, DT {arms, ...}), set) =>
+                   foldr (fn ((_, subterms), set) => 
+                             foldr (fn ({t, ...}, set) => SetX.insert set t)
+                                set subterms)
+                      set arms)
+            SetX.empty dtypes
+   in
+      (dtypes, SetX.difference uses defs)
+   end
+in
+   map (dependency o mapper) [dict1, dict2]
 end
 
 fun terms () = 
 let
-   val all_types = Tab.list Tab.types
-
-   (*[ val folder: (Symbol.symbol * Class.knd) * SetX.set -> SetX.set ]*)
-   fun folder ((t, Class.Type), set) = 
-         (case Tab.find Tab.representations t of 
-             NONE => SetX.insert set t
-           | SOME Type.Sealed => SetX.insert set t
-           | SOME Type.Transparent => SetX.insert set t
-           | SOME Type.HashConsed => SetX.insert set t
-           | SOME Type.External => set)
-     | folder (_, set) = set
- 
-   val types_to_create = List.foldr folder SetX.empty all_types
- 
-   val datatypes = 
-      DictX.toList 
-         (SetX.foldr (makeDtypes types_to_create) DictX.empty types_to_create)
+   val datatypes = partition_types ()
+   fun body ((dtypes, dependencies): ((Type.t * dtype) list * SetX.set)) = 
+    ( emit ["structure L10_Terms = ", "struct"]
+    ; incr ()
+       ; emit (DiscTree.discCore dependencies)
+       ; appFirst (fn () => ()) emitDatatype (false, true) dtypes
+       ; appFirst (fn () => ()) emitEq (false, true) dtypes
+       ; emit [""]
+       ; appFirst (fn () => ()) emitStr (false, true) dtypes
+    ; decr ()
+    ; emit ["end", ""]
+    ; app emitDatastructure dtypes)
 in
- ( emit "structure L10Terms = "
- ; emit "struct"
- ; incr ()
-    ; appFirst (fn () => raise Match) emitDatatype (false, true) datatypes
- ; decr ()
- ; emit "end"
- ; emit ""
- ; app emitDatastructure datatypes
- ; emit "structure L10Terms = struct end (* Poor type theorist's sealing *)")
+ ( emit ["","(* L10 Generated Terms (terms.sml) *)", "", ""]
+ ; app body datatypes
+ ; emit ["structure L10_Terms = struct end (* Workable sealing *)"])
 end
 
 fun emit () = terms ()

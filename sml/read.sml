@@ -79,6 +79,7 @@ end
 fun readfile filename = 
 let 
    val file = TextIO.openIn filename 
+   val out = TextIO.openOut (filename ^ ".sml")
    val stream = 
       stream_map Types.check 
          (Parser.parse (Lexer.lex filename (Stream.fromTextInstream file)))
@@ -86,7 +87,14 @@ in
    ( print ("[ == Opening " ^ filename ^ " == ]\n")
    ; load stream
      handle exn => ((TextIO.closeIn file handle _ => ()); raise exn)
-   ; print ("[ == Closing " ^ filename ^ " == ]\n\n"))
+   ; print ("[ == Closing " ^ filename ^ " == ]\n\n")
+   ; Util.write
+        out
+        (fn () => 
+          ( Util.emit ["structure L10 = struct"]
+          ; EmitTerms.emit ()
+          ; Util.emit ["end"]))
+   ; TextIO.closeOut out)
 end
 handle Lexer.LexError (c, s) =>
           print ("Lex error at " ^ Coord.toString c ^ "\n" ^ s ^ ".\n")

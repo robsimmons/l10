@@ -16,6 +16,12 @@ sig
    (* Gives a string comparing two things for equality *)
    val eq: Type.t -> string -> string -> string
 
+   (* Gives a toString function *)
+   val str: Type.t -> string -> string
+
+   (* Names the dictionary for this type *)
+   val dict: Type.t -> string 
+
    (* Create a tuple: optTuple emits nothing on unit *)
    val tuple: string list -> string
    val optTuple: string list -> string
@@ -49,6 +55,17 @@ fun typ t =
          then "IntInf.int"
          else if Symbol.eq (t, Type.string)
          then "String.string"
+         else raise Fail ("Dunno about builtin `" ^ Symbol.toValue t ^ "`")
+
+fun dict t = 
+   case Tab.lookup Tab.types t of
+      Class.Type => embiggen t ^ ".Dict"
+    | Class.Extensible => "SymbolSplayDict"
+    | Class.Builtin =>
+         if Symbol.eq (t, Type.nat)
+         then "IntInfSplayDict"
+         else if Symbol.eq (t, Type.string)
+         then "StringSplayDict"
          else raise Fail ("Dunno about builtin `" ^ Symbol.toValue t ^ "`")
 
 fun prjOrInj which t s = 
@@ -94,13 +111,24 @@ val builder = patternOrBuilder true
 
 fun eq t thing1 thing2 =
    case Tab.lookup Tab.types t of
-      Class.Type => "(" ^ embiggen t ^ ".eq (" ^ thing1 ^ ", " ^ thing2 ^ ")"
-    | Class.Extensible => "(Symbol.eq (" ^ thing1 ^ ", " ^ thing2 ^ ")"
+      Class.Type => "(" ^ embiggen t ^ ".eq (" ^ thing1 ^ ", " ^ thing2 ^ "))"
+    | Class.Extensible => "(Symbol.eq (" ^ thing1 ^ ", " ^ thing2 ^ "))"
     | Class.Builtin => 
          if Symbol.eq (t, Type.nat)
          then "(EQUAL = IntInf.compare (" ^ thing1 ^ ", " ^ thing2 ^ "))"
          else if Symbol.eq (t, Type.string)
          then "(EQUAL = String.compare (" ^ thing1 ^ ", " ^ thing2 ^ "))"
+         else raise Fail ("Dunno about builtin `" ^ Symbol.toValue t ^ "`")
+
+fun str t thing = 
+   case Tab.lookup Tab.types t of
+      Class.Type => "(" ^ embiggen t ^ ".toString " ^ thing ^ ")"
+    | Class.Extensible => "(Symbol.toValue " ^ thing ^ ")"
+    | Class.Builtin => 
+         if Symbol.eq (t, Type.nat)
+         then "(IntInf.toString " ^ thing ^ ")"
+         else if Symbol.eq (t, Type.string)
+         then "(\"\\\"\" ^ " ^ thing ^ " ^ \"\\\"\")"
          else raise Fail ("Dunno about builtin `" ^ Symbol.toValue t ^ "`")
 
 fun tuple [ x ] = x

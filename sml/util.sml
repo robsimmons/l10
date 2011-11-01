@@ -3,14 +3,14 @@
 
 structure Util:> sig
    (* Stateful; set or unset the indent *)
-   val emit: string -> unit
+   val emit: string list -> unit
    val incr: unit -> unit
    val decr: unit -> unit
 
    (* Write: output to a particular stream *)
    val write: TextIO.outstream -> (unit -> unit) -> unit
 
-   (* Annotate a list with ints *)
+   (* Annotate a listwith ints *)
    val mapi: (int * 'a -> 'b) -> 'a list -> 'b list
    val intify: 'a list -> (int * 'a) list 
 
@@ -61,12 +61,14 @@ local
    val outstream: TextIO.outstream option ref = ref NONE
    val ind = ref ""
 in
-   fun emit s = 
+   fun emit1 s = 
    let val s' = !ind ^ s ^ "\n"
    in case !outstream of 
          NONE => print s'
        | SOME stream => TextIO.output (stream, s')
    end
+
+   val emit = app emit1
 
    fun incr () = ind := !ind ^ "   "
 

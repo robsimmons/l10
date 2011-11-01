@@ -3,222 +3,363 @@
 structure DiscTree = 
 struct
 
-val s = 
-"   (* Discrimination trees as used in the L10 compiler *)\
-\\n\
-\   (* Hopefully this won't wind up write-only; the invariants are\n\
-\    * complicated. This is basically a hack to get around SML's lack of \n\
-\    * polymorphic recursion, which would enforce the shape invariants that\n\
-\    * we're counting on. *)  \n\
-\\n\
-\   structure DiscMap:> sig\n\
-\      type 'a map \n\
-\      exception NotThere\n\
-\\n\
-\      val empty: 'a map\n\
-\      val isEmpty: 'a map -> bool\n\
-\      val inj: 'a -> 'a map (* Insert data *)\n\
-\      val prj: 'a map -> 'a (* Expect data, may raise NotThere *)\n\
-\      val sub: int -> 'a map -> 'a map \n\
-\      val subX: Symbol.symbol -> 'a map -> 'a map\n\
-\      val subII: IntInf.int -> 'a map -> 'a map\n\
-\      val subS: String.string -> 'a map -> 'a map\n\
-\\n\
-\      (* Combines the ORD_MAP intersectWith with a fold *)\n\
-\      val intersect: ('a * 'b * 'c -> 'c) -> 'c -> ('a map * 'b map) -> 'c\n\
-\\n\
-\      type 'a zipmap \n\
-\      val id: 'a map -> 'a zipmap\n\
-\      val unzip: int * int -> 'a zipmap -> 'a zipmap\n\
-\      val unzipX: Symbol.symbol -> 'a zipmap -> 'a zipmap\n\
-\      val unzipII: IntInf.int -> 'a zipmap -> 'a zipmap\n\
-\      val unzipS: String.string -> 'a zipmap -> 'a zipmap\n\
-\\n\
-\      val rezip: 'a zipmap -> 'a map\n\
-\      val replace: 'a zipmap * 'a map -> 'a zipmap\n\
-\   end = \n\
-\   struct\n\
-\      exception Invariant\n\
-\\n\
-\      datatype 'a map' = \n\
-\         D of 'a \n\
-\       | M of 'a map' option vector\n\
-\       | MX of 'a map' MapX.map\n\
-\       | MII of 'a map' MapII.map\n\
-\       | MS of 'a map' MapS.map\n\
-\\n\
-\      fun intersect f a (NONE, _) = a\n\
-\        | intersect f a (_, NONE) = a\n\
-\        | intersect f a (SOME m1, SOME m2) = \n\
-\          case (m1, m2) of \n\
-\             (D data1, D data2) => f (data1, data2, a)\n\
-\           | (M vec1, M vec2) => \n\
-\             if Vector.length vec1 <> Vector.length vec2\n\
-\             then raise Invariant\n\
-\             else Vector.foldri \n\
-\                (fn (i, map1, a) => \n\
-\                   intersect f a (map1, Vector.sub (vec2, i)))\n\
-\                a vec1\n\
-\           | (MX map1, MX map2) =>\n\
-\             MapX.foldri\n\
-\                (fn (x, m1, a) =>\n\
-\                   intersect f a (SOME m1, MapX.find (map2, x)))\n\
-\                a map1\n\
-\           | (MII map1, MII map2) =>\n\
-\             MapII.foldri\n\
-\                (fn (i, m1, a) => \n\
-\                   intersect f a (SOME m1, MapII.find (map2, i)))\n\
-\                a map1\n\
-\           | (MS map1, MS map2) => \n\
-\             MapS.foldri\n\
-\                (fn (s, m1, a) => \n\
-\                   intersect f a (SOME m1, MapS.find (map2, s)))\n\
-\                a map1\n\
-\           | _ => raise Invariant\n\
-\\n\
-\      type 'a map = 'a map' option\n\
-\\n\
-\      datatype 'a zipper = \n\
-\         Z of int * 'a map vector\n\
-\       | ZX of Symbol.symbol * 'a map' MapX.map\n\
-\       | ZII of IntInf.int * 'a map' MapII.map\n\
-\       | ZS of String.string * 'a map' MapS.map\n\
-\\n\
-\      type 'a zipmap = 'a zipper list * 'a map\n\
-\\n\
-\      fun id map = ([], map)\n\
-\\n\
-\      fun replace ((zipper, _), map) = (zipper, map)\n\
-\\n\
-\      val empty = NONE\n\
-\\n\
-\      fun isEmpty NONE = true\n\
-\        | isEmpty _ = false\n\
-\\n\
-\      fun inj x = SOME (D x)\n\
-\\n\
-\      exception NotThere\n\
-\\n\
-\      fun prj NONE = raise NotThere\n\
-\        | prj (SOME (D x)) = x\n\
-\        | prj _ = raise Invariant\n\
-\\n\
-\      fun sub n map =\n\
-\         case map of \n\
-\            NONE => raise NotThere\n\
-\          | SOME (M vector) => Vector.sub (vector, n) \n\
-\          | _ => raise Invariant\n\
-\\n\
-\      fun subX x map = \n\
-\         case map of\n\
-\            NONE => raise NotThere\n\
-\          | SOME (MX map) => MapX.find (map, x)\n\
-\          | _ => raise Invariant\n\
-\\n\
-\      fun subII i map = \n\
-\         case map of \n\
-\            NONE => raise NotThere\n\
-\          | SOME (MII map) => MapII.find (map, i)\n\
-\          | _ => raise Invariant\n\
-\\n\
-\      fun subS s map = \n\
-\         case map of\n\
-\            NONE => raise NotThere\n\
-\          | SOME (MS map) => MapS.find (map, s)\n\
-\          | _ => raise Invariant\n\
-\\n\
-\      fun unzip (n, typ) (zipper, map) = \n\
-\         case map of \n\
-\             NONE => \n\
-\             (Z (n, Vector.tabulate (typ, fn _ => NONE)) :: zipper, NONE)\n\
-\           | SOME (M vector) => \n\
-\             (Z (n, vector) :: zipper, Vector.sub (vector, n))\n\
-\           | SOME _ => raise Invariant\n\
-\\n\
-\      fun unzipX x (zipper, map) = \n\
-\         case map of \n\
-\            NONE => (ZX (x, MapX.empty) :: zipper, NONE)\n\
-\          | SOME (MX map) =>\n\
-\            (ZX (x, map) :: zipper, MapX.find (map, x))\n\
-\          | _ => raise Invariant\n\
-\\n\
-\      fun unzipII i (zipper, map) = \n\
-\         case map of \n\
-\            NONE => (ZII (i, MapII.empty) :: zipper, NONE)\n\
-\          | SOME (MII map) =>\n\
-\            (ZII (i, map) :: zipper, MapII.find (map, i))\n\
-\          | _ => raise Invariant\n\
-\\n\
-\      fun unzipS s (zipper, map) = \n\
-\         case map of \n\
-\            NONE => (ZS (s, MapS.empty) :: zipper, NONE)\n\
-\          | SOME (MS map) =>\n\
-\            (ZS (s, map) :: zipper, MapS.find (map, s))\n\
-\          | _ => raise Invariant\n\
-\\n\
-\      (* XXX these insertion functions need to be revised if the rezip\n\
-\       * function has the possibility of *deleting* entries *)\n\
-\      fun insertX (map, x, NONE) = map\n\
-\        | insertX (map, x, SOME discmap) = MapX.insert (map, x, discmap)\n\
-\\n\
-\      fun insertII (map, i, NONE) = map\n\
-\        | insertII (map, i, SOME discmap) = MapII.insert (map, i, discmap)\n\
-\\n\
-\      fun insertS (map, s, NONE) = map\n\
-\        | insertS (map, s, SOME discmap) = MapS.insert (map, s, discmap)\n\
-\\n\
-\      fun rezip ([], discmap) = discmap\n\
-\        | rezip (Z (n, vector) :: zipper, discmap) = \n\
-\          rezip (zipper, SOME (M (Vector.update (vector, n, discmap))))\n\
-\        | rezip (ZX (x, map) :: zipper, discmap) = \n\
-\          rezip (zipper, SOME (MX (insertX (map, x, discmap))))\n\
-\        | rezip (ZII (i, map) :: zipper, discmap) = \n\
-\          rezip (zipper, SOME (MII (insertII (map, i, discmap))))\n\
-\        | rezip (ZS (s, map) :: zipper, discmap) = \n\
-\          rezip (zipper, SOME (MS (insertS (map, s, discmap))))\n\
-\   end\n\
-\\n\
-\   signature DISC_PATHS = sig\n\
-\      type key\n\
-\      val unzip: key -> 'a DiscMap.zipmap -> 'a DiscMap.zipmap\n\
-\      val sub: key -> 'a DiscMap.map -> 'a DiscMap.map\n\
-\   end\n\
-\\n\
-\   signature DISC_MAP = sig\n\
-\      type key \n\
-\      type 'a map\n\
-\      val empty: 'a map\n\
-\      val singleton: key * 'a -> 'a map \n\
-\      val insert: 'a map * key * 'a -> 'a map\n\
-\      val insert': (key * 'a) * 'a map -> 'a map\n\
-\      val find: 'a map * key -> 'a option\n\
-\      val lookup: 'a map * key -> 'a\n\
-\   end\n\
-\\n\
-\   (* Leaves the implementation exposed *)\n\
-\   functor DiscMapImplFn (P: DISC_PATHS) =\n\
-\   struct\n\
-\      open DiscMap\n\
-\\n\
-\      type key = P.key\n\
-\\n\
-\      type 'a map = 'a map\n\
-\\n\
-\      val empty = empty\n\
-\\n\
-\      fun singleton (key, data) =\n\
-\         rezip (replace (P.unzip key (id empty), inj data))\n\
-\\n\
-\      fun insert (map, key, data) = \n\
-\         rezip (replace (P.unzip key (id map), inj data))\n\
-\\n\
-\      fun insert' ((key, data), map) = \n\
-\         rezip (replace (P.unzip key (id map), inj data))\n\
-\\n\
-\      fun find (map, key) = SOME (prj (P.sub key map))\n\
-\         handle NotThere => NONE\n\
-\\n\
-\      fun lookup (map, key) = prj (P.sub key map)\n\
-\   end\n"
+(* Discrimination trees as used in the L10 compiler *)
+(* Hopefully this won't wind up write-only; the invariants are
+ * complicated. This is basically a hack to get around SML's lack of 
+ * polymorphic recursion, which would enforce the shape invariants that
+ * we're counting on. *)
+
+fun discCore (deps: SetX.set) =
+let
+   fun info t = 
+      {name = Strings.symbol t
+       , ty = Strings.typ t
+       , dict = Strings.dict t}
+   val deps = map info (SetX.toList deps)
+in
+[
+"structure DiscDict:>",
+"sig",
+"   type 'a dict",
+"   exception NotThere",
+"",
+"   val empty: 'a dict",
+"   val isEmpty: 'a dict -> bool",
+"   val inj: 'a -> 'a dict (* Insert data *)",
+"   val prj: 'a dict -> 'a (* Expect data, may raise NotThere *)",
+"   val sub: int -> 'a dict -> 'a dict ",
+"   val subSymbol: Symbol.symbol -> 'a dict -> 'a dict",
+"   val subIntInf: IntInf.int -> 'a dict -> 'a dict",
+"   val subString: String.string -> 'a dict -> 'a dict"
+]
+@
+List.map 
+   (fn {name, ty, ...} =>
+       "   val sub" ^ name ^ ": " ^ ty ^ " -> 'a dict -> 'a dict")
+   deps
+@
+[
+"",
+"   (* Combines the ORD_MAP intersectWith with a fold *)",
+"   val intersect: ('a * 'b * 'c -> 'c) -> 'c -> ('a dict * 'b dict) -> 'c",
+"",
+"   type 'a zipdict ",
+"   val id: 'a dict -> 'a zipdict",
+"   val unzip: int * int -> 'a zipdict -> 'a zipdict",
+"   val unzipSymbol: Symbol.symbol -> 'a zipdict -> 'a zipdict",
+"   val unzipIntInf: IntInf.int -> 'a zipdict -> 'a zipdict",
+"   val unzipString: String.string -> 'a zipdict -> 'a zipdict"
+]
+@
+List.map 
+   (fn {name, ty, ...} =>
+       "   val unzip" ^ name ^ ": " ^ ty ^ " -> 'a zipdict -> 'a zipdict")
+   deps
+@
+[
+"",
+"   val rezip: 'a zipdict -> 'a dict",
+"   val replace: 'a zipdict * 'a dict -> 'a zipdict",
+"end =",
+"struct",
+"   exception Invariant",
+"",
+"   datatype 'a dict' = ",
+"      D of 'a ",
+"    | D_ of 'a dict' option vector",
+"    | DSymbol of 'a dict' SymbolSplayDict.dict",
+"    | DIntInf of 'a dict' IntInfSplayDict.dict",
+"    | DString of 'a dict' StringSplayDict.dict"
+]
+@
+List.map
+   (fn {name, dict, ...} =>
+       "    | D" ^ name ^ " of 'a dict' " ^ dict ^ ".dict")
+   deps
+@
+[
+"",
+"   fun intersect f a (NONE, _) = a",
+"     | intersect f a (_, NONE) = a",
+"     | intersect f a (SOME m1, SOME m2) = ",
+"       case (m1, m2) of ",
+"             (D data1, D data2) => f (data1, data2, a)",
+"        | (D_ vec1, D_ vec2) => ",
+"             if Vector.length vec1 <> Vector.length vec2",
+"             then raise Invariant",
+"             else Vector.foldri ",
+"                (fn (i, d1, a) => ",
+"                    intersect f a (d1, Vector.sub (vec2, i)))",
+"                a vec1",
+"        | (DSymbol dict1, DSymbol dict2) =>",
+"             SymbolSplayDict.foldr",
+"                (fn (x, d1, a) =>",
+"                    intersect f a (SOME d1, SymbolSplayDict.find dict2 x))",
+"                a dict1",
+"        | (DIntInf dict1, DIntInf dict2) =>",
+"             IntInfSplayDict.foldr",
+"                (fn (i, d1, a) => ",
+"                    intersect f a (SOME d1, IntInfSplayDict.find dict2 i))",
+"                a dict1",
+"        | (DString dict1, DString dict2) => ",
+"             StringSplayDict.foldr",
+"                (fn (s, d1, a) => ",
+"                    intersect f a (SOME d1, StringSplayDict.find dict2 s))",
+"                a dict1"
+]
+@
+List.concat (List.map
+   (fn {name, dict, ...} => 
+       [
+       "        | (D" ^ name ^ " dict1, D" ^ name ^ " dict2) => ",
+       "             " ^ dict ^ ".foldr",
+       "                (fn (s, d1, a) => ",
+       "                    intersect f a (SOME d1, "^dict^".find dict2 s))",
+       "                a dict1"
+       ])
+   deps)
+@
+[
+"        | _ => raise Invariant",
+"",
+"   type 'a dict = 'a dict' option",
+"",
+"   datatype 'a zipper = ",
+"      Z_ of int * 'a dict vector",
+"    | ZSymbol of Symbol.symbol * 'a dict' SymbolSplayDict.dict",
+"    | ZIntInf of IntInf.int * 'a dict' IntInfSplayDict.dict",
+"    | ZString of String.string * 'a dict' StringSplayDict.dict"
+]
+@
+List.map
+   (fn {ty, dict, name} =>
+       "    | Z" ^ name ^ " of " ^ ty ^ " * 'a dict' " ^ dict ^ ".dict")
+   deps
+@
+[
+"",
+"   type 'a zipdict = 'a zipper list * 'a dict",
+"",
+"   fun id dict = ([], dict)",
+"",
+"   fun replace ((zipper, _), dict) = (zipper, dict)",
+"",
+"   val empty = NONE",
+"",
+"   fun isEmpty NONE = true",
+"     | isEmpty _ = false",
+"",
+"   fun inj x = SOME (D x)",
+"",
+"   exception NotThere",
+"",
+"   fun prj NONE = raise NotThere",
+"     | prj (SOME (D x)) = x",
+"     | prj _ = raise Invariant",
+"",
+"   fun sub n dict =",
+"      case dict of ",
+"         NONE => raise NotThere",
+"       | SOME (D_ vector) => Vector.sub (vector, n) ",
+"       | _ => raise Invariant",
+"",
+"   fun subSymbol x dict = ",
+"      case dict of",
+"         NONE => raise NotThere",
+"       | SOME (DSymbol dict) => SymbolSplayDict.find dict x",
+"       | _ => raise Invariant",
+"",
+"   fun subIntInf i dict = ",
+"      case dict of ",
+"         NONE => raise NotThere",
+"       | SOME (DIntInf dict) => IntInfSplayDict.find dict i",
+"       | _ => raise Invariant",
+"",
+"   fun subString s dict = ",
+"      case dict of",
+"         NONE => raise NotThere",
+"       | SOME (DString dict) => StringSplayDict.find dict s",
+"       | _ => raise Invariant",
+""
+]
+@
+List.concat (List.map
+   (fn {name, dict, ...} => 
+       [
+       "   fun sub" ^ name ^ " s dict = ",
+       "      case dict of",
+       "         NONE => raise NotThere",
+       "       | SOME (D" ^ name ^ " dict) => " ^ dict ^ ".find dict s", 
+       "       | _ => raise Invariant",
+       ""
+       ])
+   deps)
+@
+[
+"   fun unzip (n, typ) (zipper, dict) = ",
+"      case dict of ",
+"          NONE => ",
+"             (Z_ (n, Vector.tabulate (typ, fn _ => NONE)) :: zipper, NONE)",
+"        | SOME (D_ vector) => ",
+"             (Z_ (n, vector) :: zipper, Vector.sub (vector, n))",
+"        | SOME _ => raise Invariant",
+"",
+"   fun unzipSymbol x (zipper, dict) = ",
+"      case dict of ",
+"         NONE =>",
+"            (ZSymbol (x, SymbolSplayDict.empty) :: zipper, NONE)",
+"       | SOME (DSymbol dict) =>",
+"            (ZSymbol (x, dict) :: zipper, SymbolSplayDict.find dict x)",
+"       | _ => raise Invariant",
+"",
+"   fun unzipIntInf i (zipper, dict) = ",
+"      case dict of ",
+"         NONE =>",
+"            (ZIntInf (i, IntInfSplayDict.empty) :: zipper, NONE)",
+"       | SOME (DIntInf dict) =>",
+"            (ZIntInf (i, dict) :: zipper, IntInfSplayDict.find dict i)",
+"       | _ => raise Invariant",
+"",
+"   fun unzipString s (zipper, dict) = ",
+"      case dict of ",
+"         NONE => (ZString (s, StringSplayDict.empty) :: zipper, NONE)",
+"       | SOME (DString dict) =>",
+"            (ZString (s, dict) :: zipper, StringSplayDict.find dict s)",
+"       | _ => raise Invariant",
+""
+]
+@
+List.concat (List.map
+   (fn {name, dict, ...} => 
+       [
+       "   fun unzip" ^ name ^ " s (zipper, dict) = ",
+       "      case dict of ",
+       "         NONE => (Z"^name^" (s, "^dict^".empty) :: zipper, NONE)",
+       "       | SOME (D" ^ name ^ " dict) =>",
+       "            (Z"^name^" (s, dict) :: zipper, "^dict^".find dict s)",
+       "       | _ => raise Invariant",
+       ""
+       ])
+   deps)
+@
+[
+"   (* XXX these insertion functions need to be revised if the rezip",
+"    * function has the possibility of *deleting* entries *)",
+"   fun insertSymbol dict x NONE = dict",
+"     | insertSymbol dict x (SOME discdict) =",
+"          SymbolSplayDict.insert dict x discdict",
+"",
+"   fun insertIntInf dict i NONE = dict",
+"     | insertIntInf dict i (SOME discdict) =",
+"          IntInfSplayDict.insert dict i discdict",
+"",
+"   fun insertString dict s NONE = dict",
+"     | insertString dict s (SOME discdict) =",
+"          StringSplayDict.insert dict s discdict",
+""
+]
+@
+List.concat (List.map
+   (fn {name, dict, ...} => 
+       [
+       "   fun insert"^name^" dict s NONE = dict",
+        "     | insert"^name^" dict s (SOME discdict) =",
+       "          "^dict^".insert dict s discdict",
+       ""
+       ])
+   deps  )
+@
+[
+"   fun rezip ([], discdict) = discdict",
+"     | rezip (Z_ (n, vector) :: zipper, discdict) = ",
+"          rezip (zipper, SOME (D_ (Vector.update (vector, n, discdict))))",
+"     | rezip (ZSymbol (x, dict) :: zipper, discdict) = ",
+"          rezip (zipper, SOME (DSymbol (insertSymbol dict x discdict)))",
+"     | rezip (ZIntInf (i, dict) :: zipper, discdict) = ",
+"          rezip (zipper, SOME (DIntInf (insertIntInf dict i discdict)))",
+"     | rezip (ZString (s, dict) :: zipper, discdict) = ",
+"          rezip (zipper, SOME (DString (insertString dict s discdict)))"
+]
+@
+List.concat (List.map
+   (fn {name, dict, ...} => 
+       [
+       "     | rezip (Z"^name^" (s, dict) :: zipper, discdict) = ",
+       "          rezip ",
+       "             (zipper",
+       "              , SOME (D"^name^" (insert"^name^" dict s discdict)))"
+       ])
+   deps)
+@
+[
+"end",
+"",
+"functor DiscDictFn",
+"   (P: sig",
+"          type t",
+"          val unzip: t -> 'a DiscDict.zipdict -> 'a DiscDict.zipdict",
+"          val sub: t -> 'a DiscDict.dict -> 'a DiscDict.dict",
+"       end):> DICT where type key = P.t =",
+"struct",
+"   open DiscDict",
+"",
+"   type key = P.t",
+"",
+"   exception Absent",
+"",
+"   type 'a dict = 'a dict",
+"",
+"   val empty = empty",
+"",
+"   fun singleton key data =",
+"      rezip (replace (P.unzip key (id empty), inj data))",
+"",
+"   fun insert dict key data = ",
+"      rezip (replace (P.unzip key (id dict), inj data))",
+"",
+"   fun find dict key = SOME (prj (P.sub key dict))",
+"      handle NotThere => NONE",
+"",
+"   fun lookup dict key = prj (P.sub key dict)",
+"      handle NotThere => raise Absent",
+"",
+"   exception NotImpl",
+"   val union = fn _ => raise NotImpl",
+"   val operate = fn _ => raise NotImpl",
+"   val insertMerge = fn _ => raise NotImpl",
+"   val isEmpty = fn _ => raise NotImpl",
+"   val member = fn _ => raise NotImpl",
+"   val size = fn _ => raise NotImpl",
+"   val toList = fn _ => raise NotImpl",
+"   val domain = fn _ => raise NotImpl",
+"   val map = fn _ => raise NotImpl",
+"   val foldl = fn _ => raise NotImpl",
+"   val foldr = fn _ => raise NotImpl",
+"   val app = fn _ => raise NotImpl",
+"   val remove = fn _ => raise NotImpl",
+"end"
+]
+end
+
+(*
+"",
+"signature DISC_PATHS = sig",
+"   type key",
+"   val unzip: key -> 'a DiscDict.zipdict -> 'a DiscDict.zipdict",
+"   val sub: key -> 'a DiscDict.dict -> 'a DiscDict.dict",
+"end",
+"",
+"signature DISC_DICT = sig",
+"   type key ",
+"   type 'a dict",
+"   val empty: 'a dict",
+"   val singleton: key * 'a -> 'a dict ",
+"   val insert: 'a dict * key * 'a -> 'a dict",
+"   val insert': (key * 'a) * 'a dict -> 'a dict",
+"   val find: 'a dict * key -> 'a option",
+"   val lookup: 'a dict * key -> 'a",
+"end",
+]
+*)
 
 end

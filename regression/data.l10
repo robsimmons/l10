@@ -1,3 +1,14 @@
+unit: type.
+one: unit. 
+
+w: world.
+
+foo: type. {-# TYPE foo external #-}
+bar: type. {-# TYPE bar external #-}
+leaf: foo.
+next: bar -> foo.
+branch: foo -> foo -> bar.
+
 typ: extensible.
 sym: extensible.
 var: extensible.
