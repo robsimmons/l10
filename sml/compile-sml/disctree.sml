@@ -27,10 +27,7 @@ in
 "   val isEmpty: 'a dict -> bool",
 "   val inj: 'a -> 'a dict (* Insert data *)",
 "   val prj: 'a dict -> 'a (* Expect data, may raise NotThere *)",
-"   val sub: int -> 'a dict -> 'a dict ",
-"   val subSymbol: Symbol.symbol -> 'a dict -> 'a dict",
-"   val subIntInf: IntInf.int -> 'a dict -> 'a dict",
-"   val subString: String.string -> 'a dict -> 'a dict"
+"   val sub: int -> 'a dict -> 'a dict "
 ]
 @
 List.map 
@@ -45,10 +42,7 @@ List.map
 "",
 "   type 'a zipdict ",
 "   val id: 'a dict -> 'a zipdict",
-"   val unzip: int * int -> 'a zipdict -> 'a zipdict",
-"   val unzipSymbol: Symbol.symbol -> 'a zipdict -> 'a zipdict",
-"   val unzipIntInf: IntInf.int -> 'a zipdict -> 'a zipdict",
-"   val unzipString: String.string -> 'a zipdict -> 'a zipdict"
+"   val unzip: int * int -> 'a zipdict -> 'a zipdict"
 ]
 @
 List.map 
@@ -66,10 +60,7 @@ List.map
 "",
 "   datatype 'a dict' = ",
 "      D of 'a ",
-"    | D_ of 'a dict' option vector",
-"    | DSymbol of 'a dict' SymbolSplayDict.dict",
-"    | DIntInf of 'a dict' IntInfSplayDict.dict",
-"    | DString of 'a dict' StringSplayDict.dict"
+"    | D_ of 'a dict' option vector"
 ]
 @
 List.map
@@ -90,22 +81,7 @@ List.map
 "             else Vector.foldri ",
 "                (fn (i, d1, a) => ",
 "                    intersect f a (d1, Vector.sub (vec2, i)))",
-"                a vec1",
-"        | (DSymbol dict1, DSymbol dict2) =>",
-"             SymbolSplayDict.foldr",
-"                (fn (x, d1, a) =>",
-"                    intersect f a (SOME d1, SymbolSplayDict.find dict2 x))",
-"                a dict1",
-"        | (DIntInf dict1, DIntInf dict2) =>",
-"             IntInfSplayDict.foldr",
-"                (fn (i, d1, a) => ",
-"                    intersect f a (SOME d1, IntInfSplayDict.find dict2 i))",
-"                a dict1",
-"        | (DString dict1, DString dict2) => ",
-"             StringSplayDict.foldr",
-"                (fn (s, d1, a) => ",
-"                    intersect f a (SOME d1, StringSplayDict.find dict2 s))",
-"                a dict1"
+"                a vec1"
 ]
 @
 List.concat (List.map
@@ -125,10 +101,7 @@ List.concat (List.map
 "   type 'a dict = 'a dict' option",
 "",
 "   datatype 'a zipper = ",
-"      Z_ of int * 'a dict vector",
-"    | ZSymbol of Symbol.symbol * 'a dict' SymbolSplayDict.dict",
-"    | ZIntInf of IntInf.int * 'a dict' IntInfSplayDict.dict",
-"    | ZString of String.string * 'a dict' StringSplayDict.dict"
+"      Z_ of int * 'a dict vector"
 ]
 @
 List.map
@@ -162,24 +135,6 @@ List.map
 "         NONE => raise NotThere",
 "       | SOME (D_ vector) => Vector.sub (vector, n) ",
 "       | _ => raise Invariant",
-"",
-"   fun subSymbol x dict = ",
-"      case dict of",
-"         NONE => raise NotThere",
-"       | SOME (DSymbol dict) => SymbolSplayDict.find dict x",
-"       | _ => raise Invariant",
-"",
-"   fun subIntInf i dict = ",
-"      case dict of ",
-"         NONE => raise NotThere",
-"       | SOME (DIntInf dict) => IntInfSplayDict.find dict i",
-"       | _ => raise Invariant",
-"",
-"   fun subString s dict = ",
-"      case dict of",
-"         NONE => raise NotThere",
-"       | SOME (DString dict) => StringSplayDict.find dict s",
-"       | _ => raise Invariant",
 ""
 ]
 @
@@ -203,29 +158,6 @@ List.concat (List.map
 "        | SOME (D_ vector) => ",
 "             (Z_ (n, vector) :: zipper, Vector.sub (vector, n))",
 "        | SOME _ => raise Invariant",
-"",
-"   fun unzipSymbol x (zipper, dict) = ",
-"      case dict of ",
-"         NONE =>",
-"            (ZSymbol (x, SymbolSplayDict.empty) :: zipper, NONE)",
-"       | SOME (DSymbol dict) =>",
-"            (ZSymbol (x, dict) :: zipper, SymbolSplayDict.find dict x)",
-"       | _ => raise Invariant",
-"",
-"   fun unzipIntInf i (zipper, dict) = ",
-"      case dict of ",
-"         NONE =>",
-"            (ZIntInf (i, IntInfSplayDict.empty) :: zipper, NONE)",
-"       | SOME (DIntInf dict) =>",
-"            (ZIntInf (i, dict) :: zipper, IntInfSplayDict.find dict i)",
-"       | _ => raise Invariant",
-"",
-"   fun unzipString s (zipper, dict) = ",
-"      case dict of ",
-"         NONE => (ZString (s, StringSplayDict.empty) :: zipper, NONE)",
-"       | SOME (DString dict) =>",
-"            (ZString (s, dict) :: zipper, StringSplayDict.find dict s)",
-"       | _ => raise Invariant",
 ""
 ]
 @
@@ -245,17 +177,6 @@ List.concat (List.map
 [
 "   (* XXX these insertion functions need to be revised if the rezip",
 "    * function has the possibility of *deleting* entries *)",
-"   fun insertSymbol dict x NONE = dict",
-"     | insertSymbol dict x (SOME discdict) =",
-"          SymbolSplayDict.insert dict x discdict",
-"",
-"   fun insertIntInf dict i NONE = dict",
-"     | insertIntInf dict i (SOME discdict) =",
-"          IntInfSplayDict.insert dict i discdict",
-"",
-"   fun insertString dict s NONE = dict",
-"     | insertString dict s (SOME discdict) =",
-"          StringSplayDict.insert dict s discdict",
 ""
 ]
 @
@@ -272,13 +193,7 @@ List.concat (List.map
 [
 "   fun rezip ([], discdict) = discdict",
 "     | rezip (Z_ (n, vector) :: zipper, discdict) = ",
-"          rezip (zipper, SOME (D_ (Vector.update (vector, n, discdict))))",
-"     | rezip (ZSymbol (x, dict) :: zipper, discdict) = ",
-"          rezip (zipper, SOME (DSymbol (insertSymbol dict x discdict)))",
-"     | rezip (ZIntInf (i, dict) :: zipper, discdict) = ",
-"          rezip (zipper, SOME (DIntInf (insertIntInf dict i discdict)))",
-"     | rezip (ZString (s, dict) :: zipper, discdict) = ",
-"          rezip (zipper, SOME (DString (insertString dict s discdict)))"
+"          rezip (zipper, SOME (D_ (Vector.update (vector, n, discdict))))"
 ]
 @
 List.concat (List.map
@@ -294,7 +209,7 @@ List.concat (List.map
 [
 "end",
 "",
-"functor DiscDictFn",
+"functor DiscDictFun",
 "   (P: sig",
 "          type t",
 "          val unzip: t -> 'a DiscDict.zipdict -> 'a DiscDict.zipdict",

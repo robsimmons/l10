@@ -7,7 +7,7 @@ sig
       DT of 
        { ts: string 
        , tS: string
-       , arms: (string * subterm list) list
+       , arms: (string * int * subterm list) list
        , rep: Type.representation}
    val dtype: Type.t -> dtype
    val emit: unit -> unit
@@ -22,7 +22,7 @@ datatype dtype =
    DT of 
     { ts: string 
     , tS: string
-    , arms: (string * subterm list) list
+    , arms: (string * int * subterm list) list
     , rep: Type.representation}
 fun makeDatatype mutually_defined (t, rep): dtype = 
     let 
@@ -36,15 +36,16 @@ fun makeDatatype mutually_defined (t, rep): dtype =
            in subterms class (n+1) (subterm :: accum)
            end
 
-       fun armfolder (c, constrs): (string * subterm list) list =
-          (Strings.symbol c, subterms (Tab.lookup Tab.consts c) 0 []) 
-          :: constrs
+       fun armfolder (c, (n, constrs)) =
+          (n+1
+           , ((Strings.symbol c, n, subterms (Tab.lookup Tab.consts c) 0 []) 
+              :: constrs))
 
-       val arms = SetX.foldl armfolder [] (Tab.lookup Tab.typecon t)
+       val (_, arms) = SetX.foldl armfolder (0, []) (Tab.lookup Tab.typecon t)
     in 
        DT {ts = Symbol.toValue t
            , tS = Strings.symbol t
-           , arms = arms
+           , arms = rev arms
            , rep = rep}
     end
 
@@ -79,8 +80,8 @@ let
 in
  ( emit [ prelude ]
  ; appFirst (fn () => ())
-      (fn (str', (constructor, [])) => emit [str' ^ constructor]
-        | (str', (constructor, subterms)) =>
+      (fn (str', (constructor, _, [])) => emit [str' ^ constructor]
+        | (str', (constructor, _, subterms)) =>
              emit [str' ^ constructor ^ " of " 
                    ^ String.concatWith " * " (map typ subterms)])
       ("   ", " | ")
@@ -93,7 +94,7 @@ handle Skip => (emit ["datatype t_" ^ ts ^ " = datatype " ^ tS ^ ".t", ""])
 
 fun emitEq (isAnd, (t, DT {ts, tS, arms, rep})) =
 let
-   fun emitCase pre post (c, (xs: subterm list)) =
+   fun emitCase pre post (c, _, (xs: subterm list)) =
    let 
       fun geteq {t, ts, mutual, n} = 
       let val n = Int.toString n 
@@ -138,7 +139,7 @@ end
 
 fun emitStr (isAnd, (t, DT {ts, tS, arms, rep})) = 
 let
-   fun emitCase pre post (c, (xs: subterm list)) =
+   fun emitCase pre post (c, _, (xs: subterm list)) =
    let 
       fun getstr {t, ts, mutual, n} = 
          if mutual then "str_" ^ ts ^ " x_" ^ Int.toString n 
@@ -175,6 +176,54 @@ in
       arms
 end
 
+fun emitZip isUn (isAnd, (t, DT {ts, tS, arms, rep})) = 
+let
+   val sub = if isUn then "unzip" else "sub"
+   val len = Int.toString (length arms)
+   fun emitCase pre post (c, ndx, (xs: subterm list)) =
+   let 
+      fun getzip {t, ts, mutual, n} = 
+         if mutual then sub ^ "_" ^ ts ^ " x_" ^ Int.toString n 
+         else "DiscDict." ^ sub ^ Strings.symbol t ^ " x_" ^ Int.toString n
+      val uz = 
+         if not isUn then "DiscDict.sub " ^ Int.toString ndx 
+         else "DiscDict.unzip (" ^ Int.toString ndx ^ ", " ^ len ^")"
+   in
+    ( emit [pre ^ c 
+            ^ Strings.optTuple (map (fn x => "x_" ^ Int.toString (#n x)) xs)
+            ^ " => " ]
+    ; incr ()
+    ; appSuper
+         (fn () => emit ["   " ^ uz ^ post])
+         (fn x => emit ["   " ^ getzip x ^ " o", "   " ^ uz ^ post])
+         ((fn x => (incr (); emit [getzip x ^ " o"]))
+          , (fn x => emit [getzip x ^ " o"])
+          , (fn x => (emit [getzip x ^ " o", uz ^ post]; decr ())))
+         (rev xs)
+    ; decr ())
+   end
+ 
+   val prefix = 
+      (if isAnd then "and" else "fun")  
+      ^ " " ^ sub ^ "_" ^ ts ^ " "
+      ^ (if isPrj rep then ("(inj_" ^ ts ^ " x) =") else "x =")
+in
+   appSuper
+      (fn () => emit [prefix ^ " raise Match (* Impossible *)"])
+      (fn x => 
+         ( emit [prefix, "  (case x of "]
+         ; incr ()
+         ; emitCase "   " ")" x
+         ; decr ()))
+      ((fn x => 
+         ( emit [prefix, "  (case x of"]
+         ; incr ()
+         ; emitCase "   " "" x))
+       , (fn x => (emitCase " | " "" x))
+       , (fn x => (emitCase " | " ")" x; decr ())))
+      arms
+end
+
 (* Emit the structure which will be externally viewable *)
 fun emitDatastructure (t, DT {ts, tS, arms, rep}) = 
 let 
@@ -190,6 +239,10 @@ in
     ; if sealed 
       then emit ["type t = L10_Terms.t_" ^ ts]
       else emit ["datatype t = datatype L10_Terms.t_" ^ ts]
+    ; emit ["structure Dict:> DICT where type key = t = DiscDictFun", "(struct"]
+    ; emit ["   type t = L10_Terms.t_" ^ ts]
+    ; emit ["   val sub = L10_Terms.sub_" ^ ts]
+    ; emit ["   val unzip = L10_Terms.unzip_" ^ ts, "end)"]
     ; if sealed 
       then emit ["datatype view = datatype L10_Terms.view_" ^ ts]
       else ()
@@ -203,15 +256,16 @@ in
     ; emit ["val eq: t * t -> bool = L10_Terms.eq_" ^ ts]
     ; if sealed
       then List.app 
-              (fn (cstr, []) => 
+              (fn (cstr, _, []) => 
                      emit ["val " ^ cstr ^ "': t = inj " ^ cstr]
-                | (cstr, _) => 
+                | (cstr, _, _) => 
                      emit ["fun " ^ cstr ^ "' x: t = inj (" ^ cstr ^ " x)"])
               arms
       else ()            
  ; decr ()
  ; emit ["end", ""])
 end 
+
 
 (* This function splits the datatypes into sections that aren't mutually
  * recursive. The only necessary property of this function, and indeed the
@@ -245,7 +299,7 @@ let
          foldr (fn ((t, _), set) => SetX.insert set t) SetX.empty dtypes
       val uses = 
          foldr (fn ((_, DT {arms, ...}), set) =>
-                   foldr (fn ((_, subterms), set) => 
+                   foldr (fn ((_, _, subterms), set) => 
                              foldr (fn ({t, ...}, set) => SetX.insert set t)
                                 set subterms)
                       set arms)
@@ -261,20 +315,27 @@ fun terms () =
 let
    val datatypes = partition_types ()
    fun body ((dtypes, dependencies): ((Type.t * dtype) list * SetX.set)) = 
-    ( emit ["structure L10_Terms = ", "struct"]
+    ( emit (DiscTree.discCore dependencies)
+    ; emit ["structure L10_Terms = ", "struct"]
     ; incr ()
-       ; emit (DiscTree.discCore dependencies)
        ; appFirst (fn () => ()) emitDatatype (false, true) dtypes
        ; appFirst (fn () => ()) emitEq (false, true) dtypes
        ; emit [""]
        ; appFirst (fn () => ()) emitStr (false, true) dtypes
+       ; emit [""]
+       ; appFirst (fn () => ()) (emitZip false) (false, true) dtypes
+       ; emit [""]
+       ; appFirst (fn () => ()) (emitZip true) (false, true) dtypes
     ; decr ()
     ; emit ["end", ""]
     ; app emitDatastructure dtypes)
 in
- ( emit ["","(* L10 Generated Terms (terms.sml) *)", "", ""]
+ ( emit ["","(* L10 Generated Terms (terms.sml) *)", ""]
  ; app body datatypes
- ; emit ["structure L10_Terms = struct end (* Workable sealing *)"])
+ ; emit ["structure L10_Terms = struct end (* Protect *)"]
+ ; emit ["structure DiscDict = struct end (* Protect *)"]
+ ; emit ["structure DiscDictFun = struct end (* Protect *)"]
+)
 end
 
 fun emit () = terms ()

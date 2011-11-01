@@ -91,9 +91,8 @@ in
    ; Util.write
         out
         (fn () => 
-          ( Util.emit ["structure L10 = struct"]
-          ; EmitTerms.emit ()
-          ; Util.emit ["end"]))
+          ( EmitTerms.emit ()
+          ; ()))
    ; TextIO.closeOut out)
 end
 handle Lexer.LexError (c, s) =>
