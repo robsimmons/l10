@@ -6,18 +6,27 @@ sig
       Sym of Type.t * SetX.set
     | Nat of IntInfSplaySet.set
     | Str of StringSplaySet.set
-    | Root of {t: Type.t, covered: t list DictX.dict, uncovered: SetX.set}
+    | Root of 
+       { t: Type.t
+       , covered: (int * t) list DictX.dict
+       , uncovered: SetX.set}
     | Unsplit of Type.t
 
-   val unsplit: t -> bool
+   val typ: t -> Type.t
+
+   val isUnsplit: t -> bool
+
+   (*[ val unsplit: Class.rel_t -> (int * t) list
+                  & Class.world -> (int * t) list ]*)
+   val unsplit: Class.t -> (int * t) list
 
    (*[ val singleton: Term.term_t -> t ]*)
    val singleton: Term.t -> t
 
    (*[ val insert: t -> Term.term_t -> t ]*)
-   (*[ val insertList: t list -> Term.term_t list -> t list ]*)
+   (*[ val insertList: (int * t) list -> Term.term_t list -> (int * t) list ]*)
    val insert: t -> Term.t -> t
-   val insertList: t list -> Term.t list -> t list
+   val insertList: (int * t) list -> Term.t list -> (int * t) list
 end = 
 struct
 
@@ -25,17 +34,37 @@ datatype t =
    Sym of Type.t * SetX.set
  | Nat of IntInfSplaySet.set
  | Str of StringSplaySet.set
- | Root of {t: Type.t, covered: t list DictX.dict, uncovered: SetX.set}
+ | Root of 
+    { t: Type.t
+    , covered: (int * t) list DictX.dict
+    , uncovered: SetX.set}
  | Unsplit of Type.t
 
 (*[ sortdef split = 
-       {t: Type.t, covered: t list DictX.dict, uncovered: SetX.set} ]*)
+       {t: Type.t, covered: (int * t) list DictX.dict, uncovered: SetX.set} ]*)
 
-fun unsplit (Unsplit _) = true
-  | unsplit _ = false
+fun typ (Sym (t, _)) = t
+  | typ (Nat _) = Type.nat
+  | typ (Str _) = Type.string
+  | typ (Root {t, ...}) = t
+  | typ (Unsplit t) = t
+
+fun isUnsplit (Unsplit _) = true
+  | isUnsplit _ = false
+
+(*[ val unsplit': int -> ( Class.rel_t -> (int * t) list
+                        & Class.world -> (int * t) list) ]*)
+fun unsplit' n class = 
+   case class of 
+      Class.Arrow (t, class) => (n, Unsplit t) :: unsplit' (n+1) class
+    | Class.Pi (t, SOME _, class) => (n, Unsplit t) :: unsplit' (n+1) class
+    | _ => []
+
+val unsplit = unsplit' 0
 
 (*[ val singleton: Term.term_t -> t ]*)
-(*[ val singletonList: Term.term_t list -> t list ]*)
+(*[ val singletonList: Term.term_t list -> (int * t) list ]*)
+(*[ val singletonList': int -> Term.term_t list -> (int * t) list ]*)
 fun singleton term = 
 let 
    (*[ val split: Type.t -> (Symbol.symbol * Term.term_t list) -> split ]*)
@@ -64,13 +93,14 @@ in case term of
     | Term.Var (_, SOME t) => Unsplit t
 end
 
-and singletonList terms = 
-   (map (*[ <: (Term.term_t -> t) -> Term.term_t conslist -> t conslist
-             & (Term.term_t -> t) -> Term.term_t list -> t list ]*)) 
-       singleton terms
+and singletonList' n [] = []
+  | singletonList' n (term :: terms) = 
+       (n, singleton term) :: singletonList' (n+1) terms
+
+and singletonList terms = singletonList' 0 terms
 
 (*[ val insert: t -> Term.term_t -> t ]*)
-(*[ val insertList: t list -> Term.term_t list -> t list ]*)
+(*[ val insertList: (int * t) list -> Term.term_t list -> (int * t) list ]*)
 fun insert splitting term =
    case (splitting, term) of
       (_, Term.Var _) => splitting
@@ -105,8 +135,8 @@ fun insert splitting term =
     | _ => raise Fail "Splitting.insert (coverage)"
 
 and insertList [] [] = []
-  | insertList (splitting :: splittings) (term :: terms) = 
-       (insert splitting term :: insertList splittings terms)
+  | insertList ((n, splitting) :: splittings) (term :: terms) = 
+       ((n, insert splitting term) :: insertList splittings terms)
   | insertList _ _ = raise Fail "Splitting.insertList"
 
 end

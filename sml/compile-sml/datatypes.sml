@@ -1,15 +1,15 @@
 (* Copyright (C) 2011 Robert J. Simmons *)
 
-structure EmitTerms:>
+structure Datatypes:>
 sig
    type subterm = {t: Type.t, ts: string, mutual: bool, n: int}
-   datatype dtype =
+   datatype t =
       DT of 
        { ts: string 
        , tS: string
        , arms: (Symbol.symbol * string * int * subterm list) list
        , rep: Type.representation}
-   val dtype: Type.t -> dtype
+   val dtype: Type.t -> t
    val emit: unit -> unit
 end =
 struct
@@ -18,13 +18,13 @@ open Util
 
 (* A representation of the initial datatype *)
 type subterm = {t: Type.t, ts: string, mutual: bool, n: int}
-datatype dtype =
+datatype t =
    DT of 
     { ts: string 
     , tS: string
     , arms: (Symbol.symbol * string * int * subterm list) list
     , rep: Type.representation}
-fun makeDatatype mutually_defined (t, rep): dtype = 
+fun makeDatatype mutually_defined (t, rep) = 
     let 
        (*[ subterms: Class.typ -> int -> subterm list -> subterm list ]*)
        fun subterms (Class.Base _) n accum: subterm list = rev accum
@@ -94,7 +94,7 @@ handle Skip => (emit ["datatype t_" ^ ts ^ " = datatype " ^ tS ^ ".t", ""])
 
 
 
-(* HELPER FUNCTIONS *)
+(* Helper functions *)
 (* These functions all have similar structure, it would be nice to reduce 
    the cutpasteness between them. *)
 
@@ -233,6 +233,7 @@ in
       arms
 end
 
+
 (* Emit the structure which will be externally viewable *)
 fun emitDatastructure (t, DT {ts, tS, arms, rep}) = 
 let 
@@ -281,7 +282,7 @@ end
  * only property that this function currently has at all, is to make sure that
  * "external" types are all defined prior to other types, because otherwise
  * the datatype definitions won't refer to each other correctly. *)
-fun partition_types (): ((Type.t * dtype) list * SetX.set) list = 
+fun partition_types (): ((Type.t * t) list * SetX.set) list = 
 let
    fun folder ((t, Class.Type (* <: Class.knd *)), (dict1, dict2)) = 
          (case Tab.find Tab.representations t of 
@@ -302,7 +303,7 @@ let
    fun mapper dict = 
       DictX.toList (DictX.map (makeDatatype (DictX.member dict)) dict)
 
-   fun dependency (dtypes: (Type.t * dtype) list) = 
+   fun dependency (dtypes: (Type.t * t) list) = 
    let 
       val defs = 
          foldr (fn ((t, _), set) => SetX.insert set t) SetX.empty dtypes
@@ -323,7 +324,7 @@ end
 fun terms () = 
 let
    val datatypes = partition_types ()
-   fun body ((dtypes, dependencies): ((Type.t * dtype) list * SetX.set)) = 
+   fun body ((dtypes, dependencies): ((Type.t * t) list * SetX.set)) = 
     ( emit (DiscTree.discCore dependencies)
     ; emit ["structure L10_Terms = ", "struct"]
     ; incr ()

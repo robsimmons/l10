@@ -90,7 +90,7 @@ in
  ; print ("[ == Closing " ^ filename ^ " == ]\n\n"))
  ; Util.write
       out (fn () => 
-              ( EmitTerms.emit ()
+              ( Datatypes.emit ()
               ; ()))
  ; TextIO.closeOut out
 end

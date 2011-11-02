@@ -42,11 +42,11 @@ fun 'a appSuper none one (first, middle, last) xs: unit =
 let 
    (*[ val loop: ('a conslist) -> unit ]*)
    fun loop [ x ] = last x
-     | loop (x :: y :: xs) = (middle x; loop (y :: xs))
+     | loop (x :: (xs as _ :: _)) = (middle x; loop xs)
 in case xs of 
       [] => none ()
     | [ x ] => one x
-    | x :: y :: xs => (first x; loop (y :: xs))
+    | x :: (xs as _ :: _) => (first x; loop xs)
 end
 
 fun appFirst none some (first, rest) = 

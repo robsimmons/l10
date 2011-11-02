@@ -44,7 +44,6 @@ structure Path:> sig
     * genTerm (f (_, _), f(X, X)) = true *)
    val genTerm: 'a Ast.term' * 'b Ast.term' -> bool
    val genTerms: 'a Ast.term' list -> 'b Ast.term' list -> bool
-
 end = 
 struct
 

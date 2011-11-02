@@ -8,25 +8,23 @@ struct
 
    fun toVar path = "x_" ^ toString path
 
-   structure Set =
-      SplaySetFun (structure Elem = ListOrdered (IntOrdered))
-   structure Dict = 
-      SplayDictFun (structure Key = ListOrdered (IntOrdered))
+   structure Set = SplaySet (structure Elem = ListOrdered (IntOrdered))
+   structure Dict = SplayDict (structure Key = ListOrdered (IntOrdered))
 
-   (* subst N path M = N [M/path] *)
-   (*[ val subst: Term.shape -> t -> Term.shape -> Term.shape ]*)
-   fun subst (Term.Var (NONE, SOME t)) [] newshape = newshape
-     | subst (Term.Root (f, shapes)) path newshape = 
-          Term.Root (f, substs shapes path newshape)
-     | subst path shapes = raise Fail "Path.subst"
+   (*[ val subst: Term.shape * t -> Term.shape -> Term.shape ]*)
+   (*[ val substs: Term.shape * t -> 
+          ( Term.shape list -> Term.shape list 
+          & Term.shape conslist -> Term.shape conslist) ]*)
+   fun subst (newshape, []) (Term.Path _) = newshape
+     | subst (newshape, path) (Term.Root (f, shapes)) = 
+          Term.Root (f, substs (newshape, path) shapes)
+     | subst (newshape, path) shapes = raise Fail "Path.subst"
    
-   (* subst Ns path M = Ns [M/path] *)
-   (*[ val substs: Term.shape list -> t -> Term.shape -> Term.shape list ]*)
-   fun substs [] _ _ = raise Invariant
-     | substs (i :: path) newshape shapes =
+   and substs (_, []) _ = raise Fail "Path.substs"
+     | substs (newshape, i :: path) shapes =
         ( if length shapes <= i then raise Fail "Path.substs" else ()
-        ; (List.take (terms, i)
-           @ [ subst (path, List.nth (terms, i), terms) ]
-           @ tl (List.drop (terms, i))))
+        ; (List.take (shapes, i)
+           @ [ subst (newshape, path) (List.nth (shapes, i)) ]
+           @ tl (List.drop (shapes, i))))
 end
 

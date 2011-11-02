@@ -35,6 +35,11 @@ struct
      | toString Ignore = "_"
 end
 
+(* I would do this differently now. As it is, "root" takes a conslist and
+ * SymConst does not. I'd rather have SymConst not be parsed from the syntax,
+ * but to be introduced in typechecking for things that are, it turns out,
+ * symbolic constants (contstants whose classifer has kind "extensible" and
+ * not kind "type". *)
 structure Term = 
 struct
    datatype t = 
@@ -88,11 +93,10 @@ struct
     | Root of Symbol.symbol * moded_t conslist
 
    datasort path = Path of int list * Type.t
-   datasort pat = 
-      SymConst of Symbol.symbol 
-    | NatConst of IntInf.int
-    | StrConst of string
-    | Root of Symbol.symbol * path conslist
+   datasort sym = Root of Symbol.symbol * path conslist
+   datasort nat = Root of Symbol.symbol * path conslist
+   datasort str = Root of Symbol.symbol * path conslist
+   datasort pat = Root of Symbol.symbol * path conslist
 ]*)
 
    fun eq (term1, term2) = 
