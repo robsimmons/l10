@@ -38,8 +38,7 @@ fun mapi f xs = mapi' f 0 xs []
 
 fun intify xs = mapi (fn x => x) xs
 
-(*[ val appSuper: (unit -> unit) -> ('a -> unit) -> (('a -> unit) * ('a -> unit) * ('a -> unit)) -> 'a list -> unit ]*)
-fun appSuper none one (first, middle, last) xs: unit = 
+fun appSuper none one (first, middle, last) (xs: 'a list): unit = 
 let 
    (*[ val loop: ('a conslist) -> unit ]*)
    fun loop [ x ] = last x
