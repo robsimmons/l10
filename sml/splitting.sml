@@ -3,10 +3,10 @@
 structure Splitting:>
 sig
    datatype t = 
-      SymSplit of SetX.set
-    | NatSplit of IntInfSplaySet.set
-    | StrSplit of StringSplaySet.set
-    | Split of {t: Type.t, covered: t list DictX.dict, uncovered: SetX.set}
+      Sym of Type.t * SetX.set
+    | Nat of IntInfSplaySet.set
+    | Str of StringSplaySet.set
+    | Root of {t: Type.t, covered: t list DictX.dict, uncovered: SetX.set}
     | Unsplit of Type.t
 
    val unsplit: t -> bool
@@ -22,10 +22,10 @@ end =
 struct
 
 datatype t = 
-   SymSplit of SetX.set
- | NatSplit of IntInfSplaySet.set
- | StrSplit of StringSplaySet.set
- | Split of {t: Type.t, covered: t list DictX.dict, uncovered: SetX.set}
+   Sym of Type.t * SetX.set
+ | Nat of IntInfSplaySet.set
+ | Str of StringSplaySet.set
+ | Root of {t: Type.t, covered: t list DictX.dict, uncovered: SetX.set}
  | Unsplit of Type.t
 
 (*[ sortdef split = 
@@ -51,15 +51,15 @@ in case term of
       Term.SymConst c => 
       let val t = Class.base (Tab.lookup Tab.consts c)
       in case Tab.lookup Tab.types t of
-            Class.Extensible => SymSplit (SetX.singleton c)
-          | Class.Type => Split (split t (c, []))
+            Class.Extensible => Sym (t, SetX.singleton c)
+          | Class.Type => Root (split t (c, []))
           | _ => raise Fail "Splitting.singleton"
       end
-    | Term.NatConst i => NatSplit (IntInfSplaySet.singleton i)
-    | Term.StrConst s => StrSplit (StringSplaySet.singleton s)
+    | Term.NatConst i => Nat (IntInfSplaySet.singleton i)
+    | Term.StrConst s => Str (StringSplaySet.singleton s)
     | Term.Root (f, terms) => 
       let val t = Class.base (Tab.lookup Tab.consts f)
-      in Split (split t (f, terms)) 
+      in Root (split t (f, terms)) 
       end
     | Term.Var (_, SOME t) => Unsplit t
 end
@@ -75,30 +75,30 @@ fun insert splitting term =
    case (splitting, term) of
       (_, Term.Var _) => splitting
     | (Unsplit _, _) => singleton term
-    | (SymSplit set, Term.SymConst c) => 
-         SymSplit (SetX.insert set c)
-    | (NatSplit set, Term.NatConst i) => 
-         NatSplit (IntInfSplaySet.insert set i)
-    | (StrSplit set, Term.StrConst s) => 
-         StrSplit (StringSplaySet.insert set s)
-    | (Split {t, covered, uncovered}, Term.SymConst c) =>
+    | (Sym (t, set), Term.SymConst c) => 
+         Sym (t, SetX.insert set c)
+    | (Nat set, Term.NatConst i) => 
+         Nat (IntInfSplaySet.insert set i)
+    | (Str set, Term.StrConst s) => 
+         Str (StringSplaySet.insert set s)
+    | (Root {t, covered, uncovered}, Term.SymConst c) =>
          (case DictX.find covered c of 
              NONE => 
-                Split 
+                Root 
                    { t = t
                    , covered = DictX.insert covered c []
                    , uncovered = SetX.remove uncovered c}
            | SOME [] => splitting
            | _ => raise Fail "Splitting.insert")
-    | (Split {t, covered, uncovered}, Term.Root (f, terms)) =>
+    | (Root {t, covered, uncovered}, Term.Root (f, terms)) =>
          (case DictX.find covered f of 
              NONE => 
-                Split 
+                Root 
                    { t = t
                    , covered = DictX.insert covered f (singletonList terms)
                    , uncovered = SetX.remove uncovered f}
            | SOME trees => 
-                Split 
+                Root 
                    { t = t 
                    , covered = DictX.insert covered f (insertList trees terms)
                    , uncovered = uncovered})

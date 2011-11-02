@@ -44,6 +44,7 @@ struct
     | Root of Symbol.symbol * t list
     | Var of Symbol.symbol option * Type.t option
     | Mode of Mode.t * Type.t option
+    | Path of int list * Type.t 
 (*[
    datasort term = 
       SymConst of Symbol.symbol 
@@ -69,7 +70,7 @@ struct
       SymConst of Symbol.symbol 
     | NatConst of IntInf.int
     | StrConst of string
-    | Var of Symbol.symbol none * Type.t none
+    | Path of int list * Type.t
     | Root of Symbol.symbol * shape conslist
 
    datasort moded = 
@@ -85,6 +86,13 @@ struct
     | StrConst of string
     | Mode of Mode.t * Type.t some
     | Root of Symbol.symbol * moded_t conslist
+
+   datasort path = Path of int list * Type.t
+   datasort pat = 
+      SymConst of Symbol.symbol 
+    | NatConst of IntInf.int
+    | StrConst of string
+    | Root of Symbol.symbol * path conslist
 ]*)
 
    fun eq (term1, term2) = 
@@ -96,8 +104,8 @@ struct
        | (Var (SOME v1, _), Var (SOME v2, _)) => Symbol.eq (v1, v2)
        | (Mode (m1, _), Mode (m2, _)) => m1 = m2
        | (Root (f1, terms1), Root (f2, terms2)) => 
-         Symbol.eq(f1, f2)
-         andalso List.all eq (ListPair.zip (terms1, terms2))
+            Symbol.eq(f1, f2)
+            andalso List.all eq (ListPair.zip (terms1, terms2))
        | (_, _) => false
 
    fun fv term =
@@ -125,6 +133,7 @@ struct
               ^ Symbol.toValue f 
               ^ String.concat (map (fn term => " " ^ toString term) terms)
               ^ ")")
+       | Path (path, _) => "x_" ^ String.concatWith "_" (map Int.toString path)
 
    (*[ sortdef subst = term_t DictX.dict ]*)
   
@@ -169,6 +178,14 @@ struct
        | _ => false
 
    val plus = Symbol.fromValue "_plus"
+
+   (* Generalization:
+    *
+    * genTerm (s (s T1)) (s N) = SOME { N |-> [ T1 ] }
+    * genTerm (s (s T2)) (s z) = SOME { 
+    * genTerm (s (s T1)) (s (s (s N)) = FAILS INVARIANT 
+    * genTerm (f T2 _) (f X X) = true *)
+
 end
 
 structure Atom = struct

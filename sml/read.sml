@@ -84,16 +84,15 @@ let
       stream_map Types.check 
          (Parser.parse (Lexer.lex filename (Stream.fromTextInstream file)))
 in
-   ( print ("[ == Opening " ^ filename ^ " == ]\n")
-   ; load stream
-     handle exn => ((TextIO.closeIn file handle _ => ()); raise exn)
-   ; print ("[ == Closing " ^ filename ^ " == ]\n\n")
-   ; Util.write
-        out
-        (fn () => 
-          ( EmitTerms.emit ()
-          ; ()))
-   ; TextIO.closeOut out)
+ ( print ("[ == Opening " ^ filename ^ " == ]\n")
+ ; load stream
+   handle exn => ((TextIO.closeIn file handle _ => ()); raise exn)
+ ; print ("[ == Closing " ^ filename ^ " == ]\n\n"))
+ ; Util.write
+      out (fn () => 
+              ( EmitTerms.emit ()
+              ; ()))
+ ; TextIO.closeOut out
 end
 handle Lexer.LexError (c, s) =>
           print ("Lex error at " ^ Coord.toString c ^ "\n" ^ s ^ ".\n")

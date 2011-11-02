@@ -2,12 +2,12 @@
 
 structure EmitTerms:>
 sig
-   type subterm = {t: Symbol.symbol, ts: string, mutual: bool, n: int}
+   type subterm = {t: Type.t, ts: string, mutual: bool, n: int}
    datatype dtype =
       DT of 
        { ts: string 
        , tS: string
-       , arms: (string * int * subterm list) list
+       , arms: (Symbol.symbol * string * int * subterm list) list
        , rep: Type.representation}
    val dtype: Type.t -> dtype
    val emit: unit -> unit
@@ -17,12 +17,12 @@ struct
 open Util
 
 (* A representation of the initial datatype *)
-type subterm = {t: Symbol.symbol, ts: string, mutual: bool, n: int}
+type subterm = {t: Type.t, ts: string, mutual: bool, n: int}
 datatype dtype =
    DT of 
     { ts: string 
     , tS: string
-    , arms: (string * int * subterm list) list
+    , arms: (Symbol.symbol * string * int * subterm list) list
     , rep: Type.representation}
 fun makeDatatype mutually_defined (t, rep): dtype = 
     let 
@@ -38,7 +38,7 @@ fun makeDatatype mutually_defined (t, rep): dtype =
 
        fun armfolder (c, (n, constrs)) =
           (n+1
-           , ((Strings.symbol c, n, subterms (Tab.lookup Tab.consts c) 0 []) 
+           , ((c, Strings.symbol c, n, subterms (Tab.lookup Tab.consts c) 0 []) 
               :: constrs))
 
        val (_, arms) = SetX.foldl armfolder (0, []) (Tab.lookup Tab.typecon t)
@@ -80,8 +80,8 @@ let
 in
  ( emit [ prelude ]
  ; appFirst (fn () => ())
-      (fn (str', (constructor, _, [])) => emit [str' ^ constructor]
-        | (str', (constructor, _, subterms)) =>
+      (fn (str', (_, constructor, _, [])) => emit [str' ^ constructor]
+        | (str', (_, constructor, _, subterms)) =>
              emit [str' ^ constructor ^ " of " 
                    ^ String.concatWith " * " (map typ subterms)])
       ("   ", " | ")
@@ -92,9 +92,16 @@ in
 end 
 handle Skip => (emit ["datatype t_" ^ ts ^ " = datatype " ^ tS ^ ".t", ""])
 
+
+
+(* HELPER FUNCTIONS *)
+(* These functions all have similar structure, it would be nice to reduce 
+   the cutpasteness between them. *)
+
+(* EQUALITY *)
 fun emitEq (isAnd, (t, DT {ts, tS, arms, rep})) =
 let
-   fun emitCase pre post (c, _, (xs: subterm list)) =
+   fun emitCase pre post (_, c, _, (xs: subterm list)) =
    let 
       fun geteq {t, ts, mutual, n} = 
       let val n = Int.toString n 
@@ -137,9 +144,10 @@ in
       arms
 end
 
+(* TO STRING *)
 fun emitStr (isAnd, (t, DT {ts, tS, arms, rep})) = 
 let
-   fun emitCase pre post (c, _, (xs: subterm list)) =
+   fun emitCase pre post (_, c, _, (xs: subterm list)) =
    let 
       fun getstr {t, ts, mutual, n} = 
          if mutual then "str_" ^ ts ^ " x_" ^ Int.toString n 
@@ -176,11 +184,12 @@ in
       arms
 end
 
+(* ZIP/UNZIP *)
 fun emitZip isUn (isAnd, (t, DT {ts, tS, arms, rep})) = 
 let
    val sub = if isUn then "unzip" else "sub"
    val len = Int.toString (length arms)
-   fun emitCase pre post (c, ndx, (xs: subterm list)) =
+   fun emitCase pre post (_, c, ndx, (xs: subterm list)) =
    let 
       fun getzip {t, ts, mutual, n} = 
          if mutual then sub ^ "_" ^ ts ^ " x_" ^ Int.toString n 
@@ -256,9 +265,9 @@ in
     ; emit ["val eq: t * t -> bool = L10_Terms.eq_" ^ ts]
     ; if sealed
       then List.app 
-              (fn (cstr, _, []) => 
+              (fn (_, cstr, _, []) => 
                      emit ["val " ^ cstr ^ "': t = inj " ^ cstr]
-                | (cstr, _, _) => 
+                | (_, cstr, _, _) => 
                      emit ["fun " ^ cstr ^ "' x: t = inj (" ^ cstr ^ " x)"])
               arms
       else ()            
@@ -299,7 +308,7 @@ let
          foldr (fn ((t, _), set) => SetX.insert set t) SetX.empty dtypes
       val uses = 
          foldr (fn ((_, DT {arms, ...}), set) =>
-                   foldr (fn ((_, _, subterms), set) => 
+                   foldr (fn ((_, _, _, subterms), set) => 
                              foldr (fn ({t, ...}, set) => SetX.insert set t)
                                 set subterms)
                       set arms)

@@ -15,6 +15,7 @@ $(SML_LIB)/refined-basis/basis.mlb
    splitting.sml
    compile-sml/strings.sml
    compile-sml/disctree.sml
+   compile-sml/terms.sml
 
    (* Parser stuff *)
    l10.cmlex.sml
