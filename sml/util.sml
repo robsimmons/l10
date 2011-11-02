@@ -59,7 +59,8 @@ in
 end
 
 local 
-   val outstream: TextIO.outstream option ref = ref NONE
+   val outstream: TextIO.outstream option ref = 
+      (ref NONE (*[ <: TextIO.outstream option ref ]*))
    val ind = ref ""
 in
    fun emit1 s = 
