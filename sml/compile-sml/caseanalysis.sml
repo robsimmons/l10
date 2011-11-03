@@ -5,17 +5,11 @@ struct
 datatype t = 
    Done of Term.t list
  | Case of (Type.t * Path.t) * (Term.t * t) list * t option
- | Sym of Path.t * (Term.t * t) list * t
- | Nat of Path.t * (Term.t * t) list * t
- | Str of Path.t * (Term.t * t) list * t
 
 (*[
 datasort cases = 
    Done of Term.shape list
  | Case of (Type.t * Path.t) * (Term.pat * cases) list * cases option
- | Sym of Path.t * (Term.pat * cases) list * cases
- | Nat of Path.t * (Term.pat * cases) list * cases
- | Str of Path.t * (Term.pat * cases) list * cases
 ]*)
 
 (*[ cases: (int * Splitting.t) list -> cases ]*)
@@ -49,20 +43,20 @@ let
        in case split of  
              Splitting.Unsplit t => splitter shapes splits
            | Splitting.Sym (t, set) => 
-                Sym (path
+                Case ((t, path)
                      , map (caser shapes splits path)
                            (map' Term.SymConst (SetX.toList set))
-                     , splitter shapes splits)
+                     , SOME (splitter shapes splits))
            | Splitting.Nat set => 
-                Nat (path
+                Case ((Type.nat, path)
                      , map (caser shapes splits path)
                            (map' Term.NatConst (IntInfSplaySet.toList set))
-                     , splitter shapes splits)
+                     , SOME (splitter shapes splits))
            | Splitting.Str set =>
-                Str (path
+                Case ((Type.string, path)
                      , map (caser shapes splits path)
                           (map' Term.StrConst (StringSplaySet.toList set))
-                     , splitter shapes splits)
+                     , SOME (splitter shapes splits))
            | Splitting.Root {t, covered, uncovered} => 
              let 
                 val Datatypes.DT {arms, ...} = Datatypes.dtype t
@@ -93,5 +87,49 @@ in
       (map (fn (i, split) => Term.Path ([ i ], Splitting.typ split)) splits)
       (map (fn (i, split) => ([ i ], split)) splits)
 end
+
+fun emit postfix f cases = 
+   case cases of 
+      Done shapes => 
+       ( Util.incr ()
+       ; f (postfix, shapes)
+       ; Util.decr ())
+    | Case ((t, path), cases, catchall) =>
+      let val postfix' = if Option.isSome catchall then "" else postfix ^ ")"
+      in
+       ( Util.emit ["  (case "
+                    ^ Strings.prj t (Path.toVar path) ^ " of "]
+       ; Util.appSuper 
+            (fn () => 
+              Util.emit ["      _ => raise Match (* impossible *)" ^ postfix'])
+            (fn (term, cases) => 
+              ( Util.emit ["      " ^ Strings.match term ^ " =>"]
+              ; Util.incr (); Util.incr ()
+              ; emit postfix' f cases
+              ; Util.decr (); Util.decr ()))
+            ((fn (term, cases) => 
+               ( Util.emit ["      " ^ Strings.match term ^ " =>"]
+               ; Util.incr (); Util.incr ()
+               ; emit "" f cases 
+               ; Util.decr (); Util.decr ()))
+             , (fn (term, cases) => 
+                  ( Util.emit ["    | " ^ Strings.match term ^ " =>"]
+                  ; Util.incr (); Util.incr ()
+                  ; emit ")" f cases 
+                  ; Util.decr (); Util.decr ()))
+             , (fn (term, cases) => 
+                  ( Util.emit ["    | " ^ Strings.match term ^ " =>"]
+                  ; Util.incr (); Util.incr ()
+                  ; emit postfix' f cases 
+                  ; Util.decr (); Util.decr ())))
+            cases
+       ; case catchall of 
+            NONE => () 
+          | SOME cases => 
+             ( Util.emit ["    | _ =>"]
+             ; Util.incr (); Util.incr ()
+             ; emit (postfix ^ ")") f cases 
+             ; Util.decr (); Util.decr ()))
+      end
 
 end (* struct *)

@@ -91,9 +91,9 @@ in
  ; Util.write
       out (fn () => 
               ( Datatypes.emit ()
-              ; ()))
+              ; Search.emit ()))
  ; TextIO.closeOut out
-end
+end 
 handle Lexer.LexError (c, s) =>
           print ("Lex error at " ^ Coord.toString c ^ "\n" ^ s ^ ".\n")
      | Parser.SyntaxError (NONE, s) =>

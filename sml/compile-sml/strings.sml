@@ -28,6 +28,9 @@ sig
 
    (* Outputs a first-letter-capitalized version of the symbol *)
    val symbol: Symbol.symbol -> string
+
+   val build: Term.t -> string
+   val match: Term.t -> string
 end =
 struct
 
@@ -79,7 +82,10 @@ fun prjOrInj which t s =
               "(" ^ embiggen t ^ "." ^ which ^ " " ^ s ^ ")"
           | NONE =>
               "(" ^ embiggen t ^ "." ^ which ^ " " ^ s ^ ")")
-    | Class.Extensible => "(Symbol.toValue " ^ s ^ ")"
+    | Class.Extensible => (* ugh *)
+         if which = "inj" 
+         then "(Symbol.toValue " ^ s ^ ")"
+         else "(Symbol.fromValue " ^ s ^ ")"
     | Class.Builtin => s 
 
 val prj = prjOrInj "prj"
@@ -96,9 +102,12 @@ in
             SOME Type.Transparent => base
           | SOME Type.HashConsed => raise Fail "Don't know how to hashcons yet"
           | SOME Type.External => base
-          | SOME Type.Sealed => base ^ "'"
-          | NONE => base ^ "'")
-    | Class.Extensible => "(Symbol.fromValue \"" ^ Symbol.toValue c ^ "\")" 
+          | SOME Type.Sealed => base ^ (if isBuilder then "'" else "")
+          | NONE => base ^ (if isBuilder then "'" else ""))
+    | Class.Extensible => 
+         if isBuilder 
+         then "(Symbol.fromValue \"" ^ Symbol.toValue c ^ "\")" 
+         else "\"" ^ Symbol.toValue c ^ "\""
     | Class.Builtin => 
          if not isBuilder 
          then raise Fail ("Builtin pattern `" ^ Symbol.toValue c ^ "`?") 
@@ -137,4 +146,25 @@ fun tuple [ x ] = x
 fun optTuple [] = ""
   | optTuple xs = " " ^ tuple xs
 
+fun build t = 
+   case t of 
+      Term.SymConst c => builder c
+    | Term.NatConst i => IntInf.toString i
+    | Term.StrConst s => "\"" ^ s ^ "\""
+    | Term.Root (f, ts) => 
+         "(" ^ builder f ^ " "
+         ^ tuple (map build ts) ^ ")"
+    | Term.Var (NONE, _) => "_"
+    | Term.Var (SOME x, _) => Symbol.toValue x
+    | Term.Path (path, _) => Path.toVar path
+
+fun match t = 
+   case t of 
+      Term.SymConst c => pattern c 
+    | Term.NatConst i => IntInf.toString i
+    | Term.StrConst s => "\"" ^ s ^ "\""
+    | Term.Root (f, ts) => pattern f ^ " " ^ tuple (map build ts)
+    | Term.Var (NONE, _) => "_"
+    | Term.Var (SOME x, _) => Symbol.toValue x
+    | Term.Path (path, _) => Path.toVar path
 end

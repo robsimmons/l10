@@ -12,10 +12,13 @@ ann "nonexhaustiveMatch ignore" in
 
    (* SML compiler stuff *)
    util.sml
+   path.sml
    splitting.sml
    compile-sml/strings.sml
    compile-sml/disctree.sml
-   compile-sml/terms.sml
+   compile-sml/datatypes.sml
+   compile-sml/caseanalysis.sml
+   compile-sml/search.sml
 
    (* Parser stuff *)
    l10.cmlex.sml

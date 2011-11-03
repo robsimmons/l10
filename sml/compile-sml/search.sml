@@ -1,18 +1,14 @@
-(* Robert J. Simmons *)
 
-structure SMLCompileSearch:> sig
+structure Search:> sig
 
-   val searchSig: unit -> unit 
-   val search: unit -> unit 
+   val emit: unit -> unit 
 
 end = 
 struct
 
-open SMLCompileUtil
-open SMLCompileTypes
-open SMLCompileTerms
+open Util
 
-
+(*
 (* Emit the correct seek functions for a world in the signature *) 
 
 fun emitWorldSig world = 
@@ -105,19 +101,55 @@ fun emitStartingPoints w terms =
       then emit "  [])"
       else emit ", [])"
    end  
-
+*)
 
 (* Emit the saturation fuction for a given world *)
 
-fun emitWorld w =
-   let 
-      val name = Symbol.name w
-      val Name = embiggen (Symbol.name w)
-      val typs = WorldTab.lookup w
+fun emitWorld (isAnd, (w, depends)) =
+let 
+   val splits = 
+      List.foldl
+         (fn ((_, ((_, (w', args)), _), SOME _), splits) => 
+           ( if Symbol.eq (w, w') then () else raise Fail "Search.emit"
+           ; Splitting.insertList splits args))
+         (Splitting.unsplit (Tab.lookup Tab.worlds w))
+         depends
+
+   val tuple = Strings.optTuple (map (fn (i, _) => Path.toVar [ i ]) splits)
+   val prefix = 
+      (if isAnd then "and" else "fun") ^ " saturate_" ^ Symbol.toValue w
+      ^ tuple ^ " visited ="
+in
+ ( emit [prefix,"let"]
+ ; emit ["in if World.Dict.member visited (" ^ Strings.builder w ^ tuple ^ ")"]
+ ; emit ["   then visited else"]
+ ; incr ()
+ ; CaseAnalysis.emit ""
+      (fn (postfix, _) => emit ["let", "in","   visited", "end" ^ postfix])
+      (CaseAnalysis.cases splits)
+ ; decr ()
+ ; emit ["end"])
+end   
+
+fun emit () = 
+let
+in
+ ( Util.emit ["", "", "(* L10 Generated Tabled Search (search.sml) *)", ""]
+ ; Util.emit ["structure L10_Search = ", "struct"]
+ ; incr ()
+ ; appFirst (fn () => ()) emitWorld (false, true) (Tab.list Tab.depends)   
+ ; decr ()
+ ; Util.emit ["end"])
+end
+
+(*
+   val name = Symbol.name w
+   val Name = embiggen (Symbol.name w)
+   val typs = WorldTab.lookup w
       val pathtree = WorldMatchTab.lookup w
       val tuple = optTuple (fn (i, _) => Path.var [ i ]) (mapi pathtree)
    in
-      emit ("and saturate" ^ Name ^ tuple ^ " worldmap =")
+      emit ("and saturate_" ^ Name ^ tuple ^ " worldmap =")
       ; incr (); emit ("let"); incr ()
 
       ; emit ("val w = " ^ embiggen (Symbol.name w) ^ "'" ^ tuple)
@@ -142,8 +174,9 @@ fun emitWorld w =
       ; emit ("end handle Revisit => worldmap\n")
       ; decr ()
    end
+*)
 
-
+(*
 (* SIGNATURE FOO_SEARCH *)
 
 fun searchSig () = 
@@ -183,5 +216,6 @@ fun search () =
       ; decr ()
       ; emit "end"
    end
+*)
 
 end
