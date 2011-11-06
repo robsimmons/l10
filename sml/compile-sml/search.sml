@@ -118,14 +118,21 @@ let
    val tuple = Strings.optTuple (map (fn (i, _) => Path.toVar [ i ]) splits)
    val prefix = 
       (if isAnd then "and" else "fun") ^ " saturate_" ^ Symbol.toValue w
-      ^ tuple ^ " visited ="
+      ^ tuple ^ " orig_visited database ="
 in
- ( emit [prefix,"let"]
- ; emit ["in if World.Dict.member visited (" ^ Strings.builder w ^ tuple ^ ")"]
+ ( emit [prefix, "let"]
+ ; incr ()
+ ; emit ["val w = " ^ Strings.builder w ^ tuple]
+ ; emit ["val visited = World.Dict.insert orig_visited w"]
+ ; decr ()
+ ; emit ["in if World.Dict.member visited w"]
  ; emit ["   then visited else"]
  ; incr ()
  ; CaseAnalysis.emit ""
-      (fn (postfix, _) => emit ["let", "in","   visited", "end" ^ postfix])
+      (fn (postfix, _) =>
+        ( emit ["let"]
+        ; ()
+        ; emit ["in", "   (visited, database, ())", "end" ^ postfix]))
       (CaseAnalysis.cases splits)
  ; decr ()
  ; emit ["end"])
@@ -137,7 +144,13 @@ in
  ( Util.emit ["", "", "(* L10 Generated Tabled Search (search.sml) *)", ""]
  ; Util.emit ["structure L10_Search = ", "struct"]
  ; incr ()
- ; appFirst (fn () => ()) emitWorld (false, true) (Tab.list Tab.depends)   
+ ; appSuper 
+      (fn () => ()) 
+      (fn x => emitWorld (false, x))
+      ((fn x => (emitWorld (false, x); Util.emit [""]))
+       , (fn x => (emitWorld (true, x); Util.emit [""]))
+       , (fn x => (emitWorld (true, x))))
+      (rev (Tab.list Tab.depends))
  ; decr ()
  ; Util.emit ["end"])
 end

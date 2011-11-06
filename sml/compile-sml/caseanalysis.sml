@@ -126,7 +126,7 @@ fun emit postfix f cases =
        ; case catchall of 
             NONE => () 
           | SOME cases => 
-             ( Util.emit ["    | _ =>"]
+             ( Util.emit ["   | _ =>"]
              ; Util.incr (); Util.incr ()
              ; emit (postfix ^ ")") f cases 
              ; Util.decr (); Util.decr ()))

@@ -75,26 +75,9 @@ in
 end
 
 
-(* Files *)
-fun readfile filename = 
-let 
-   val file = TextIO.openIn filename 
-   val out = TextIO.openOut (filename ^ ".sml")
-   val stream = 
-      stream_map Types.check 
-         (Parser.parse (Lexer.lex filename (Stream.fromTextInstream file)))
-in
- ( print ("[ == Opening " ^ filename ^ " == ]\n")
- ; load stream
-   handle exn => ((TextIO.closeIn file handle _ => ()); raise exn)
- ; print ("[ == Closing " ^ filename ^ " == ]\n\n"))
- ; Util.write
-      out (fn () => 
-              ( Datatypes.emit ()
-              ; Search.emit ()))
- ; TextIO.closeOut out
-end 
-handle Lexer.LexError (c, s) =>
+fun handler exn = 
+   case exn of 
+       Lexer.LexError (c, s) =>
           print ("Lex error at " ^ Coord.toString c ^ "\n" ^ s ^ ".\n")
      | Parser.SyntaxError (NONE, s) =>
           print ("Parse error at end of file.\n")
@@ -111,10 +94,30 @@ handle Lexer.LexError (c, s) =>
                 ^ exnMessage cause ^ "\n")
      | exn => print ( "Unexpected error: " ^ exnName exn ^ "\n" 
                     ^ exnMessage exn ^ "\n") 
+(* Files *)
+fun readfile filename = 
+let 
+   val file = TextIO.openIn filename 
+   val stream = 
+      stream_map Types.check 
+         (Parser.parse (Lexer.lex filename (Stream.fromTextInstream file))) 
+   (* val out = TextIO.openOut (filename ^ ".sml") *)
+in
+ ( print ("[ == Opening " ^ filename ^ " == ]\n")
+ ; load stream
+   handle exn => ((TextIO.closeIn file handle _ => ()); raise exn)
+ ; print ("[ == Closing " ^ filename ^ " == ]\n\n")
+(*
+ ;  Util.write
+      out (fn () => 
+              ( Datatypes.emit ()
+              ; Search.emit ()))
+ ; TextIO.closeOut out *))
+end 
 
 fun readfiles files = app readfile files
 
-val file = readfile
-val files = readfiles
+fun file s = readfile s handle exn => handler exn
+fun files s = readfiles s handle exn => handler exn
 
 end

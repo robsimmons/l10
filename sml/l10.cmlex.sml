@@ -1,20 +1,108 @@
+
+functor L10Lex
+   (structure Streamable : STREAMABLE
+    structure Arg :
+       sig
+          type symbol
+          val ord : symbol -> int
+
+          type tok
+          type u
+
+          type self = { anno : symbol Streamable.t -> tok,
+                        comment : symbol Streamable.t -> u,
+                        lexmain : symbol Streamable.t -> tok,
+                        linecomment : symbol Streamable.t -> u }
+          type info = { match : symbol list,
+                        len : int,
+                        start : symbol Streamable.t,
+                        follow : symbol Streamable.t,
+                        self : self }
+
+          val anno_colon : info -> tok
+          val anno_comment : info -> tok
+          val anno_end : info -> tok
+          val anno_error : info -> tok
+          val anno_lcid : info -> tok
+          val anno_linecomment : info -> tok
+          val anno_lparen : info -> tok
+          val anno_minus : info -> tok
+          val anno_plus : info -> tok
+          val anno_query : info -> tok
+          val anno_rparen : info -> tok
+          val anno_space : info -> tok
+          val anno_start : info -> tok
+          val anno_type : info -> tok
+          val anno_uscore : info -> tok
+          val at : info -> tok
+          val colon : info -> tok
+          val comma : info -> tok
+          val comment : info -> tok
+          val comment_close : info -> u
+          val comment_error : info -> u
+          val comment_open : info -> u
+          val comment_skip : info -> u
+          val eof : info -> tok
+          val eq : info -> tok
+          val eqeq : info -> tok
+          val error : info -> tok
+          val ex : info -> tok
+          val extensible : info -> tok
+          val geq : info -> tok
+          val gt : info -> tok
+          val larrow : info -> tok
+          val lcid : info -> tok
+          val lcurly : info -> tok
+          val leq : info -> tok
+          val linecomment : info -> tok
+          val linecomment_close : info -> u
+          val linecomment_error : info -> u
+          val linecomment_skip : info -> u
+          val lparen : info -> tok
+          val lt : info -> tok
+          val neq : info -> tok
+          val not : info -> tok
+          val num : info -> tok
+          val period : info -> tok
+          val plus : info -> tok
+          val rarrow : info -> tok
+          val rcurly : info -> tok
+          val rel : info -> tok
+          val rparen : info -> tok
+          val space : info -> tok
+          val str : info -> tok
+          val ty : info -> tok
+          val ucid : info -> tok
+          val uscore : info -> tok
+          val world : info -> tok
+       end)
+   :>
+   sig
+      val anno : Arg.symbol Streamable.t -> Arg.tok
+      val comment : Arg.symbol Streamable.t -> Arg.u
+      val lexmain : Arg.symbol Streamable.t -> Arg.tok
+      val linecomment : Arg.symbol Streamable.t -> Arg.u
+   end
+=
+
 (*
 
-anno
+AUTOMATON LISTINGS
+==================
+
+Automaton anno
 initial state = 12
 total states = 25
 
 -----
 
-anno
-state 11 (final:anno_minus):
+anno state 11 (final:anno_minus):
 
 45 => state 1   (sink:anno_linecomment)
 
 -----
 
-anno
-state 12 (initial, final:anno_error):
+anno state 12 (initial, final:anno_error):
 
 9-10 => state 13   (final:anno_space)
 13 => state 13   (final:anno_space)
@@ -33,8 +121,7 @@ state 12 (initial, final:anno_error):
 
 -----
 
-anno
-state 13 (final:anno_space):
+anno state 13 (final:anno_space):
 
 9-10 => state 13   (final:anno_space)
 13 => state 13   (final:anno_space)
@@ -42,8 +129,7 @@ state 13 (final:anno_space):
 
 -----
 
-anno
-state 14 (final:anno_lcid):
+anno state 14 (final:anno_lcid):
 
 39 => state 14   (final:anno_lcid)
 48-57 => state 14   (final:anno_lcid)
@@ -54,91 +140,79 @@ state 14 (final:anno_lcid):
 
 -----
 
-anno
-state 15:
+anno state 15:
 
 45 => state 19
 
 -----
 
-anno
-state 16:
+anno state 16:
 
 89 => state 20
 
 -----
 
-anno
-state 17:
+anno state 17:
 
 85 => state 21
 
 -----
 
-anno
-state 18:
+anno state 18:
 
 45 => state 5   (sink:anno_comment)
 
 -----
 
-anno
-state 19:
+anno state 19:
 
 125 => state 6   (sink:anno_end)
 
 -----
 
-anno
-state 20:
+anno state 20:
 
 80 => state 22
 
 -----
 
-anno
-state 21:
+anno state 21:
 
 69 => state 23
 
 -----
 
-anno
-state 22:
+anno state 22:
 
 69 => state 10   (sink:anno_type)
 
 -----
 
-anno
-state 23:
+anno state 23:
 
 82 => state 24
 
 -----
 
-anno
-state 24:
+anno state 24:
 
 89 => state 4   (sink:anno_query)
 
 =====
 
-comment
+Automaton comment
 initial state = 5
 total states = 7
 
 -----
 
-comment
-state 4 (final:comment_skip):
+comment state 4 (final:comment_skip):
 
 45 => state 3   (sink:comment_open)
 
 -----
 
-comment
-state 5 (initial, final:comment_error):
+comment state 5 (initial, final:comment_error):
 
 0-44 => state 1   (sink:comment_skip)
 45 => state 6   (final:comment_skip)
@@ -148,28 +222,25 @@ state 5 (initial, final:comment_error):
 
 -----
 
-comment
-state 6 (final:comment_skip):
+comment state 6 (final:comment_skip):
 
 125 => state 2   (sink:comment_close)
 
 =====
 
-lexmain
+Automaton lexmain
 initial state = 45
 total states = 63
 
 -----
 
-lexmain
-state 22 (final:gt):
+lexmain state 22 (final:gt):
 
 61 => state 7   (sink:geq)
 
 -----
 
-lexmain
-state 23 (final:lcid):
+lexmain state 23 (final:lcid):
 
 39 => state 54   (final:lcid)
 48-57 => state 54   (final:lcid)
@@ -182,8 +253,7 @@ state 23 (final:lcid):
 
 -----
 
-lexmain
-state 24 (final:not):
+lexmain state 24 (final:not):
 
 39 => state 54   (final:lcid)
 48-57 => state 54   (final:lcid)
@@ -194,16 +264,14 @@ state 24 (final:not):
 
 -----
 
-lexmain
-state 25 (final:lt):
+lexmain state 25 (final:lt):
 
 45 => state 13   (sink:larrow)
 61 => state 3   (sink:leq)
 
 -----
 
-lexmain
-state 26 (final:lcid):
+lexmain state 26 (final:lcid):
 
 39 => state 54   (final:lcid)
 48-57 => state 54   (final:lcid)
@@ -216,8 +284,7 @@ state 26 (final:lcid):
 
 -----
 
-lexmain
-state 27 (final:lcid):
+lexmain state 27 (final:lcid):
 
 39 => state 54   (final:lcid)
 48-57 => state 54   (final:lcid)
@@ -230,8 +297,7 @@ state 27 (final:lcid):
 
 -----
 
-lexmain
-state 28 (final:lcid):
+lexmain state 28 (final:lcid):
 
 39 => state 54   (final:lcid)
 48-57 => state 54   (final:lcid)
@@ -244,8 +310,7 @@ state 28 (final:lcid):
 
 -----
 
-lexmain
-state 29 (final:world):
+lexmain state 29 (final:world):
 
 39 => state 54   (final:lcid)
 48-57 => state 54   (final:lcid)
@@ -256,8 +321,7 @@ state 29 (final:world):
 
 -----
 
-lexmain
-state 30 (final:lcid):
+lexmain state 30 (final:lcid):
 
 39 => state 54   (final:lcid)
 48-57 => state 54   (final:lcid)
@@ -270,8 +334,7 @@ state 30 (final:lcid):
 
 -----
 
-lexmain
-state 31 (final:lcid):
+lexmain state 31 (final:lcid):
 
 39 => state 54   (final:lcid)
 48-57 => state 54   (final:lcid)
@@ -284,8 +347,7 @@ state 31 (final:lcid):
 
 -----
 
-lexmain
-state 32 (final:lcid):
+lexmain state 32 (final:lcid):
 
 39 => state 54   (final:lcid)
 48-57 => state 54   (final:lcid)
@@ -298,8 +360,7 @@ state 32 (final:lcid):
 
 -----
 
-lexmain
-state 33 (final:ty):
+lexmain state 33 (final:ty):
 
 39 => state 54   (final:lcid)
 48-57 => state 54   (final:lcid)
@@ -310,8 +371,7 @@ state 33 (final:ty):
 
 -----
 
-lexmain
-state 34 (final:lcid):
+lexmain state 34 (final:lcid):
 
 39 => state 54   (final:lcid)
 48-57 => state 54   (final:lcid)
@@ -324,8 +384,7 @@ state 34 (final:lcid):
 
 -----
 
-lexmain
-state 35 (final:extensible):
+lexmain state 35 (final:extensible):
 
 39 => state 54   (final:lcid)
 48-57 => state 54   (final:lcid)
@@ -336,8 +395,7 @@ state 35 (final:extensible):
 
 -----
 
-lexmain
-state 36 (final:lcid):
+lexmain state 36 (final:lcid):
 
 39 => state 54   (final:lcid)
 48-57 => state 54   (final:lcid)
@@ -350,8 +408,7 @@ state 36 (final:lcid):
 
 -----
 
-lexmain
-state 37 (final:lcid):
+lexmain state 37 (final:lcid):
 
 39 => state 54   (final:lcid)
 48-57 => state 54   (final:lcid)
@@ -364,8 +421,7 @@ state 37 (final:lcid):
 
 -----
 
-lexmain
-state 38 (final:lcid):
+lexmain state 38 (final:lcid):
 
 39 => state 54   (final:lcid)
 48-57 => state 54   (final:lcid)
@@ -378,8 +434,7 @@ state 38 (final:lcid):
 
 -----
 
-lexmain
-state 39 (final:lcid):
+lexmain state 39 (final:lcid):
 
 39 => state 54   (final:lcid)
 48-57 => state 54   (final:lcid)
@@ -392,8 +447,7 @@ state 39 (final:lcid):
 
 -----
 
-lexmain
-state 40 (final:ucid):
+lexmain state 40 (final:ucid):
 
 39 => state 40   (final:ucid)
 48-57 => state 40   (final:ucid)
@@ -404,8 +458,7 @@ state 40 (final:ucid):
 
 -----
 
-lexmain
-state 41 (final:lcid):
+lexmain state 41 (final:lcid):
 
 39 => state 54   (final:lcid)
 48-57 => state 54   (final:lcid)
@@ -418,8 +471,7 @@ state 41 (final:lcid):
 
 -----
 
-lexmain
-state 42 (final:ucid):
+lexmain state 42 (final:ucid):
 
 39 => state 40   (final:ucid)
 48-57 => state 40   (final:ucid)
@@ -432,8 +484,7 @@ state 42 (final:ucid):
 
 -----
 
-lexmain
-state 43 (final:space):
+lexmain state 43 (final:space):
 
 9-10 => state 43   (final:space)
 13 => state 43   (final:space)
@@ -441,8 +492,7 @@ state 43 (final:space):
 
 -----
 
-lexmain
-state 44 (final:rel):
+lexmain state 44 (final:rel):
 
 39 => state 54   (final:lcid)
 48-57 => state 54   (final:lcid)
@@ -453,8 +503,7 @@ state 44 (final:rel):
 
 -----
 
-lexmain
-state 45 (initial, final:error):
+lexmain state 45 (initial, final:error):
 
 9-10 => state 43   (final:space)
 13 => state 43   (final:space)
@@ -496,8 +545,7 @@ EOS => state 21   (sink:eof)
 
 -----
 
-lexmain
-state 46 (final:lcid):
+lexmain state 46 (final:lcid):
 
 39 => state 54   (final:lcid)
 48-57 => state 54   (final:lcid)
@@ -510,15 +558,13 @@ state 46 (final:lcid):
 
 -----
 
-lexmain
-state 47 (final:lcurly):
+lexmain state 47 (final:lcurly):
 
 45 => state 50   (final:comment)
 
 -----
 
-lexmain
-state 48 (final:lcid):
+lexmain state 48 (final:lcid):
 
 39 => state 54   (final:lcid)
 48-57 => state 54   (final:lcid)
@@ -531,8 +577,7 @@ state 48 (final:lcid):
 
 -----
 
-lexmain
-state 49 (final:lcid):
+lexmain state 49 (final:lcid):
 
 39 => state 54   (final:lcid)
 48-57 => state 54   (final:lcid)
@@ -545,15 +590,13 @@ state 49 (final:lcid):
 
 -----
 
-lexmain
-state 50 (final:comment):
+lexmain state 50 (final:comment):
 
 35 => state 15   (sink:anno_start)
 
 -----
 
-lexmain
-state 51 (final:lcid):
+lexmain state 51 (final:lcid):
 
 39 => state 54   (final:lcid)
 48-57 => state 54   (final:lcid)
@@ -566,8 +609,7 @@ state 51 (final:lcid):
 
 -----
 
-lexmain
-state 52 (final:lcid):
+lexmain state 52 (final:lcid):
 
 39 => state 54   (final:lcid)
 48-57 => state 54   (final:lcid)
@@ -580,8 +622,7 @@ state 52 (final:lcid):
 
 -----
 
-lexmain
-state 53 (final:lcid):
+lexmain state 53 (final:lcid):
 
 39 => state 54   (final:lcid)
 48-57 => state 54   (final:lcid)
@@ -594,8 +635,7 @@ state 53 (final:lcid):
 
 -----
 
-lexmain
-state 54 (final:lcid):
+lexmain state 54 (final:lcid):
 
 39 => state 54   (final:lcid)
 48-57 => state 54   (final:lcid)
@@ -606,8 +646,7 @@ state 54 (final:lcid):
 
 -----
 
-lexmain
-state 55 (final:lcid):
+lexmain state 55 (final:lcid):
 
 39 => state 54   (final:lcid)
 48-57 => state 54   (final:lcid)
@@ -620,15 +659,13 @@ state 55 (final:lcid):
 
 -----
 
-lexmain
-state 56 (final:eq):
+lexmain state 56 (final:eq):
 
 61 => state 18   (sink:eqeq)
 
 -----
 
-lexmain
-state 57 (final:ex):
+lexmain state 57 (final:ex):
 
 39 => state 40   (final:ucid)
 48-57 => state 40   (final:ucid)
@@ -639,22 +676,19 @@ state 57 (final:ex):
 
 -----
 
-lexmain
-state 58 (final:num):
+lexmain state 58 (final:num):
 
 48-57 => state 58   (final:num)
 
 -----
 
-lexmain
-state 59:
+lexmain state 59:
 
 61 => state 11   (sink:neq)
 
 -----
 
-lexmain
-state 60:
+lexmain state 60:
 
 32-33 => state 60
 34 => state 1   (sink:str)
@@ -666,29 +700,26 @@ state 60:
 
 -----
 
-lexmain
-state 61:
+lexmain state 61:
 
 45 => state 17   (sink:linecomment)
 62 => state 20   (sink:rarrow)
 
 -----
 
-lexmain
-state 62:
+lexmain state 62:
 
 47 => state 6   (sink:linecomment)
 
 =====
 
-linecomment
+Automaton linecomment
 initial state = 3
 total states = 4
 
 -----
 
-linecomment
-state 3 (initial, final:linecomment_error):
+linecomment state 3 (initial, final:linecomment_error):
 
 0-9 => state 2   (sink:linecomment_skip)
 10 => state 1   (sink:linecomment_close)
@@ -698,77 +729,13 @@ state 3 (initial, final:linecomment_error):
 
 *)
 
-functor L10Lex (structure Streamable : STREAMABLE
-structure Arg : sig
-type symbol
-val ord : symbol -> int
-type tok
-type u
-val anno_colon : { match : symbol list, len : int, start : symbol Streamable.t, follow : symbol Streamable.t, self : {anno : symbol Streamable.t -> tok, comment : symbol Streamable.t -> u, lexmain : symbol Streamable.t -> tok, linecomment : symbol Streamable.t -> u} } -> tok
-val anno_comment : { match : symbol list, len : int, start : symbol Streamable.t, follow : symbol Streamable.t, self : {anno : symbol Streamable.t -> tok, comment : symbol Streamable.t -> u, lexmain : symbol Streamable.t -> tok, linecomment : symbol Streamable.t -> u} } -> tok
-val anno_end : { match : symbol list, len : int, start : symbol Streamable.t, follow : symbol Streamable.t, self : {anno : symbol Streamable.t -> tok, comment : symbol Streamable.t -> u, lexmain : symbol Streamable.t -> tok, linecomment : symbol Streamable.t -> u} } -> tok
-val anno_error : { match : symbol list, len : int, start : symbol Streamable.t, follow : symbol Streamable.t, self : {anno : symbol Streamable.t -> tok, comment : symbol Streamable.t -> u, lexmain : symbol Streamable.t -> tok, linecomment : symbol Streamable.t -> u} } -> tok
-val anno_lcid : { match : symbol list, len : int, start : symbol Streamable.t, follow : symbol Streamable.t, self : {anno : symbol Streamable.t -> tok, comment : symbol Streamable.t -> u, lexmain : symbol Streamable.t -> tok, linecomment : symbol Streamable.t -> u} } -> tok
-val anno_linecomment : { match : symbol list, len : int, start : symbol Streamable.t, follow : symbol Streamable.t, self : {anno : symbol Streamable.t -> tok, comment : symbol Streamable.t -> u, lexmain : symbol Streamable.t -> tok, linecomment : symbol Streamable.t -> u} } -> tok
-val anno_lparen : { match : symbol list, len : int, start : symbol Streamable.t, follow : symbol Streamable.t, self : {anno : symbol Streamable.t -> tok, comment : symbol Streamable.t -> u, lexmain : symbol Streamable.t -> tok, linecomment : symbol Streamable.t -> u} } -> tok
-val anno_minus : { match : symbol list, len : int, start : symbol Streamable.t, follow : symbol Streamable.t, self : {anno : symbol Streamable.t -> tok, comment : symbol Streamable.t -> u, lexmain : symbol Streamable.t -> tok, linecomment : symbol Streamable.t -> u} } -> tok
-val anno_plus : { match : symbol list, len : int, start : symbol Streamable.t, follow : symbol Streamable.t, self : {anno : symbol Streamable.t -> tok, comment : symbol Streamable.t -> u, lexmain : symbol Streamable.t -> tok, linecomment : symbol Streamable.t -> u} } -> tok
-val anno_query : { match : symbol list, len : int, start : symbol Streamable.t, follow : symbol Streamable.t, self : {anno : symbol Streamable.t -> tok, comment : symbol Streamable.t -> u, lexmain : symbol Streamable.t -> tok, linecomment : symbol Streamable.t -> u} } -> tok
-val anno_rparen : { match : symbol list, len : int, start : symbol Streamable.t, follow : symbol Streamable.t, self : {anno : symbol Streamable.t -> tok, comment : symbol Streamable.t -> u, lexmain : symbol Streamable.t -> tok, linecomment : symbol Streamable.t -> u} } -> tok
-val anno_space : { match : symbol list, len : int, start : symbol Streamable.t, follow : symbol Streamable.t, self : {anno : symbol Streamable.t -> tok, comment : symbol Streamable.t -> u, lexmain : symbol Streamable.t -> tok, linecomment : symbol Streamable.t -> u} } -> tok
-val anno_start : { match : symbol list, len : int, start : symbol Streamable.t, follow : symbol Streamable.t, self : {anno : symbol Streamable.t -> tok, comment : symbol Streamable.t -> u, lexmain : symbol Streamable.t -> tok, linecomment : symbol Streamable.t -> u} } -> tok
-val anno_type : { match : symbol list, len : int, start : symbol Streamable.t, follow : symbol Streamable.t, self : {anno : symbol Streamable.t -> tok, comment : symbol Streamable.t -> u, lexmain : symbol Streamable.t -> tok, linecomment : symbol Streamable.t -> u} } -> tok
-val anno_uscore : { match : symbol list, len : int, start : symbol Streamable.t, follow : symbol Streamable.t, self : {anno : symbol Streamable.t -> tok, comment : symbol Streamable.t -> u, lexmain : symbol Streamable.t -> tok, linecomment : symbol Streamable.t -> u} } -> tok
-val at : { match : symbol list, len : int, start : symbol Streamable.t, follow : symbol Streamable.t, self : {anno : symbol Streamable.t -> tok, comment : symbol Streamable.t -> u, lexmain : symbol Streamable.t -> tok, linecomment : symbol Streamable.t -> u} } -> tok
-val colon : { match : symbol list, len : int, start : symbol Streamable.t, follow : symbol Streamable.t, self : {anno : symbol Streamable.t -> tok, comment : symbol Streamable.t -> u, lexmain : symbol Streamable.t -> tok, linecomment : symbol Streamable.t -> u} } -> tok
-val comma : { match : symbol list, len : int, start : symbol Streamable.t, follow : symbol Streamable.t, self : {anno : symbol Streamable.t -> tok, comment : symbol Streamable.t -> u, lexmain : symbol Streamable.t -> tok, linecomment : symbol Streamable.t -> u} } -> tok
-val comment : { match : symbol list, len : int, start : symbol Streamable.t, follow : symbol Streamable.t, self : {anno : symbol Streamable.t -> tok, comment : symbol Streamable.t -> u, lexmain : symbol Streamable.t -> tok, linecomment : symbol Streamable.t -> u} } -> tok
-val comment_close : { match : symbol list, len : int, start : symbol Streamable.t, follow : symbol Streamable.t, self : {anno : symbol Streamable.t -> tok, comment : symbol Streamable.t -> u, lexmain : symbol Streamable.t -> tok, linecomment : symbol Streamable.t -> u} } -> u
-val comment_error : { match : symbol list, len : int, start : symbol Streamable.t, follow : symbol Streamable.t, self : {anno : symbol Streamable.t -> tok, comment : symbol Streamable.t -> u, lexmain : symbol Streamable.t -> tok, linecomment : symbol Streamable.t -> u} } -> u
-val comment_open : { match : symbol list, len : int, start : symbol Streamable.t, follow : symbol Streamable.t, self : {anno : symbol Streamable.t -> tok, comment : symbol Streamable.t -> u, lexmain : symbol Streamable.t -> tok, linecomment : symbol Streamable.t -> u} } -> u
-val comment_skip : { match : symbol list, len : int, start : symbol Streamable.t, follow : symbol Streamable.t, self : {anno : symbol Streamable.t -> tok, comment : symbol Streamable.t -> u, lexmain : symbol Streamable.t -> tok, linecomment : symbol Streamable.t -> u} } -> u
-val eof : { match : symbol list, len : int, start : symbol Streamable.t, follow : symbol Streamable.t, self : {anno : symbol Streamable.t -> tok, comment : symbol Streamable.t -> u, lexmain : symbol Streamable.t -> tok, linecomment : symbol Streamable.t -> u} } -> tok
-val eq : { match : symbol list, len : int, start : symbol Streamable.t, follow : symbol Streamable.t, self : {anno : symbol Streamable.t -> tok, comment : symbol Streamable.t -> u, lexmain : symbol Streamable.t -> tok, linecomment : symbol Streamable.t -> u} } -> tok
-val eqeq : { match : symbol list, len : int, start : symbol Streamable.t, follow : symbol Streamable.t, self : {anno : symbol Streamable.t -> tok, comment : symbol Streamable.t -> u, lexmain : symbol Streamable.t -> tok, linecomment : symbol Streamable.t -> u} } -> tok
-val error : { match : symbol list, len : int, start : symbol Streamable.t, follow : symbol Streamable.t, self : {anno : symbol Streamable.t -> tok, comment : symbol Streamable.t -> u, lexmain : symbol Streamable.t -> tok, linecomment : symbol Streamable.t -> u} } -> tok
-val ex : { match : symbol list, len : int, start : symbol Streamable.t, follow : symbol Streamable.t, self : {anno : symbol Streamable.t -> tok, comment : symbol Streamable.t -> u, lexmain : symbol Streamable.t -> tok, linecomment : symbol Streamable.t -> u} } -> tok
-val extensible : { match : symbol list, len : int, start : symbol Streamable.t, follow : symbol Streamable.t, self : {anno : symbol Streamable.t -> tok, comment : symbol Streamable.t -> u, lexmain : symbol Streamable.t -> tok, linecomment : symbol Streamable.t -> u} } -> tok
-val geq : { match : symbol list, len : int, start : symbol Streamable.t, follow : symbol Streamable.t, self : {anno : symbol Streamable.t -> tok, comment : symbol Streamable.t -> u, lexmain : symbol Streamable.t -> tok, linecomment : symbol Streamable.t -> u} } -> tok
-val gt : { match : symbol list, len : int, start : symbol Streamable.t, follow : symbol Streamable.t, self : {anno : symbol Streamable.t -> tok, comment : symbol Streamable.t -> u, lexmain : symbol Streamable.t -> tok, linecomment : symbol Streamable.t -> u} } -> tok
-val larrow : { match : symbol list, len : int, start : symbol Streamable.t, follow : symbol Streamable.t, self : {anno : symbol Streamable.t -> tok, comment : symbol Streamable.t -> u, lexmain : symbol Streamable.t -> tok, linecomment : symbol Streamable.t -> u} } -> tok
-val lcid : { match : symbol list, len : int, start : symbol Streamable.t, follow : symbol Streamable.t, self : {anno : symbol Streamable.t -> tok, comment : symbol Streamable.t -> u, lexmain : symbol Streamable.t -> tok, linecomment : symbol Streamable.t -> u} } -> tok
-val lcurly : { match : symbol list, len : int, start : symbol Streamable.t, follow : symbol Streamable.t, self : {anno : symbol Streamable.t -> tok, comment : symbol Streamable.t -> u, lexmain : symbol Streamable.t -> tok, linecomment : symbol Streamable.t -> u} } -> tok
-val leq : { match : symbol list, len : int, start : symbol Streamable.t, follow : symbol Streamable.t, self : {anno : symbol Streamable.t -> tok, comment : symbol Streamable.t -> u, lexmain : symbol Streamable.t -> tok, linecomment : symbol Streamable.t -> u} } -> tok
-val linecomment : { match : symbol list, len : int, start : symbol Streamable.t, follow : symbol Streamable.t, self : {anno : symbol Streamable.t -> tok, comment : symbol Streamable.t -> u, lexmain : symbol Streamable.t -> tok, linecomment : symbol Streamable.t -> u} } -> tok
-val linecomment_close : { match : symbol list, len : int, start : symbol Streamable.t, follow : symbol Streamable.t, self : {anno : symbol Streamable.t -> tok, comment : symbol Streamable.t -> u, lexmain : symbol Streamable.t -> tok, linecomment : symbol Streamable.t -> u} } -> u
-val linecomment_error : { match : symbol list, len : int, start : symbol Streamable.t, follow : symbol Streamable.t, self : {anno : symbol Streamable.t -> tok, comment : symbol Streamable.t -> u, lexmain : symbol Streamable.t -> tok, linecomment : symbol Streamable.t -> u} } -> u
-val linecomment_skip : { match : symbol list, len : int, start : symbol Streamable.t, follow : symbol Streamable.t, self : {anno : symbol Streamable.t -> tok, comment : symbol Streamable.t -> u, lexmain : symbol Streamable.t -> tok, linecomment : symbol Streamable.t -> u} } -> u
-val lparen : { match : symbol list, len : int, start : symbol Streamable.t, follow : symbol Streamable.t, self : {anno : symbol Streamable.t -> tok, comment : symbol Streamable.t -> u, lexmain : symbol Streamable.t -> tok, linecomment : symbol Streamable.t -> u} } -> tok
-val lt : { match : symbol list, len : int, start : symbol Streamable.t, follow : symbol Streamable.t, self : {anno : symbol Streamable.t -> tok, comment : symbol Streamable.t -> u, lexmain : symbol Streamable.t -> tok, linecomment : symbol Streamable.t -> u} } -> tok
-val neq : { match : symbol list, len : int, start : symbol Streamable.t, follow : symbol Streamable.t, self : {anno : symbol Streamable.t -> tok, comment : symbol Streamable.t -> u, lexmain : symbol Streamable.t -> tok, linecomment : symbol Streamable.t -> u} } -> tok
-val not : { match : symbol list, len : int, start : symbol Streamable.t, follow : symbol Streamable.t, self : {anno : symbol Streamable.t -> tok, comment : symbol Streamable.t -> u, lexmain : symbol Streamable.t -> tok, linecomment : symbol Streamable.t -> u} } -> tok
-val num : { match : symbol list, len : int, start : symbol Streamable.t, follow : symbol Streamable.t, self : {anno : symbol Streamable.t -> tok, comment : symbol Streamable.t -> u, lexmain : symbol Streamable.t -> tok, linecomment : symbol Streamable.t -> u} } -> tok
-val period : { match : symbol list, len : int, start : symbol Streamable.t, follow : symbol Streamable.t, self : {anno : symbol Streamable.t -> tok, comment : symbol Streamable.t -> u, lexmain : symbol Streamable.t -> tok, linecomment : symbol Streamable.t -> u} } -> tok
-val plus : { match : symbol list, len : int, start : symbol Streamable.t, follow : symbol Streamable.t, self : {anno : symbol Streamable.t -> tok, comment : symbol Streamable.t -> u, lexmain : symbol Streamable.t -> tok, linecomment : symbol Streamable.t -> u} } -> tok
-val rarrow : { match : symbol list, len : int, start : symbol Streamable.t, follow : symbol Streamable.t, self : {anno : symbol Streamable.t -> tok, comment : symbol Streamable.t -> u, lexmain : symbol Streamable.t -> tok, linecomment : symbol Streamable.t -> u} } -> tok
-val rcurly : { match : symbol list, len : int, start : symbol Streamable.t, follow : symbol Streamable.t, self : {anno : symbol Streamable.t -> tok, comment : symbol Streamable.t -> u, lexmain : symbol Streamable.t -> tok, linecomment : symbol Streamable.t -> u} } -> tok
-val rel : { match : symbol list, len : int, start : symbol Streamable.t, follow : symbol Streamable.t, self : {anno : symbol Streamable.t -> tok, comment : symbol Streamable.t -> u, lexmain : symbol Streamable.t -> tok, linecomment : symbol Streamable.t -> u} } -> tok
-val rparen : { match : symbol list, len : int, start : symbol Streamable.t, follow : symbol Streamable.t, self : {anno : symbol Streamable.t -> tok, comment : symbol Streamable.t -> u, lexmain : symbol Streamable.t -> tok, linecomment : symbol Streamable.t -> u} } -> tok
-val space : { match : symbol list, len : int, start : symbol Streamable.t, follow : symbol Streamable.t, self : {anno : symbol Streamable.t -> tok, comment : symbol Streamable.t -> u, lexmain : symbol Streamable.t -> tok, linecomment : symbol Streamable.t -> u} } -> tok
-val str : { match : symbol list, len : int, start : symbol Streamable.t, follow : symbol Streamable.t, self : {anno : symbol Streamable.t -> tok, comment : symbol Streamable.t -> u, lexmain : symbol Streamable.t -> tok, linecomment : symbol Streamable.t -> u} } -> tok
-val ty : { match : symbol list, len : int, start : symbol Streamable.t, follow : symbol Streamable.t, self : {anno : symbol Streamable.t -> tok, comment : symbol Streamable.t -> u, lexmain : symbol Streamable.t -> tok, linecomment : symbol Streamable.t -> u} } -> tok
-val ucid : { match : symbol list, len : int, start : symbol Streamable.t, follow : symbol Streamable.t, self : {anno : symbol Streamable.t -> tok, comment : symbol Streamable.t -> u, lexmain : symbol Streamable.t -> tok, linecomment : symbol Streamable.t -> u} } -> tok
-val uscore : { match : symbol list, len : int, start : symbol Streamable.t, follow : symbol Streamable.t, self : {anno : symbol Streamable.t -> tok, comment : symbol Streamable.t -> u, lexmain : symbol Streamable.t -> tok, linecomment : symbol Streamable.t -> u} } -> tok
-val world : { match : symbol list, len : int, start : symbol Streamable.t, follow : symbol Streamable.t, self : {anno : symbol Streamable.t -> tok, comment : symbol Streamable.t -> u, lexmain : symbol Streamable.t -> tok, linecomment : symbol Streamable.t -> u} } -> tok
-end)
-=
 struct
 local
 structure LexEngine = LexEngineFun (structure Streamable = Streamable
 type symbol = Arg.symbol
 val ord = Arg.ord)
 structure Tables = struct
-fun error _ = raise (Fail "Illegal lexeme")
+fun epsilon _ = raise (Fail "Illegal lexeme")
 val anno = (12, 10, 14, Vector.fromList [Arg.anno_linecomment,Arg.anno_colon,Arg.anno_lparen,Arg.anno_query,Arg.anno_comment,Arg.anno_end,Arg.anno_uscore,Arg.anno_plus,Arg.anno_rparen,Arg.anno_type,Arg.anno_minus,Arg.anno_error,Arg.anno_space,Arg.anno_lcid], LexEngine.next7x1 128 "\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^A\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\r\r\^@\^@\r\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\r\^@\^@\^O\^@\^@\^@\^@\^C\t\^@\b\^@\v\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^B\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^Q\^@\^@\^P\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\a\^@\^N\^N\^N\^N\^N\^N\^N\^N\^N\^N\^N\^N\^N\^N\^N\^N\^N\^N\^N\^N\^N\^N\^N\^N\^N\^N\^R\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\r\r\^@\^@\r\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\r\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^N\^@\^@\^@\^@\^@\^@\^@\^@\^N\^N\^N\^N\^N\^N\^N\^N\^N\^N\^@\^@\^@\^@\^@\^@\^@\^N\^N\^N\^N\^N\^N\^N\^N\^N\^N\^N\^N\^N\^N\^N\^N\^N\^N\^N\^N\^N\^N\^N\^N\^N\^N\^@\^N\^@\^@\^N\^@\^N\^N\^N\^N\^N\^N\^N\^N\^N\^N\^N\^N\^N\^N\^N\^N\^N\^N\^N\^N\^N\^N\^N\^N\^N\^N\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^S\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^T\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^U\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^E\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^F\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^V\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^W\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\n\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^X\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^D\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@", LexEngine.next0x1 "\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@")
 val comment = (5, 3, 6, Vector.fromList [Arg.comment_skip,Arg.comment_close,Arg.comment_open,Arg.comment_skip,Arg.comment_error,Arg.comment_skip], LexEngine.next7x1 128 "\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^C\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^A\^A\^A\^A\^A\^A\^A\^A\^A\^A\^A\^A\^A\^A\^A\^A\^A\^A\^A\^A\^A\^A\^A\^A\^A\^A\^A\^A\^A\^A\^A\^A\^A\^A\^A\^A\^A\^A\^A\^A\^A\^A\^A\^A\^A\^F\^A\^A\^A\^A\^A\^A\^A\^A\^A\^A\^A\^A\^A\^A\^A\^A\^A\^A\^A\^A\^A\^A\^A\^A\^A\^A\^A\^A\^A\^A\^A\^A\^A\^A\^A\^A\^A\^A\^A\^A\^A\^A\^A\^A\^A\^A\^A\^A\^A\^A\^A\^A\^A\^A\^A\^A\^A\^A\^A\^A\^A\^A\^A\^A\^A\^A\^A\^A\^A\^A\^A\^A\^A\^A\^A\^A\^A\^D\^A\^A\^A\^A\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^B\^@\^@", LexEngine.next0x1 "\^@\^@\^@\^@\^@\^@\^@")
 val lexmain = (45, 21, 58, Vector.fromList [Arg.str,Arg.comma,Arg.leq,Arg.rparen,Arg.at,Arg.linecomment,Arg.geq,Arg.period,Arg.num,Arg.uscore,Arg.neq,Arg.lparen,Arg.larrow,Arg.plus,Arg.anno_start,Arg.colon,Arg.linecomment,Arg.eqeq,Arg.rcurly,Arg.rarrow,Arg.eof,Arg.gt,Arg.lcid,Arg.not,Arg.lt,Arg.lcid,Arg.lcid,Arg.lcid,Arg.world,Arg.lcid,Arg.lcid,Arg.lcid,Arg.ty,Arg.lcid,Arg.extensible,Arg.lcid,Arg.lcid,Arg.lcid,Arg.lcid,Arg.ucid,Arg.lcid,Arg.ucid,Arg.space,Arg.rel,Arg.error,Arg.lcid,Arg.lcurly,Arg.lcid,Arg.lcid,Arg.comment,Arg.lcid,Arg.lcid,Arg.lcid,Arg.lcid,Arg.lcid,Arg.eq,Arg.ex,Arg.num], LexEngine.next7x1 128 "\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\a\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@6\^@\^@\^@\^@\^@\^@\^@\^@6666666666\^@\^@\^@\^@\^@\^@\^@66666666666666666666666666\^@6\^@\^@6\^@6666666666666666666.666666\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@6\^@\^@\^@\^@\^@\^@\^@\^@6666666666\^@\^@\^@\^@\^@\^@\^@66666666666666666666666666\^@6\^@\^@6\^@66666666666666666666666666\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\r\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^C\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@6\^@\^@\^@\^@\^@\^@\^@\^@6666666666\^@\^@\^@\^@\^@\^@\^@66666666666666666666666666\^@6\^@\^@6\^@66666666666066666666666666\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@6\^@\^@\^@\^@\^@\^@\^@\^@6666666666\^@\^@\^@\^@\^@\^@\^@66666666666666666666666666\^@6\^@\^@6\^@66666666)66666666666666666\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@6\^@\^@\^@\^@\^@\^@\^@\^@6666666666\^@\^@\^@\^@\^@\^@\^@66666666666666666666666666\^@6\^@\^@6\^@666666666666666%6666666666\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@6\^@\^@\^@\^@\^@\^@\^@\^@6666666666\^@\^@\^@\^@\^@\^@\^@66666666666666666666666666\^@6\^@\^@6\^@66666666666666666666666666\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@6\^@\^@\^@\^@\^@\^@\^@\^@6666666666\^@\^@\^@\^@\^@\^@\^@66666666666666666666666666\^@6\^@\^@6\^@6666666666666666666\^X666666\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@6\^@\^@\^@\^@\^@\^@\^@\^@6666666666\^@\^@\^@\^@\^@\^@\^@66666666666666666666666666\^@6\^@\^@6\^@66666666666667666666666666\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@6\^@\^@\^@\^@\^@\^@\^@\^@6666666666\^@\^@\^@\^@\^@\^@\^@66666666666666666666666666\^@6\^@\^@6\^@666666666666666666666666\^\6\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@6\^@\^@\^@\^@\^@\^@\^@\^@6666666666\^@\^@\^@\^@\^@\^@\^@66666666666666666666666666\^@6\^@\^@6\^@66666666666666666666666666\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@6\^@\^@\^@\^@\^@\^@\^@\^@6666666666\^@\^@\^@\^@\^@\^@\^@66666666666666666666666666\^@6\^@\^@6\^@6666#666666666666666666666\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@6\^@\^@\^@\^@\^@\^@\^@\^@6666666666\^@\^@\^@\^@\^@\^@\^@66666666666666666666666666\^@6\^@\^@6\^@66666666666666666666666666\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@6\^@\^@\^@\^@\^@\^@\^@\^@6666666666\^@\^@\^@\^@\^@\^@\^@66666666666666666666666666\^@6\^@\^@6\^@66666666666666666666666\^W66\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@6\^@\^@\^@\^@\^@\^@\^@\^@6666666666\^@\^@\^@\^@\^@\^@\^@66666666666666666666666666\^@6\^@\^@6\^@6666!666666666666666666666\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@6\^@\^@\^@\^@\^@\^@\^@\^@6666666666\^@\^@\^@\^@\^@\^@\^@66666666666666666666666666\^@6\^@\^@6\^@66666666666666\^^66666666666\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@6\^@\^@\^@\^@\^@\^@\^@\^@6666666666\^@\^@\^@\^@\^@\^@\^@66666666666666666666666666\^@6\^@\^@6\^@66666666666,66666666666666\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@(\^@\^@\^@\^@\^@\^@\^@\^@((((((((((\^@\^@\^@\^@\^@\^@\^@((((((((((((((((((((((((((\^@(\^@\^@(\^@((((((((((((((((((((((((((\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@6\^@\^@\^@\^@\^@\^@\^@\^@6666666666\^@\^@\^@\^@\^@\^@\^@66666666666666666666666666\^@6\^@\^@6\^@64666666666666666666666666\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@(\^@\^@\^@\^@\^@\^@\^@\^@((((((((((\^@\^@\^@\^@\^@\^@\^@((((((((((((((((((((((((((\^@(\^@\^@(\^@(((((((((((((((((((((((9((\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@++\^@\^@+\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@+\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@6\^@\^@\^@\^@\^@\^@\^@\^@6666666666\^@\^@\^@\^@\^@\^@\^@66666666666666666666666666\^@6\^@\^@6\^@66666666666666666666666666\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@++\^@\^@+\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@+;<\^@\^@\^@\^@\^@\f\^D\^@\^N\^B=\b>\t:::::::::\^P\^@\^Y8\^V\^@\^E((((*(((((((((((((((((((((\^@\^@\^@\^@\n\^@6666$66666666&66656 661666/\^@\^S\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@6\^@\^@\^@\^@\^@\^@\^@\^@6666666666\^@\^@\^@\^@\^@\^@\^@66666666666666666666666666\^@6\^@\^@6\^@6666\^_666666666666666666666\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@2\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@6\^@\^@\^@\^@\^@\^@\^@\^@6666666666\^@\^@\^@\^@\^@\^@\^@66666666666666666666666666\^@6\^@\^@6\^@666\^]6666666666666666666666\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@6\^@\^@\^@\^@\^@\^@\^@\^@6666666666\^@\^@\^@\^@\^@\^@\^@66666666666666666666666666\^@6\^@\^@6\^@66666666666666366666666666\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^O\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@6\^@\^@\^@\^@\^@\^@\^@\^@6666666666\^@\^@\^@\^@\^@\^@\^@66666666666666666666666666\^@6\^@\^@6\^@66666666666666666\^Z66666666\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@6\^@\^@\^@\^@\^@\^@\^@\^@6666666666\^@\^@\^@\^@\^@\^@\^@66666666666666666666666666\^@6\^@\^@6\^@66666666666\"66666666666666\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@6\^@\^@\^@\^@\^@\^@\^@\^@6666666666\^@\^@\^@\^@\^@\^@\^@66666666666666666666666666\^@6\^@\^@6\^@6666'666666666666666666666\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@6\^@\^@\^@\^@\^@\^@\^@\^@6666666666\^@\^@\^@\^@\^@\^@\^@66666666666666666666666666\^@6\^@\^@6\^@66666666666666666666666666\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@6\^@\^@\^@\^@\^@\^@\^@\^@6666666666\^@\^@\^@\^@\^@\^@\^@66666666666666666666666666\^@6\^@\^@6\^@666666666666666666\^[6666666\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^R\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@(\^@\^@\^@\^@\^@\^@\^@\^@((((((((((\^@\^@\^@\^@\^@\^@\^@((((((((((((((((((((((((((\^@(\^@\^@(\^@((((((((((((((((((((((((((\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@::::::::::\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\v\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@<<\^A<<<<<<<<\^@\^@\^@\^@\^@<<<<<<<<<<\^@\^@\^@\^@\^@\^@<<<<<<<<<<<<<<<<<<<<<<<<<<<\^@\^@\^@<\^@\^@<<<<<<<<<<<<<<<<<<<<<<<<<<\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^Q\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^T\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^F\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@", LexEngine.next0x1 "\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^U\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@\^@")

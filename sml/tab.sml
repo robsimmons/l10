@@ -111,6 +111,7 @@ struct
    fun bind (Decl.World (_, w, class)) = 
         ( SymbolHashTable.insert worlds w class
         ; SymbolHashTable.insert consts w (Class.worldToTyp class)
+        ; SymbolHashTable.insert depends w []
         ; mergeTypecon Type.world w)
      | bind (Decl.Const (_, c, class)) =
        let val t = Class.base class 

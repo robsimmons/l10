@@ -84,7 +84,7 @@ in
         | (str', (_, constructor, _, subterms)) =>
              emit [str' ^ constructor ^ " of " 
                    ^ String.concatWith " * " (map typ subterms)])
-      ("   ", " | ")
+      ("  ", "| ")
       arms
  ; if isPrj rep 
    then emit ["and t_" ^ ts ^ " = inj_" ^ ts ^ " of view_" ^ ts, ""]
@@ -250,9 +250,9 @@ in
       then emit ["type t = L10_Terms.t_" ^ ts]
       else emit ["datatype t = datatype L10_Terms.t_" ^ ts]
     ; emit ["structure Dict:> DICT where type key = t = DiscDictFun", "(struct"]
-    ; emit ["   type t = L10_Terms.t_" ^ ts]
-    ; emit ["   val sub = L10_Terms.sub_" ^ ts]
-    ; emit ["   val unzip = L10_Terms.unzip_" ^ ts, "end)"]
+    ; emit ["  type t = L10_Terms.t_" ^ ts]
+    ; emit ["  val sub = L10_Terms.sub_" ^ ts]
+    ; emit ["  val unzip = L10_Terms.unzip_" ^ ts, "end)"]
     ; if sealed 
       then emit ["datatype view = datatype L10_Terms.view_" ^ ts]
       else ()

@@ -105,14 +105,18 @@ struct
       fun ord (c, _) = Char.ord c
       type tok = Coord.t -> Token.t front
       type u = Coord.t -> Coord.t * symbol stream
-      type arg = 
+      type self = 
+         {
+         lexmain: symbol stream -> tok,
+         anno: symbol stream -> tok,
+         linecomment: symbol stream -> u,
+         comment: symbol stream -> u 
+         }
+      type info = 
          { 
          follow: symbol stream,
          len: int,
-         self: { lexmain: symbol stream -> tok,
-                 anno: symbol stream -> tok,
-                 linecomment: symbol stream -> u,
-                 comment: symbol stream -> u },
+         self: self,
          start: symbol stream,
          match: symbol list
          }
@@ -133,21 +137,21 @@ struct
             loop [] match
          end
 
-      fun simple nextstate token ({ follow, self, match, ...}: arg) left = 
+      fun simple nextstate token ({ follow, self, match, ...}: info) left = 
          let 
             val (pos, coord, match') = extent match left
          in
             Cons (token pos, lazy (fn () => (nextstate self) follow coord))
          end
 
-      fun action nextstate f ({ follow, self, match, ...}: arg) left = 
+      fun action nextstate f ({ follow, self, match, ...}: info) left = 
          let 
             val (pos, coord, match') = extent match left
          in
             Cons (f (pos, match'), lazy (fn () => (nextstate self) follow coord))
          end
 
-      fun fastforward nextstate ({ follow, self, match, ...}: arg) left = 
+      fun fastforward nextstate ({ follow, self, match, ...}: info) left = 
          (nextstate self) follow (#2 (extent match left))
 
       fun eof _ _ = Nil
@@ -193,11 +197,11 @@ struct
          (fn (pos, match) => 
             STRING (pos, String.substring (match, 1, size match - 2)))
 
-      fun linecomment ({ follow, self, match, ...}: arg) coord = 
+      fun linecomment ({ follow, self, match, ...}: info) coord = 
          let val (coord', follow') = 
                 (#linecomment self) follow (#2 (extent match coord))
          in (#lexmain self) follow' coord' end
-      fun comment ({ follow, self, match, ...}: arg) coord = 
+      fun comment ({ follow, self, match, ...}: info) coord = 
          let val (coord', follow') = 
                 (#comment self) follow (#2 (extent match coord))
          in (#lexmain self) follow' coord' end
@@ -216,29 +220,29 @@ struct
       val anno_colon = simple #anno COLON
 
       val anno_end = simple #lexmain RANNO
-      fun anno_linecomment ({ follow, self, match, ...}: arg) coord = 
+      fun anno_linecomment ({ follow, self, match, ...}: info) coord = 
          let val (coord', follow') = 
                 (#linecomment self) follow (#2 (extent match coord))
          in (#anno self) follow' coord' end
-      fun anno_comment ({ follow, self, match, ...}: arg) coord = 
+      fun anno_comment ({ follow, self, match, ...}: info) coord = 
          let val (coord', follow') = 
                 (#comment self) follow (#2 (extent match coord))
          in (#anno self) follow' coord' end
       fun anno_error _ coord = 
          raise LexError (coord, "Lex error in annotation")
 
-      fun linecomment_close ({ follow, self, match, ...}: arg) coord =
+      fun linecomment_close ({ follow, self, match, ...}: info) coord =
          (#2 (extent match coord), follow)
       val linecomment_skip = fastforward #linecomment
       fun linecomment_error _ coord =
          raise LexError(coord, "Unterminated line comment at end of file")
 
-      fun comment_open ({ follow, self, match, ...}: arg) coord = 
+      fun comment_open ({ follow, self, match, ...}: info) coord = 
          let val (coord', follow') = 
                 (#comment self) follow (#2 (extent match coord))
          in (#comment self) follow' coord' end
       val comment_skip = fastforward #comment
-      fun comment_close ({ follow, self, match, ... }: arg) coord = 
+      fun comment_close ({ follow, self, match, ... }: info) coord = 
          (#2 (extent match coord), follow)
       fun comment_error _ coord =
          raise LexError (coord, "Unclosed comment at end of file")

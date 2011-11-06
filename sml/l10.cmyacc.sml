@@ -1,4 +1,105 @@
+
+functor L10Parse
+   (structure Streamable : STREAMABLE
+    structure Arg :
+       sig
+          type pos
+          type pos_str
+          type pos_int
+          type decl
+          type syn
+          type sings
+          type modes
+
+          val mode_ignore : modes -> modes
+          val mode_output : modes -> modes
+          val mode_input : modes -> modes
+          val mode_end : unit -> modes
+          val sings_lcid : pos_str * sings -> sings
+          val sings_cons : syn * sings -> sings
+          val sings_end : unit -> sings
+          val String : pos_str -> syn
+          val Num : pos_int -> syn
+          val Rel : pos -> syn
+          val Extensible : pos -> syn
+          val Type : pos -> syn
+          val World : pos -> syn
+          val Uscore : pos -> syn
+          val var : pos_str -> syn
+          val Paren : pos * syn * pos -> syn
+          val Ex : pos * pos_str * syn -> syn
+          val Pi : pos * syn * pos * syn -> syn
+          val Not : pos * syn -> syn
+          val App : pos_str * sings -> syn
+          val id1 : syn -> syn
+          val plus : syn * syn -> syn
+          val leq : syn * syn -> syn
+          val geq : syn * syn -> syn
+          val lt : syn * syn -> syn
+          val gt : syn * syn -> syn
+          val neq : syn * syn -> syn
+          val eqeq : syn * syn -> syn
+          val At : syn * syn -> syn
+          val Conj : syn * syn -> syn
+          val Arrow : syn * syn -> syn
+          val larrow : syn * syn -> syn
+          val Assign : pos_str * syn -> syn
+          val Ascribe : pos_str * syn -> syn
+          val ascribe_ucid : pos_str * syn -> syn
+          val Ucid : pos_str -> syn
+          val AnnoType : pos * pos_str * pos_str * pos * decl -> decl
+          val AnnoQuery : pos * pos_str * pos_str * modes * pos * decl -> decl
+          val Syn : syn * pos * decl -> decl
+          val Done : unit -> decl
+
+          datatype terminal =
+             LCURLY of pos
+           | RCURLY of pos
+           | LPAREN of pos
+           | RPAREN of pos
+           | EX of pos
+           | PERIOD of pos
+           | COLON of pos
+           | EQ of pos
+           | LARROW of pos
+           | RARROW of pos
+           | COMMA of pos
+           | AT of pos
+           | EQEQ of pos
+           | NEQ of pos
+           | GT of pos
+           | LT of pos
+           | GEQ of pos
+           | LEQ of pos
+           | PLUS of pos
+           | MINUS of pos
+           | NOT of pos
+           | WORLD of pos
+           | TYPE of pos
+           | EXTENSIBLE of pos
+           | REL of pos
+           | USCORE of pos
+           | UCID of pos_str
+           | LCID of pos_str
+           | NUM of pos_int
+           | STRING of pos_str
+           | LANNO of pos
+           | RANNO of pos
+           | ANNO_QUERY of pos
+           | ANNO_TYPE of pos
+
+          val error : terminal Streamable.t -> exn
+       end)
+   :>
+   sig
+      val parse : Arg.terminal Streamable.t -> Arg.decl * Arg.terminal Streamable.t
+   end
+=
+
 (*
+
+AUTOMATON LISTING
+=================
 
 State 0:
 
@@ -2410,93 +2511,6 @@ lookahead 7 = RANNO
 
 *)
 
-functor L10Parse (structure Streamable : STREAMABLE
-structure Arg : sig
-type pos
-type pos_str
-type pos_int
-type decl
-type syn
-type sings
-type modes
-val Done : {} -> decl
-val Syn : {1:syn, 2:pos, 3:decl} -> decl
-val AnnoQuery : {1:pos, 2:pos_str, 3:pos_str, 4:modes, 5:pos, 6:decl} -> decl
-val AnnoType : {1:pos, 2:pos_str, 3:pos_str, 4:pos, 5:decl} -> decl
-val Ucid : pos_str -> syn
-val ascribe_ucid : {1:pos_str, 2:syn} -> syn
-val Ascribe : {1:pos_str, 2:syn} -> syn
-val Assign : {1:pos_str, 2:syn} -> syn
-val larrow : {1:syn, 2:syn} -> syn
-val Arrow : {1:syn, 2:syn} -> syn
-val Conj : {1:syn, 2:syn} -> syn
-val At : {1:syn, 2:syn} -> syn
-val eqeq : {1:syn, 2:syn} -> syn
-val neq : {1:syn, 2:syn} -> syn
-val gt : {1:syn, 2:syn} -> syn
-val lt : {1:syn, 2:syn} -> syn
-val geq : {1:syn, 2:syn} -> syn
-val leq : {1:syn, 2:syn} -> syn
-val plus : {1:syn, 2:syn} -> syn
-val id1 : syn -> syn
-val App : {1:pos_str, 2:sings} -> syn
-val Not : {1:pos, 2:syn} -> syn
-val Pi : {1:pos, 2:syn, 3:pos, 4:syn} -> syn
-val Ex : {1:pos, 2:pos_str, 3:syn} -> syn
-val Paren : {1:pos, 2:syn, 3:pos} -> syn
-val var : pos_str -> syn
-val Uscore : pos -> syn
-val World : pos -> syn
-val Type : pos -> syn
-val Extensible : pos -> syn
-val Rel : pos -> syn
-val Num : pos_int -> syn
-val String : pos_str -> syn
-val sings_end : {} -> sings
-val sings_cons : {1:syn, 2:sings} -> sings
-val sings_lcid : {1:pos_str, 2:sings} -> sings
-val mode_end : {} -> modes
-val mode_input : modes -> modes
-val mode_output : modes -> modes
-val mode_ignore : modes -> modes
-datatype terminal =
-LCURLY of pos
-| RCURLY of pos
-| LPAREN of pos
-| RPAREN of pos
-| EX of pos
-| PERIOD of pos
-| COLON of pos
-| EQ of pos
-| LARROW of pos
-| RARROW of pos
-| COMMA of pos
-| AT of pos
-| EQEQ of pos
-| NEQ of pos
-| GT of pos
-| LT of pos
-| GEQ of pos
-| LEQ of pos
-| PLUS of pos
-| MINUS of pos
-| NOT of pos
-| WORLD of pos
-| TYPE of pos
-| EXTENSIBLE of pos
-| REL of pos
-| USCORE of pos
-| UCID of pos_str
-| LCID of pos_str
-| NUM of pos_int
-| STRING of pos_str
-| LANNO of pos
-| RANNO of pos
-| ANNO_QUERY of pos
-| ANNO_TYPE of pos
-val error : terminal Streamable.t -> exn
-end)
-=
 struct
 local
 structure Value = struct
