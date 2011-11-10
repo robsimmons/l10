@@ -74,7 +74,7 @@ struct
       * ((Pos.t * Atom.t) * (Pos.t * Prem.t) list)
       * Type.env option) list tab = 
       (SymbolHashTable.table  
-         (*[ <: int -> (Pos.t * Decl.depend_t * Type.env some) list tab ]*))
+         (*[ <: int -> depend list tab ]*))
          1 
 
    (*[ sortdef rule = (Pos.t * Rule.rule_t * Type.env some) ]*)
@@ -99,6 +99,12 @@ struct
       SymbolHashTable.insertMerge tab key [ value ] 
          (fn values => value :: values)
 
+   val init: 'a list tab -> Symbol.symbol -> unit = 
+      fn tab =>
+      fn key =>
+      SymbolHashTable.insertMerge tab key []
+         (fn values => values)
+
    local 
       fun mergeTypecon t c = 
          SymbolHashTable.insertMerge typecon t
@@ -111,7 +117,7 @@ struct
    fun bind (Decl.World (_, w, class)) = 
         ( SymbolHashTable.insert worlds w class
         ; SymbolHashTable.insert consts w (Class.worldToTyp class)
-        ; SymbolHashTable.insert depends w []
+        ; (init (*[ <: depend list tab -> Symbol.symbol -> unit ]*)) depends w 
         ; mergeTypecon Type.world w)
      | bind (Decl.Const (_, c, class)) =
        let val t = Class.base class 

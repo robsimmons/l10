@@ -13,3 +13,4 @@ bin/*
 *.cmyacc.sml
 .svn
 .cm
+*.l10.sml

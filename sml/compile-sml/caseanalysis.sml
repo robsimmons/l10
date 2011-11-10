@@ -88,6 +88,7 @@ in
       (map (fn (i, split) => ([ i ], split)) splits)
 end
 
+(*[ emit: string -> (string * Term.shape list -> unit) -> cases -> unit ]*)
 fun emit postfix f cases = 
    case cases of 
       Done shapes => 

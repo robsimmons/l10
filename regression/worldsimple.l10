@@ -1,0 +1,14 @@
+n: type.
+z: n.
+s: n -> n.
+
+w1: n -> n -> world.
+w2: n -> n -> world.
+
+r1: {N: n} {M: n} rel @ w1 N M.
+r2: {N: n} {M: n} rel @ w2 N M.
+
+r1 N z -> r2 (s N) (s N).
+r1 N z -> r2 z N.
+r1 N z -> r2 N z.
+r2 N z -> r1 N z.

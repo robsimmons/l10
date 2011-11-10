@@ -57,10 +57,16 @@ fun load stream =
        Decl.decl_t Stream.stream * Decl.decl_t Stream.stream]*)
 fun split declstream = 
 let 
+   (*[ val waiton: Decl.decl_t -> bool ]*)
    fun waiton (Decl.Query _) = true
      | waiton (Decl.DB _) = true
      | waiton _ = false
 
+   (*[ val filter': 
+          (Decl.decl_t -> bool)
+          -> Decl.decl_t Stream.stream
+          -> unit
+          -> Decl.decl_t Stream.front ]*)
    fun filter' f stream () = 
       case stream_front stream of 
          Stream.Nil => Stream.Nil
@@ -69,6 +75,10 @@ let
             then Stream.Cons (item, Stream.lazy (filter' f stream))
             else filter' f stream ()
  
+   (*[ val filter: 
+          (Decl.decl_t -> bool) 
+          -> Decl.decl_t Stream.stream
+          -> Decl.decl_t Stream.stream ]*)
    fun filter f stream = Stream.lazy (filter' f stream)
 in
    (filter (not o waiton) declstream, filter waiton declstream)
