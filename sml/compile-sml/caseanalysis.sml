@@ -62,21 +62,30 @@ let
                 val Datatypes.DT {arms, ...} = Datatypes.dtype t
                 val arms = List.filter (DictX.member covered o #1) arms 
                 
+                (*[ val mapper: 
+                       (Symbol.symbol * string * int * Datatypes.subterm list)
+                       -> (Term.pat * (int * Splitting.t) list) ]*)
                 fun mapper (c, cstr, ndx, []) = 
                        (Term.SymConst c, DictX.lookup covered c)
                   | mapper (f, cstr, ndx, (args as _ :: _)) = 
                     let 
+                       (*[ val subtermize: Datatypes.subterm -> Term.path ]*)
                        fun subtermize {t, ts, mutual, n} = 
                           Term.Path (path @ [ n ], t)
                     in 
                        (Term.Root (f, map subtermize args)
                         , DictX.lookup covered f)
                     end
+
+                (*[ val normal: (Term.pat * cases) list ]*)
+                val normal = map (caser shapes splits path) (map mapper arms)
+
+                (*[ val catchall: cases option ]*)
+                val catchall = 
+                   if SetX.isEmpty uncovered then NONE
+                   else SOME (splitter shapes splits)
              in 
-                Case ((Splitting.typ split, path)
-                      , map (caser shapes splits path) (map mapper arms)
-                      , if SetX.isEmpty uncovered then NONE
-                        else SOME (splitter shapes splits))
+                Case ((Splitting.typ split, path), normal, catchall)
              end
        end
 

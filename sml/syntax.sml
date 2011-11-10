@@ -93,10 +93,14 @@ struct
     | Root of Symbol.symbol * moded_t conslist
 
    datasort path = Path of int list * Type.t
-   datasort sym = Root of Symbol.symbol * path conslist
-   datasort nat = Root of Symbol.symbol * path conslist
-   datasort str = Root of Symbol.symbol * path conslist
-   datasort pat = Root of Symbol.symbol * path conslist
+   datasort sym = SymConst of Symbol.symbol
+   datasort nat = NatConst of IntInf.int
+   datasort str = StrConst of string
+   datasort pat = 
+      SymConst of Symbol.symbol
+    | NatConst of IntInf.int
+    | StrConst of string
+    | Root of Symbol.symbol * path conslist
 ]*)
 
    fun eq (term1, term2) = 
