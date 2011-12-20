@@ -29,7 +29,12 @@ sig
    (* Outputs a first-letter-capitalized version of the symbol *)
    val symbol: Symbol.symbol -> string
 
+   (*[ val build: Term.term_t -> string
+                & Term.shape -> string ]*)
    val build: Term.t -> string
+
+   (*[ val match: Term.term_t -> string
+                & Term.shape -> string ]*)
    val match: Term.t -> string
 end =
 struct
@@ -146,6 +151,8 @@ fun tuple [ x ] = x
 fun optTuple [] = ""
   | optTuple xs = " " ^ tuple xs
 
+(*[ val build: Term.term_t -> string
+             & Term.shape -> string ]*)
 fun build t = 
    case t of 
       Term.SymConst c => builder c
@@ -158,6 +165,8 @@ fun build t =
     | Term.Var (SOME x, _) => Symbol.toValue x
     | Term.Path (path, _) => Path.toVar path
 
+(*[ val match: Term.term_t -> string
+             & Term.shape -> string ]*)
 fun match t = 
    case t of 
       Term.SymConst c => pattern c 
