@@ -103,7 +103,82 @@ fun emitStartingPoints w terms =
    end  
 *)
 
+
 (* Emit the saturation fuction for a given world *)
+
+fun filter shapes (pos, ((_, (w', args)), prems), SOME _) =
+   case Term.gens (shapes, args) of
+      NONE => NONE
+    | SOME subst => SOME (pos, (w', args), subst, prems)
+
+fun emitDependencyVisitor shapes (pos, conc, subst, prems) = 
+let
+   (* Little helper function for printing out the individual substitutions *) 
+   fun str (t, substs) =
+      " |-> [ " 
+      ^ String.concatWith ", " 
+           (map (fn (path, Term.Path _) => Path.toVar path
+                  | (path, term) => 
+                       Path.toVar path ^ "=" ^ Term.toString term)
+               substs) 
+      ^ " ]"
+  
+   (* XXX TODO - Prevent dumb stuff like (z = s X) equalities *) 
+   fun simplify_equalities t [] eqs_out = eqs_out
+     | simplify_equalities t [ _ ] eqs_out = eqs_out
+     | simplify_equalities t ((x, _) :: (eq as (y, _)) :: eqs) eqs_out =
+          simplify_equalities t (eq :: eqs) ((t, x, y) :: eqs_out)
+
+   fun process_subst ((x, (t, eqs)), (eqs_out, subst)) = 
+      (simplify_equalities t eqs eqs_out, 
+       DictX.insert subst x (Term.Path (#1 (hd eqs), t)))
+
+   val subst_list = DictX.toList subst
+
+   val (equalities, subst) =
+      List.foldr process_subst ([], DictX.empty) subst_list
+
+   fun getSaturate prem =
+   let
+     val (w, args) = 
+        case prem of 
+           Prem.Normal (Pat.Atom prem) => prem
+         | Prem.Negated (Pat.Atom prem) => prem
+   in 
+      "saturate_" ^ Symbol.toValue w
+      ^ Strings.optTuple 
+           (map (fn term => Term.toString (valOf (Term.subst (subst, term))))
+               args)
+   end
+
+   fun getEquality (t, x, y) =
+      Strings.eq t (Path.toVar x) (Path.toVar y)
+
+in
+ ( emit ["", "(* " ^ Pos.toString pos ^ " - " ^ Atom.toString conc ^ " *)"]
+ ; appSuper (fn () => ())
+      (fn (x, s) => emit ["(* { " ^ Symbol.toValue x ^ str s ^ " } *)"])
+      ((fn (x, s) => emit ["(* { " ^ Symbol.toValue x ^ str s ^ ","]),
+       (fn (x, s) => emit [" *   " ^ Symbol.toValue x ^ str s ^ ","]),
+       (fn (x, s) => emit [" *   " ^ Symbol.toValue x ^ str s ^ " } *)"]))
+      subst_list
+ ; emit ["val bundle ="]
+ ; incr ()
+ ; appSuper (fn () => ())
+      (fn cnstr => (emit ["if " ^ getEquality cnstr ^ " then"]; incr ()))
+      ((fn cnstr =>  emit ["if " ^ getEquality cnstr ^ " andalso"]),
+       (fn cnstr =>  emit ["   " ^ getEquality cnstr ^ " andalso"]),
+       (fn cnstr => (emit ["   " ^ getEquality cnstr ^ " then"]; incr ())))
+      equalities
+ ; appSuper (fn () => emit ["bundle"])
+      (fn (_, prem) => emit [getSaturate prem ^ " bundle"])
+      ((fn (_, prem) => emit ["(" ^ getSaturate prem ^ " o"]),
+       (fn (_, prem) => emit [" " ^ getSaturate prem ^ " o"]),
+       (fn (_, prem) => emit [" " ^ getSaturate prem ^ ") bundle"]))
+      prems
+  ; if null equalities then () else (decr (); emit ["else bundle"])
+  ; decr ())
+end
 
 fun emitWorld (isAnd, (w, depends)) =
 let 
@@ -118,21 +193,26 @@ let
    val tuple = Strings.optTuple (map (fn (i, _) => Path.toVar [ i ]) splits)
    val prefix = 
       (if isAnd then "and" else "fun") ^ " saturate_" ^ Symbol.toValue w
-      ^ tuple ^ " orig_visited database ="
+      ^ tuple ^ " (visited, database) ="
 in
  ( emit [prefix, "let"]
  ; incr ()
  ; emit ["val w = " ^ Strings.builder w ^ tuple]
- ; emit ["val visited = World.Dict.insert orig_visited w"]
+ ; emit ["val visited = World.Dict.insert visited w ()"]
  ; decr ()
  ; emit ["in if World.Dict.member visited w"]
- ; emit ["   then visited else"]
+ ; emit ["   then (visited, database) else"]
  ; incr ()
  ; CaseAnalysis.emit ""
-      (fn (postfix, _) =>
-        ( emit ["let"]
-        ; ()
-        ; emit ["in", "   (visited, database, ())", "end" ^ postfix]))
+      (fn (postfix, shapes) =>
+        ( emit ["(* " ^ Atom.toString (w, shapes) ^ " *)"]
+        ; emit ["let"]
+        ; incr ()
+        ; emit ["val bundle = (visited, database)"]
+        ; app (emitDependencyVisitor shapes) 
+             (rev (List.mapPartial (filter shapes) depends))
+        ; decr ()
+        ; emit ["in", "   bundle", "end" ^ postfix]))
       (CaseAnalysis.cases splits)
  ; decr ()
  ; emit ["end"])

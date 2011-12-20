@@ -144,11 +144,15 @@ struct
        | Path (path, _) => "x_" ^ String.concatWith "_" (map Int.toString path)
 
    (*[ sortdef subst = term_t DictX.dict ]*)
+   (*[ sortdef pathsubst = path DictX.dict ]*)
   
    (* Total substitution *)
-   (*[ val subst: subst * term_t -> term_t option ]*)
+   (*[ val subst: subst * term_t -> term_t option 
+                & pathsubst * term_t -> shape option ]*)
    (*[ val substs: subst * term_t list -> term_t list option
-                 & subst * term_t conslist -> term_t conslist option ]*)
+                 & subst * term_t conslist -> term_t conslist option
+                 & pathsubst * term_t list -> term_t list option
+                 & pathsubst * term_t conslist -> term_t conslist option ]*)
    fun subst (map, term) =
       case term of 
          SymConst c => SOME (SymConst c)
@@ -189,11 +193,67 @@ struct
 
    (* Generalization:
     *
-    * genTerm (s (s T1)) (s N) = SOME { N |-> [ T1 ] }
-    * genTerm (s (s T2)) (s z) = SOME { 
-    * genTerm (s (s T1)) (s (s (s N)) = FAILS INVARIANT 
-    * genTerm (f T2 _) (f X X) = true *)
+    * genTerm (s (s x_0_0)) (s N)        = SOME { N |-> [ (s x_0) ] }
+    * genTerm (s (s x_0_0)) (s (s N))    = SOME { N |-> [ x_0_0 ] }
+    * genTerm (s (s x_0_0)) (s z)        = NONE
+    * genTerm (s (s x_0_0)) (s (s (s N)) = NONE (used to fail invariant)
+    * genTerm (f x_0 (s x_2_0)) (f X X)  = SOME { X |-> [ x_0, (s x_2_0) ]} *)
+ 
+   local 
+   exception Gen'
 
+   (*[ val gen': (Type.t * (Path.t * shape) list) DictX.dict
+                    -> (shape * term_t) 
+                    -> (Type.t * shape list) DictX.dict ]*)
+
+   (*[ val gens': (Type.t * (Path.t * shape) list) DictX.dict 
+                    -> (shape list * term_t list)
+                    -> (Type.t * (Path.t * shape) list) DictX.dict ]*)
+   fun gen' path subst (shape, term) = 
+      case (shape, term) of 
+         (shape, Var (NONE, SOME _)) => subst
+       | (shape, Var (SOME x, SOME t)) =>
+            DictX.insertMerge subst x (t, [ (path, shape) ])
+               (fn (t', pathshapes) =>
+                   if not (Symbol.eq (t, t'))
+                   then raise Fail "inconsistent types in gen'"
+                   else (t', pathshapes @ [(path, shape)]))
+       | (SymConst c, SymConst c') =>
+            if Symbol.eq (c, c') then subst else raise Gen'
+       | (NatConst n, NatConst n') =>
+            if n = n' then subst else raise Gen'
+       | (StrConst s, StrConst s') =>
+            if s = s' then subst else raise Gen'
+       | (Root _, SymConst _) => raise Gen'
+       | (SymConst _, Root _) => raise Gen'
+       | (Root (f, shapes), Root (f', terms)) =>
+            if Symbol.eq (f, f') then gens' path 0 subst (shapes, terms) 
+            else raise Gen'
+       | (Path _, _) => raise Gen' 
+            (* Not split enough! (Code has to deal with this now) *)
+       | _ => raise Fail "typing in gen'"
+
+   and gens' path n subst (shapes, terms) =
+      case (shapes, terms) of 
+         ([], []) => subst
+       | (shape :: shapes, term :: terms) =>
+            gens' path (n+1)
+               (gen' (path @ [ n ]) subst (shape, term))
+               (shapes, terms)
+       | _ => raise Fail "arity in gens'"
+   in
+
+   (*[ val gen: (shape * term_t) 
+                   -> (Type.t * shape list) DictX.dict option ]*)
+   fun gen (shape, term) = 
+      SOME (gen' [] DictX.empty (shape, term)) handle Gen' => NONE
+
+   (*[ val gens: (shape list * term_t list)
+                   -> (Type.t * shape list) DictX.dict option ]*)
+   fun gens (shapes, terms) = 
+      SOME (gens' [] 0 DictX.empty (shapes, terms)) handle Gen' => NONE
+
+   end
 end
 
 structure Atom = struct

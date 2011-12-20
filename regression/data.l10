@@ -30,3 +30,25 @@ md: mode -> typ -> term.
 
 nil: terms.
 cons: term -> terms -> terms.
+
+n: type.
+z: n.
+s: n -> n.
+
+w2: n -> world.
+
+w2 (s X) <- w2 X, w.
+w2 z <- w.
+
+w5: world.
+w3: n -> n -> world.
+w3 (s X) z <- w2 X.
+w3 X X <- w, w2 X.
+w3 (s X) (s Y) <- w5.
+
+w5 <- w.
+
+w4: n -> n -> n -> world.
+
+w6: n -> n -> n -> n -> n -> world.
+w6 X X Y Y Y <- w.

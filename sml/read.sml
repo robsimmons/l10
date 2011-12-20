@@ -111,18 +111,17 @@ let
    val stream = 
       stream_map Types.check 
          (Parser.parse (Lexer.lex filename (Stream.fromTextInstream file))) 
-   (* val out = TextIO.openOut (filename ^ ".sml") *)
+   val out = TextIO.openOut (filename ^ ".sml")
 in
  ( print ("[ == Opening " ^ filename ^ " == ]\n")
  ; load stream
    handle exn => ((TextIO.closeIn file handle _ => ()); raise exn)
  ; print ("[ == Closing " ^ filename ^ " == ]\n\n")
-(*
  ;  Util.write
       out (fn () => 
               ( Datatypes.emit ()
               ; Search.emit ()))
- ; TextIO.closeOut out *))
+ ; TextIO.closeOut out)
 end 
 
 fun readfiles files = app readfile files
