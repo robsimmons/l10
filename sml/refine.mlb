@@ -3,8 +3,19 @@ cmlib-defaults.sml
 
 $(SML_LIB)/refined-basis/basis.mlb
 
+   (* Syntax *)
+   type.sml
+   mode.sml
+   term.sml
+   atom.sml
+   pattern.sml
+   binrel.sml
+   prem.sml
+   rule.sml
+   class.sml
+   decl.sml
+
    (* Language stuff *)
-   syntax.sml
    tab.sml
    types.sml
    worlds.sml

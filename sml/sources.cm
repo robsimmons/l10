@@ -3,8 +3,19 @@ Group is
    $SMACKAGE/cmlib/v1/cmlib.cm
    cmlib-defaults.sml
 
+   (* Syntax *)
+   type.sml
+   mode.sml
+   term.sml
+   atom.sml
+   pattern.sml
+   binrel.sml
+   prem.sml
+   rule.sml
+   class.sml
+   decl.sml
+
    (* Language stuff *)
-   syntax.sml
    tab.sml
    types.sml
    worlds.sml
