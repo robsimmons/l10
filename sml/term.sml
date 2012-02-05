@@ -169,7 +169,9 @@ struct
 
    (*[ val gen': int list -> eqssubst -> (shape * term_t) -> eqssubst ]*)
    (*[ val gens': int list -> int -> eqssubst -> (shape list * term_t list) 
-                     -> eqssubst ]*)
+                     -> eqssubst ]*) 
+   (* Invariant: the path described by the first argument is compatible with
+    * the paths that are internally recorded within the shape *)
    fun gen' path subst (shape, term) = 
       case (shape, term) of 
          (shape, Var (NONE, SOME _)) => subst

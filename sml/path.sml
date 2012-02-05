@@ -28,6 +28,6 @@ struct
            @ tl (List.drop (shapes, i))))
 
    (*[ val eq: t * t -> bool ]*)
-   fun eq (p1, p2 : t) = ListPair.allEq (fn (x, y) = x = y) (p1, p2)
+   fun eq (p1, p2 : t) = ListPair.allEq (fn (x, y) => x = y) (p1, p2)
 end
 
