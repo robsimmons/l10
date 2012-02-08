@@ -227,9 +227,9 @@ in
  ; appSuper 
       (fn () => ()) 
       (fn x => emitWorld (false, x))
-      ((fn x => (emitWorld (false, x); Util.emit [""]))
-       , (fn x => (emitWorld (true, x); Util.emit [""]))
-       , (fn x => (emitWorld (true, x))))
+      ((fn x => (emitWorld (false, x); Util.emit [""])),
+       (fn x => (emitWorld (true, x); Util.emit [""])),
+       (fn x => (emitWorld (true, x))))
       (rev (Tab.list Tab.depends))
  ; decr ()
  ; Util.emit ["end"])

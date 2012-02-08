@@ -121,17 +121,17 @@ fun emit postfix f cases =
                ( Util.emit ["      " ^ Strings.match term ^ " =>"]
                ; Util.incr (); Util.incr ()
                ; emit "" f cases 
-               ; Util.decr (); Util.decr ()))
-             , (fn (term, cases) => 
-                  ( Util.emit ["    | " ^ Strings.match term ^ " =>"]
-                  ; Util.incr (); Util.incr ()
-                  ; emit "" f cases 
-                  ; Util.decr (); Util.decr ()))
-             , (fn (term, cases) => 
-                  ( Util.emit ["    | " ^ Strings.match term ^ " =>"]
-                  ; Util.incr (); Util.incr ()
-                  ; emit postfix' f cases 
-                  ; Util.decr (); Util.decr ())))
+               ; Util.decr (); Util.decr ())),
+             (fn (term, cases) => 
+                ( Util.emit ["    | " ^ Strings.match term ^ " =>"]
+                ; Util.incr (); Util.incr ()
+                ; emit "" f cases 
+                ; Util.decr (); Util.decr ())),
+             (fn (term, cases) => 
+                ( Util.emit ["    | " ^ Strings.match term ^ " =>"]
+                ; Util.incr (); Util.incr ()
+                ; emit postfix' f cases 
+                ; Util.decr (); Util.decr ())))
             cases
        ; case catchall of 
             NONE => () 
