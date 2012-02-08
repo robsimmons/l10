@@ -31,6 +31,7 @@ Group is
    compile-sml/datatypes.sml
    compile-sml/caseanalysis.sml
    compile-sml/search.sml
+   compile-sml/indices.sml
    compile-sml/rules.sml
 
    (* Parser stuff *)

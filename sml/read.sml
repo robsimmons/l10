@@ -122,8 +122,10 @@ in
            let
               val all_rules = List.concat (Tab.range Tab.rules)
               val rules = Util.mapi (fn x => x) (map Compile.compile all_rules)
+              val tables = Indices.canonicalize (Compile.indices (map #2 rules))
            in           
             ( Datatypes.emit ()
+            ; Indices.emit tables
             ; Rules.emit rules
             ; Search.emit ())
            end)
@@ -132,7 +134,7 @@ end
 
 fun readfiles files = app readfile files
 
-fun file s = readfile s handle exn => handler exn
-fun files s = readfiles s handle exn => handler exn
+fun file s = readfile s (* handle exn => handler exn *)
+fun files s = readfiles s (* handle exn => handler exn *)
 
 end

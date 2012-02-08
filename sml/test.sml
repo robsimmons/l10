@@ -1,7 +1,15 @@
 CM.make "$SMACKAGE/cmlib/v1/cmlib.cm";
 CM.make "sml/sources.cm";
 
+CM.make "$smlnj-tdp/back-trace.cm";
+SMLofNJ.Internals.TDP.mode := true;
+
+Read.file "examples/Back3.l10";
+Tab.reset (); 
+use "examples/Back3.l10.sml"; 
+
 Read.file "examples/Regexp.l10"; 
+Tab.reset ();
 use "examples/Regexp.l10.sml"; 
 
 

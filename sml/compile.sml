@@ -32,8 +32,11 @@ structure Compile:> sig
        outgoing: (Symbol.symbol * Path.t option) list, (* Next call's args! *)
        cont: rule}
 
-  (*[ val compile: Tab.rule -> Pos.t * Atom.world_t * rule ]*)
+   (*[ val compile: Tab.rule -> Pos.t * Atom.world_t * rule ]*)
    val compile: Pos.t * Rule.t * Type.env option -> Pos.t * Atom.t * rule
+
+   (*[ val indices: (Pos.t * Atom.world_t * rule) list -> Atom.moded_t list ]*)
+   val indices: (Pos.t * Atom.t * rule) list -> Atom.t list
 
 end = 
 struct
@@ -231,6 +234,27 @@ fun compile (pos, rule as (prems, concs), SOME env) =
    in
       (pos, world, compile' (Atom.fv world, prems, concs))
    end
+
+val indices: (Pos.t * Atom.t * rule) list -> Atom.t list =
+let
+   (* PERF: O(n^2) in the total number of indices *)
+   fun add indices index = 
+      if List.exists (fn index' => Atom.eq (index, index')) indices
+      then indices
+      else index :: indices
+
+   fun loop (rule, indices) = 
+      case rule of 
+         Normal {index, common, ...} => loop (#cont common, add indices index)
+       | Negated {index, common, ...} => loop (#cont common, add indices index)
+       | Binrel {common, ...} => loop (#cont common, indices)
+       | Conclusion {...} => indices
+
+   val initial = 
+      Tab.fold (fn (_, (_, index), indices) => add indices index) [] Tab.queries
+in
+   List.foldr (fn ((_, _, rule), indices) => loop (rule, indices)) initial
+end
 
 end
 
