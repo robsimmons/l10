@@ -119,8 +119,14 @@ in
  ; print ("[ == Closing " ^ filename ^ " == ]\n\n")
  ; Util.write
       out (fn () => 
-              ( Datatypes.emit ()
-              ; Search.emit ()))
+           let
+              val all_rules = List.concat (Tab.range Tab.rules)
+              val rules = Util.mapi (fn x => x) (map Compile.compile all_rules)
+           in           
+            ( Datatypes.emit ()
+            ; Rules.emit rules
+            ; Search.emit ())
+           end)
  ; TextIO.closeOut out)
 end 
 

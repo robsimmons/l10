@@ -24,7 +24,7 @@ structure Compile:> sig
           term1: Term.t,
           term2: Term.t,
           t: Type.t}
-    | Conclusion of {facts: (Pos.t * Atom.t) list}
+    | Conclusion of {incoming: SetX.set, facts: (Pos.t * Atom.t) list}
 
    withtype common = 
       {label: string, (* Debugging information only *)
@@ -32,8 +32,8 @@ structure Compile:> sig
        outgoing: (Symbol.symbol * Path.t option) list, (* Next call's args! *)
        cont: rule}
 
-  (*[ val compile: Atom.world_t * Rule.rule_t -> rule ]*)
-   val compile: Atom.t * Rule.t -> rule
+  (*[ val compile: Tab.rule -> Pos.t * Atom.world_t * rule ]*)
+   val compile: Pos.t * Rule.t * Type.env option -> Pos.t * Atom.t * rule
 
 end = 
 struct
@@ -59,7 +59,7 @@ datatype rule =
        term1: Term.t,
        term2: Term.t,
        t: Type.t}
- | Conclusion of {facts: (Pos.t * Atom.t) list}
+ | Conclusion of {incoming: SetX.set, facts: (Pos.t * Atom.t) list}
 
 withtype common = 
    {label: string, (* Debugging information only *)
@@ -96,7 +96,7 @@ fun indexTerm known path term (stuff as (eqs, lookup, input, output)) =
          if SetX.member known x
          then (Term.Mode (Mode.Input, SOME t),
                (eqs, 
-                DictX.insertMerge lookup x [ path ] (fn ps => path :: ps), 
+                lookup, 
                 Path.Dict.insert input path x,
                 output))
          else (Term.Mode (Mode.Output, SOME t),
@@ -163,11 +163,12 @@ fun indexPat known pat =
        -> rule ]*)
 fun compile' (known, prems, concs) = 
    case prems of 
-      [] => Conclusion {facts = concs}
+      [] => Conclusion {facts = concs, incoming = known}
     | (pos, prem) :: prems => 
       let  
          (* Recompute the free variables; should be cheap enough. *)
-         val fv_tail = Rule.fv (prems, concs)
+         val fv_tail = SetX.intersection (SetX.union known (Prem.fv prem)) 
+                          (Rule.fv (prems, concs))
 
          (* We can go ahead and compute most of the common parts *)
          val label = Prem.toString prem ^ " - " ^ Pos.toString pos 
@@ -224,7 +225,12 @@ fun compile' (known, prems, concs) =
                   , t = typ} 
       end
  
-fun compile (world, (prems, concs)) = compile' (Atom.fv world, prems, concs)
+fun compile (pos, rule as (prems, concs), SOME env) =
+   let
+      val (_, world) = Worlds.ofProp (hd concs)
+   in
+      (pos, world, compile' (Atom.fv world, prems, concs))
+   end
 
 end
 
