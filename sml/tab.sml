@@ -171,6 +171,10 @@ struct
     ; SymbolHashTable.reset rels n
     ; SymbolHashTable.reset consts n
     ; SymbolHashTable.reset typecon n
+    ; SymbolHashTable.reset dbs n
+    ; SymbolHashTable.reset depends n
+    ; SymbolHashTable.reset rules n
+    ; SymbolHashTable.reset queries n
     ; SymbolHashTable.reset representations n
     ; bind plus
     ; bind (Decl.Type (pos, Type.nat, Class.Builtin))
