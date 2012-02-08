@@ -25,6 +25,7 @@ Group is
    util.sml
    path.sml
    splitting.sml
+   compile.sml
    compile-sml/strings.sml
    compile-sml/disctree.sml
    compile-sml/datatypes.sml

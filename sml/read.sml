@@ -117,7 +117,7 @@ in
  ; load stream
    handle exn => ((TextIO.closeIn file handle _ => ()); raise exn)
  ; print ("[ == Closing " ^ filename ^ " == ]\n\n")
- ;  Util.write
+ ; Util.write
       out (fn () => 
               ( Datatypes.emit ()
               ; Search.emit ()))
