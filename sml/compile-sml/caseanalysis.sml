@@ -125,7 +125,7 @@ fun emit postfix f cases =
              , (fn (term, cases) => 
                   ( Util.emit ["    | " ^ Strings.match term ^ " =>"]
                   ; Util.incr (); Util.incr ()
-                  ; emit ")" f cases 
+                  ; emit "" f cases 
                   ; Util.decr (); Util.decr ()))
              , (fn (term, cases) => 
                   ( Util.emit ["    | " ^ Strings.match term ^ " =>"]

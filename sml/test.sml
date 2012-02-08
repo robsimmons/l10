@@ -1,4 +1,11 @@
-CM.make "sml/elton.cm";
+CM.make "$SMACKAGE/cmlib/v1/cmlib.cm";
+CM.make "sml/sources.cm";
+
+Read.file "examples/Regexp.l10"; 
+use "examples/Regexp.l10.sml"; 
+
+
+(*
 fun test (prefix, files) = 
    let 
       val sourceDir = OS.Path.mkAbsolute {path = "sml/util", 
@@ -68,3 +75,4 @@ val map4 = PlusSearch.saturateW (five, three) MapWorld.empty;
 val res1 = app (fn x => print ("5+3 = " ^ strN x ^ "\n")) 
            (PlusTables.plus_1_lookup(!PlusTables.plus_1, (five, three)));
 
+*)

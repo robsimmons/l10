@@ -147,7 +147,7 @@ let
    in 
       "saturate_" ^ Symbol.toValue w
       ^ Strings.optTuple 
-           (map (fn term => Term.toString (valOf (Term.subst (subst, term))))
+           (map (fn term => Strings.build (valOf (Term.subst (subst, term))))
                args)
    end
 
