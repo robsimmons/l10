@@ -134,7 +134,7 @@ end
 
 fun readfiles files = app readfile files
 
-fun file s = readfile s (* handle exn => handler exn *)
-fun files s = readfiles s (* handle exn => handler exn *)
+fun file s = readfile s handle exn => handler exn
+fun files s = readfiles s handle exn => handler exn
 
 end

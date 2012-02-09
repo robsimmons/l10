@@ -235,7 +235,7 @@ fun compile (pos, rule as (prems, concs), SOME env) =
       (pos, world, compile' (Atom.fv world, prems, concs))
    end
 
-val indices: (Pos.t * Atom.t * rule) list -> Atom.t list =
+fun indices x =
 let
    (* PERF: O(n^2) in the total number of indices *)
    fun add indices index = 
@@ -253,7 +253,7 @@ let
    val initial = 
       Tab.fold (fn (_, (_, index), indices) => add indices index) [] Tab.queries
 in
-   List.foldr (fn ((_, _, rule), indices) => loop (rule, indices)) initial
+   List.foldr (fn ((_, _, rule), indices) => loop (rule, indices)) initial x
 end
 
 end

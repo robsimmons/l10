@@ -31,3 +31,8 @@ match RE2 J K ->
 match RE1 I J -> match (alt RE1 RE2) I J.
 
 match RE2 I J -> match (alt RE1 RE2) I J.
+
+{-# QUERY poschar token - + #-}
+{-# QUERY ischar token + + #-}
+{-# QUERY wholestring token - - #-}
+{-# QUERY ismatch match + + + #-}
