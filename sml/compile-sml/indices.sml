@@ -6,6 +6,9 @@ sig
    (*[ val caonicalize: Atom.moded_t list -> tables ]*)
    val canonicalize: Atom.t list -> tables
 
+   val get_fold: tables -> Atom.t -> {label: int,
+                                      inputs: (Path.t * Type.t) list, 
+                                      outputs: (Path.t * Type.t) list}
 (* 
    (*[ val lookup: Atom.prop_t ->  ]*)
    val lookup: tables -> Atom.moded_t ->  
@@ -60,6 +63,19 @@ let
 in
    get_terms [] 0 terms
 end
+
+exception FoldNotFound
+fun get_fold [] index = raise FoldNotFound
+  | get_fold ((i, index') :: table) index = 
+    let 
+       fun return () = 
+       let val (ins, outs) = query_paths index
+       in {label=i,
+           inputs=Path.Dict.toList ins, 
+           outputs=Path.Dict.toList outs} end
+    in 
+       if Atom.eq (index, index') then return () else get_fold table index
+    end       
 
 fun emit_folder (i, world) = 
 let
