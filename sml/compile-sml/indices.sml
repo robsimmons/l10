@@ -93,12 +93,12 @@ let
           ( emit [pre^"(mapPartial "^Strings.dict t^".find "^Path.toVar path]
           ; lookups (pre^" ") (post^")") ins)
 in
- ( emit ["fun fold_"^s^" folder seed ({"^s^"=ref dict, ...}: tables)" 
-         ^Strings.optTuple (map (Path.toVar o #1) ins)^" ="]
+ ( emit ["fun fold_"^s^" folder (db as {"^s^"=ref dict, ...}: tables) " 
+         ^Strings.tuple (map (Path.toVar o #1) ins)^" ="]
  ; incr ()
  ; if null ins
-   then (emit ["List.foldr folder seed dict"])
-   else (emit ["fold folder seed"]; incr (); lookups "" "" (rev ins); decr ())
+   then (emit ["List.foldr folder db dict"])
+   else (emit ["fold folder db"]; incr (); lookups "" "" (rev ins); decr ())
  ; decr ()
  ; emit [""])
 end

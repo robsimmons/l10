@@ -1,0 +1,9 @@
+By enabling "fold" in the built-in maps, we would not only enable 
+default implementations of most of the other missing implementations, but
+we would allow consolidation of tables (compile-sml/indices.sml).
+
+Ambitiously, it would be awesome if a "join" function was introduced
+that allowed for table joins to replace folds over tables (in the future)
+or lists (now). A join is basically just a deforested (fold o union) - you
+traverse the trees in paralell, accumulating something. I suspect that this
+is about the fastest you could get the pure data structures to run.

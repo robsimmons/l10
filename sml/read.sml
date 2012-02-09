@@ -126,7 +126,7 @@ in
            in           
             ( Datatypes.emit ()
             ; Indices.emit tables
-            ; Rules.emit rules
+            ; Rules.emit tables rules
             ; Search.emit ())
            end)
  ; TextIO.closeOut out)
