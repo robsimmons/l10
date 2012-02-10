@@ -38,23 +38,31 @@ in
                inputs
          val outputs_from_fold = 
             map (fn (path, t) => Path.toVar path) outputs
-                    
+         fun eqstr (t, path1, path2) = 
+            Strings.eq t (Path.toVar path1) (Path.toVar path2)
+         val next_call = next^" "^tuple_outgoing (#outgoing common)^" db"
       in
        ( emitrule' tables n (i+1) (#cont common)
        ; emit ["(* "^(#label common)^" *)"]
        ; emit ["fun "^this^" "^tuple_incoming (#incoming common)^" db ="]
-       ; if null eqs 
-         then 
-           ( incr ()
-           ; emit ["L10_Tables.fold_"^Int.toString label]
-           ; incr ()
-           ; emit ["(fn ("^Strings.tuple outputs_from_fold^", db) => "]
-           ; emit ["    "^next^" "^tuple_outgoing (#outgoing common)^" db"^")"]
-           ; emit ["db", Strings.tuple inputs_to_fold]
-           ; decr ()
-           ; decr ())
-         else 
-           ( emit ["   db (* XXX UNFINISHED *)"]))
+       ; incr ()
+       ; emit ["L10_Tables.fold_"^Int.toString label]
+       ; incr ()
+       ; emit ["(fn ("^Strings.tuple outputs_from_fold^", db) => "]
+       ; incr ()
+       ; appSuper
+            (fn () => emit [next_call^")"])
+            (fn cstr => emit ["if "^eqstr cstr,"then "^next_call,"else db)"])
+            ((fn cstr => emit ["if "^eqstr cstr]),
+             (fn cstr => emit ["   andalso "^eqstr cstr]),
+             (fn cstr => 
+               ( emit ["   andalso "^eqstr cstr]
+               ; emit ["then "^next_call,"else db)"])))
+            eqs
+       ; decr ()
+       ; emit ["db", Strings.tuple inputs_to_fold]
+       ; decr ()
+       ; decr ())
       end
     | Compile.Negated {common,index,input,output,eqs} =>
        ( emitrule' tables n (i+1) (#cont common)

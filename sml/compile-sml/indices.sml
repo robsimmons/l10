@@ -24,10 +24,32 @@ struct
 
 open Util
 
-type tables = (int * Atom.t) list
+type tables = 
+   (int * Atom.t) list * (* Tables indicated by a number. *)
+   (int * Type.t list) DictX.dict (* The "all-output" table for a type. *)
 
 (* XXX This creates way too many tables - reuse tables! *)
-fun canonicalize x = mapi (fn (i, x) => (i+1,x)) x 
+fun canonicalize indices = 
+let
+   val numbered_indices = mapi (fn (i, x) => (i+1,x)) indices
+   fun allInputs [] = SOME []
+     | allInputs (Term.Mode (Mode.Input, SOME t) :: terms) = 
+         (case allInputs terms of
+             NONE => NONE
+           | SOME ts => SOME (t :: ts))
+     | allInputs _ = NONE
+   val dict = 
+      List.foldr (fn ((i, (a, terms)), dict) => 
+                    (case allInputs terms of
+                        NONE => dict
+                      | SOME ts => DictX.insert dict a (i, ts)))
+         DictX.empty numbered_indices
+in
+   (numbered_indices, dict)
+end
+
+
+ 
 
 (* Given a moded term, get the paths of all the inputs and the paths of all
  * the outputs *)
@@ -65,8 +87,8 @@ in
 end
 
 exception FoldNotFound
-fun get_fold [] index = raise FoldNotFound
-  | get_fold ((i, index') :: table) index = 
+fun get_fold' [] index = raise FoldNotFound
+  | get_fold' ((i, index') :: numbered_indices) index = 
     let 
        fun return () = 
        let val (ins, outs) = query_paths index
@@ -74,8 +96,10 @@ fun get_fold [] index = raise FoldNotFound
            inputs=Path.Dict.toList ins, 
            outputs=Path.Dict.toList outs} end
     in 
-       if Atom.eq (index, index') then return () else get_fold table index
+       if Atom.eq (index, index') then return () 
+       else get_fold' numbered_indices index
     end       
+fun get_fold (numbered_indices, _) = get_fold' numbered_indices
 
 fun emit_folder (i, world) = 
 let
@@ -103,7 +127,7 @@ in
  ; emit [""])
 end
 
-fun emit_dbtype tables = 
+fun emit_dbtype numbered_indices = 
 let 
    fun tabletyp (i, world) = 
    let 
@@ -120,28 +144,41 @@ let
 in
  ( emit ["type tables = {"]
  ; incr ()
- ; app tabletyp tables
+ ; app tabletyp numbered_indices
  ; emit ["worlds: unit World.Dict.dict ref}"]
  ; decr ()
  ; emit [""])
 end
 
-fun emit' tables = 
+fun emit_assert numbered_indices (a, (i, ts)) = 
+let 
+   val args = 
+      Strings.tuple (mapi (fn (i, _) => "x_"^Int.toString i) ts)
+in
+ ( emit ["fun insert_"^Symbol.toValue a^" "^args^" ((), db) = db"]
+ ; emit ["fun assert_"^Symbol.toValue a^" "^args^" db ="]
+ ; emit ["   fold_"^Int.toString i
+         ^" (insert_"^Symbol.toValue a^" "^args^") db "^args]
+ ; emit [""])
+end
+
+fun emit' (numbered_indices, lookups) =
 let in
  ( emit ["", "", "(* L10 databases with required indexing (indices.sml) *)"]
  ; List.app
       (fn (n, index) =>
           emit ["(* "^Int.toString n^ " - "
                 ^Atom.toString index^" *)"])
-   tables
+      numbered_indices
  ; emit ["","structure L10_Tables =","struct"]
  ; incr ()
- ; emit_dbtype tables
+ ; emit_dbtype numbered_indices
  ; emit ["fun fold folder seed NONE = seed"]
  ; emit ["  | fold folder seed (SOME x) = List.foldr folder seed x",""]
  ; emit ["fun mapPartial lookup x NONE = NONE"]
  ; emit ["  | mapPartial lookup x (SOME dict) = lookup dict x",""]
- ; app emit_folder tables
+ ; app emit_folder numbered_indices
+ ; DictX.app (emit_assert numbered_indices) lookups
  ; decr ()
  ; emit ["end"])
 end
