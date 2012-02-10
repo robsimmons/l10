@@ -79,10 +79,22 @@ in
        ; emit ["   db (* XXX UNFINISHED *)"]
        ; decr ())
     | Compile.Conclusion {facts,incoming} => 
-      let val str = String.concatWith "," (map (Atom.toString o #2) facts)
+      let
+         exception ImpossiblyEmptyConclusion 
+         val str = String.concatWith "," (map (Atom.toString o #2) facts)
+         fun assert (a, terms) =
+            "L10_Tables.assert_"^Symbol.toValue a^" "
+            ^Strings.tuple (map Strings.build terms)
+         fun loop prefix postfix [] = raise ImpossiblyEmptyConclusion
+           | loop prefix postfix [ (pos, atom) ] =
+                emit [prefix^"("^assert atom^" db)"^postfix]
+           | loop prefix postfix ((pos, atom) :: facts) =
+              ( emit [prefix^"("^assert atom]
+              ; loop (prefix^" ") (postfix^")") facts)
       in
        ( emit ["(* assert -- "^str^" *)"]
-       ; emit ["fun "^this^" "^tuple_incoming incoming^" db = db"])
+       ; emit ["fun "^this^" "^tuple_incoming incoming^" db ="]
+       ; loop "   " "" (rev facts))
       end
 end
 

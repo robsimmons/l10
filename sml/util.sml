@@ -6,6 +6,7 @@ structure Util:> sig
    val emit: string list -> unit
    val incr: unit -> unit
    val decr: unit -> unit
+   val flush: unit -> unit
 
    (* Write: output to a particular stream *)
    val write: TextIO.outstream -> (unit -> unit) -> unit
@@ -70,6 +71,11 @@ in
    end
 
    val emit = app emit1
+
+   fun flush () = 
+      case !outstream of
+         NONE => TextIO.flushOut TextIO.stdOut
+       | SOME s => TextIO.flushOut s
 
    fun incr () = ind := !ind ^ "   "
 

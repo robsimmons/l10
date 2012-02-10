@@ -47,8 +47,8 @@ let
    val rest = String.substring (s, 1, len - 1)
 in
    if not (Char.isLower fst) 
-   then raise Fail ("Function 'embiggen' called on string with " 
-                    ^ "first character '" ^ str fst ^ "'")
+   then raise Fail ("Function 'embiggen' called on string `"^s^"' with " 
+                    ^ "first character '" ^ str fst ^ "'") 
    else str (Char.toUpper fst) ^ rest
 end
 
@@ -99,16 +99,16 @@ val inj = prjOrInj "inj"
 fun patternOrBuilder isBuilder c = 
 let 
    val t = Class.base (Tab.lookup Tab.consts c)
-   val base = embiggen t ^ "." ^ embiggen c
+   fun base () = embiggen t ^ "." ^ embiggen c
 in
    case Tab.lookup Tab.types t of
       Class.Type =>
         (case Tab.find Tab.representations t of 
-            SOME Type.Transparent => base
+            SOME Type.Transparent => base()
           | SOME Type.HashConsed => raise Fail "Don't know how to hashcons yet"
-          | SOME Type.External => base
-          | SOME Type.Sealed => base ^ (if isBuilder then "'" else "")
-          | NONE => base ^ (if isBuilder then "'" else ""))
+          | SOME Type.External => base()
+          | SOME Type.Sealed => base() ^ (if isBuilder then "'" else "")
+          | NONE => base() ^ (if isBuilder then "'" else ""))
     | Class.Extensible => 
          if isBuilder 
          then "(Symbol.fromValue \"" ^ Symbol.toValue c ^ "\")" 

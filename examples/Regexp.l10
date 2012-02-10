@@ -34,7 +34,7 @@ match RE2 I J -> match (alt RE1 RE2) I J.
 
 bar: regexp -> nat -> nat -> rel @ w0.
 foo: nat -> nat -> nat -> rel @ w0.
-foo X X X, foo X Y Y, foo Z Y X -> foo (X+6) Y Z.
+foo X X X, foo X Y Y, foo Z Y X -> foo (X+6) Y Z, foo 9 12 (Y+X).
 
 {-# QUERY poschar token - + #-}
 {-# QUERY ischar token + + #-}
