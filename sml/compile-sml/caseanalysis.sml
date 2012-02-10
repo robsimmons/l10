@@ -1,5 +1,25 @@
 
-structure CaseAnalysis =
+structure CaseAnalysis:> sig
+
+   datatype t = 
+      Done of Term.t list
+    | Case of (Type.t * Path.t) * (Term.t * t) list * t option
+
+   (*[
+   datasort cases = 
+      Done of Term.shape list
+    | Case of (Type.t * Path.t) * (Term.pat * cases) list * cases option
+   ]*)
+
+   (*[ val cases: (int * Splitting.t) list -> cases ]*)
+   val cases: (int * Splitting.t) list -> t
+
+   (*[ val emit: 
+          string -> (string * Term.shape list -> unit) -> cases -> unit ]*)
+   val emit: string -> (string * Term.t list -> unit) -> t -> unit 
+
+
+end =
 struct
 
 datatype t = 
@@ -97,7 +117,7 @@ in
       (map (fn (i, split) => ([ i ], split)) splits)
 end
 
-(*[ emit: string -> (string * Term.shape list -> unit) -> cases -> unit ]*)
+(*[ val emit: string -> (string * Term.shape list -> unit) -> cases -> unit ]*)
 fun emit postfix f cases = 
    case cases of 
       Done shapes => 
@@ -136,7 +156,7 @@ fun emit postfix f cases =
        ; case catchall of 
             NONE => () 
           | SOME cases => 
-             ( Util.emit ["   | _ =>"]
+             ( Util.emit ["    | _ =>"]
              ; Util.incr (); Util.incr ()
              ; emit (postfix ^ ")") f cases 
              ; Util.decr (); Util.decr ()))

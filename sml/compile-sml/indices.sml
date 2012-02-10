@@ -154,9 +154,21 @@ fun emit_assert numbered_indices (a, (i, ts)) =
 let 
    val args = 
       Strings.tuple (mapi (fn (i, _) => "x_"^Int.toString i) ts)
+   val splits = 
+      List.foldl 
+         (fn ((i, (a', terms)), splits) => 
+             if Symbol.eq (a, a') 
+             then (Splitting.insertList splits terms)
+             else (splits))
+         (Splitting.unsplit (Tab.lookup Tab.rels a))
+         numbered_indices
 in
  ( emit ["fun insert_"^Symbol.toValue a^" "^args^" ((), db: tables) ="]
- ; emit ["let val () = (#flag db) := true","in","   db","end"]
+ ; emit ["let val () = (#flag db) := true","in"]
+ ; CaseAnalysis.emit "" 
+      (fn (postfix, shapes) => emit ["db"^postfix])
+      (CaseAnalysis.cases splits)
+ ; emit ["end"]
  ; emit ["fun assert_"^Symbol.toValue a^" "^args^" db ="]
  ; emit ["   fold_"^Int.toString i
          ^" (insert_"^Symbol.toValue a^" "^args^") db "^args]

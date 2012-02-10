@@ -130,7 +130,8 @@ fun insert splitting term =
                    , covered = DictX.insert covered c []
                    , uncovered = SetX.remove uncovered c}
            | SOME [] => splitting
-           | _ => raise Fail "Splitting.insert")
+           | SOME l => raise Fail ("Splitting.insert ("^Symbol.toValue c
+                                   ^"/"^Int.toString (length l)^")"))
     | (Root {t, covered, uncovered}, Term.Root (f, terms)) =>
          (case DictX.find covered f of 
              NONE => 
@@ -148,6 +149,8 @@ fun insert splitting term =
 and insertList [] [] = []
   | insertList ((n, splitting) :: splittings) (term :: terms) = 
        ((n, insert splitting term) :: insertList splittings terms)
-  | insertList _ _ = raise Fail "Splitting.insertList"
+  | insertList splittings terms = 
+       raise Fail ("Splitting.insertList ("^Int.toString (length splittings)
+                   ^" splittings, "^Int.toString (length terms)^" terms)")
 
 end
