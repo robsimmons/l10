@@ -145,7 +145,7 @@ in
  ( emit ["type tables = {"]
  ; incr ()
  ; app tabletyp numbered_indices
- ; emit ["worlds: unit World.Dict.dict ref}"]
+ ; emit ["worlds: unit World.Dict.dict ref,","flag: bool ref}"]
  ; decr ()
  ; emit [""])
 end
@@ -155,7 +155,8 @@ let
    val args = 
       Strings.tuple (mapi (fn (i, _) => "x_"^Int.toString i) ts)
 in
- ( emit ["fun insert_"^Symbol.toValue a^" "^args^" ((), db) = db"]
+ ( emit ["fun insert_"^Symbol.toValue a^" "^args^" ((), db: tables) ="]
+ ; emit ["let val () = (#flag db) := true","in","   db","end"]
  ; emit ["fun assert_"^Symbol.toValue a^" "^args^" db ="]
  ; emit ["   fold_"^Int.toString i
          ^" (insert_"^Symbol.toValue a^" "^args^") db "^args]
