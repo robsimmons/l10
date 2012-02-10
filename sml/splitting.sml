@@ -20,11 +20,15 @@ sig
                   & Class.world -> (int * t) list ]*)
    val unsplit: Class.t -> (int * t) list
 
-   (*[ val singleton: Term.term_t -> t ]*)
+   (*[ val singleton: Term.term_t -> t
+                    & Term.moded_t -> t ]*)
    val singleton: Term.t -> t
 
-   (*[ val insert: t -> Term.term_t -> t ]*)
-   (*[ val insertList: (int * t) list -> Term.term_t list -> (int * t) list ]*)
+   (*[ val insert: t -> ( Term.term_t -> t
+                        & Term.moded_t -> t) ]*)
+   (*[ val insertList: 
+          (int * t) list -> ( Term.term_t list -> (int * t) list
+                            & Term.moded_t list -> (int * t) list) ]*)
    val insert: t -> Term.t -> t
    val insertList: (int * t) list -> Term.t list -> (int * t) list
 end = 
@@ -62,9 +66,12 @@ fun unsplit' n class =
 
 val unsplit = unsplit' 0
 
-(*[ val singleton: Term.term_t -> t ]*)
-(*[ val singletonList: Term.term_t list -> (int * t) list ]*)
-(*[ val singletonList': int -> Term.term_t list -> (int * t) list ]*)
+(*[ val singleton: Term.term_t -> t 
+                 & Term.moded_t -> t ]*)
+(*[ val singletonList: Term.term_t list -> (int * t) list
+                     & Term.moded_t list -> (int * t) list ]*)
+(*[ val singletonList': int -> ( Term.term_t list -> (int * t) list
+                               & Term.moded_t list -> (int * t) list) ]*)
 fun singleton term = 
 let 
    (*[ val split: Type.t -> (Symbol.symbol * Term.term_t list) -> split ]*)
@@ -91,6 +98,7 @@ in case term of
       in Root (split t (f, terms)) 
       end
     | Term.Var (_, SOME t) => Unsplit t
+    | Term.Mode (_, SOME t) => Unsplit t
 end
 
 and singletonList' n [] = []
@@ -99,11 +107,14 @@ and singletonList' n [] = []
 
 and singletonList terms = singletonList' 0 terms
 
-(*[ val insert: t -> Term.term_t -> t ]*)
-(*[ val insertList: (int * t) list -> Term.term_t list -> (int * t) list ]*)
+(*[ val insert: t -> ( Term.term_t -> t 
+                     & Term.moded_t -> t)]*)
+(*[ val insertList: (int * t) list -> ( Term.term_t list -> (int * t) list 
+                                      & Term.moded_t list -> (int * t) list) ]*)
 fun insert splitting term =
    case (splitting, term) of
       (_, Term.Var _) => splitting
+    | (_, Term.Mode _) => splitting
     | (Unsplit _, _) => singleton term
     | (Sym (t, set), Term.SymConst c) => 
          Sym (t, SetX.insert set c)
