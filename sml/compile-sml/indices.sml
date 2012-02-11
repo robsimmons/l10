@@ -151,12 +151,15 @@ let
           ( emit [pre^"(mapPartial "^Strings.dict t^".find "^Path.toVar path]
           ; lookups (pre^" ") (post^")") ins)
 in
- ( emit ["fun fold_"^s^" folder (db as {"^s^"=ref dict, ...}: tables) " 
+ ( emit ["fun fold_"^s^" f x (db as {"^s^"=ref dict, ...}: tables) " 
          ^Strings.tuple (map (Path.toVar o #1) ins)^" ="]
  ; incr ()
  ; if null ins
-   then (emit ["List.foldr folder db dict"])
-   else (emit ["fold folder db"]; incr (); lookups "" "" (rev ins); decr ())
+   then (emit ["List.foldr f x dict"])
+   else ( emit ["fold f x"]
+        ; incr ()
+        ; lookups "" "" (rev ins)
+        ; decr ())
  ; decr ()
  ; emit [""])
 end
@@ -272,7 +275,7 @@ in
  (* assert_rel *)
  ; emit ["fun assert_"^Symbol.toValue a^" "^args^" db ="]
  ; emit ["   fold_"^Int.toString i
-         ^" (insert_"^Symbol.toValue a^" "^args^") db "^args]
+         ^" (insert_"^Symbol.toValue a^" "^args^") db db "^args]
  ; emit [""])
 end
 

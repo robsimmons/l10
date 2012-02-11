@@ -134,7 +134,7 @@ in
             ; Rules.emit tables rules
             ; Search.emit ()
             ; decr ()
-            ; Interface.emitStruct ())
+            ; Interface.emitStruct tables)
            end)
  ; TextIO.closeOut out)
 end 

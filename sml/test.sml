@@ -4,6 +4,7 @@ CM.make "sml/sources.cm";
 CM.make "$smlnj-tdp/back-trace.cm";
 SMLofNJ.Internals.TDP.mode := true;
 
+(*
 Read.file "examples/Back3.l10";
 Tab.reset (); 
 use "examples/Back3.l10.sml"; 
@@ -18,6 +19,7 @@ structure Bar = struct datatype t = datatype bar end;
 Read.file "regression/data.l10"; 
 Tab.reset ();
 use "regression/data.l10.sml"; 
+*)
 
 structure Whee = struct
 datatype t = Whoo of IntInf.int | Wha of t * t;

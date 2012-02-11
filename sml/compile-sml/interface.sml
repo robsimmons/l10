@@ -7,8 +7,8 @@ sig
    (* emitStructHead ModuleName MODULE_NAME *)
    val emitStructHead: string -> string -> unit
 
-   (* emitStruct () *)
-   val emitStruct: unit -> unit
+   (* emitStruct tables *)
+   val emitStruct: Indices.tables -> unit
 end =
 struct
 
@@ -122,7 +122,7 @@ in
  ; emit ["=","struct"])
 end
 
-fun emitStruct () = 
+fun emitStruct tables = 
 let
    (* XXX rather than invalidating the whole world tree, we should traverse
     * it in the other direction (with forward links) - much more efficient *)
@@ -145,8 +145,43 @@ let
    end
 
    (*[ val queries: Symbol.symbol * (Pos.t * Atom.moded_t) -> unit ]*)
-   fun queries (qry, (_, index)) =
-      emit ["fun "^Symbol.toValue qry^" _ = raise Match"]
+   fun queries (fst, (qry, (pos, index))) =
+   let
+      val qrys = Symbol.toValue qry
+      val {label, inputs, outputs} = Indices.get_fold tables index
+      val (ordered_ins, ordered_outs) = Indices.query_paths index
+
+      val args = map (fn (path, t) => Path.toVar path)
+          (Path.Dict.toList ordered_ins)
+
+      (* This is a bit of a hack, entirely dependent on the fact that publicly
+       * declared indices can't analyze the structure of terms *)
+      (*[ val getwargs: int -> Term.pathsubst -> Class.rel_t 
+             -> (Symbol.symbol * Term.shape list)]*)
+      fun getwargs i subst (Class.Rel (_, (w, terms))) =
+             (Symbol.toValue w, valOf (Term.substs (subst, terms)))
+        | getwargs i subst (Class.Arrow (_, rel)) =
+             getwargs (i+1) subst rel
+        | getwargs i subst (Class.Pi (x, SOME t, rel)) =
+             getwargs (i+1) (DictX.insert subst x (Term.Path([i], t))) rel
+      val (w, wargs) = getwargs 0 DictX.empty (Tab.lookup Tab.rels (#1 index))
+   in
+    ( emit fst
+    ; emit ["fun "^qrys^" f x (db: L10_Tables.tables)"
+            ^Strings.optTuple args^" ="]
+    ; emit ["let"]
+    ; incr ()
+    ; emit ["val db = L10_Search.saturate_"^w
+            ^Strings.optTuple (map Strings.build wargs)^" db"]
+    ; decr ()
+    ; emit ["in"]
+    ; emit ["   L10_Tables.fold_"^Int.toString label^" f x db "
+            ^Strings.tuple (map (Path.toVar o #1) inputs)]
+    ; emit ["end"]
+    ; if null outputs
+      then emit ["val "^qrys^" = fn x => "^qrys^" (fn _ => true) false x"] 
+      else ())
+   end
 in
  ( incr ()
  ; emit ["","","(* L10 public interface (interface.sml *)",""]
@@ -159,7 +194,7 @@ in
  ; decr ()
  ; emit ["end","","structure Query =","struct"]
  ; incr ()
- ; app queries (Tab.list Tab.queries)
+ ; appFirst (fn () => ()) queries ([], [""]) (Tab.list Tab.queries)
  ; decr ()
  ; emit ["end"]
  ; decr ()

@@ -60,7 +60,7 @@ in
                ; emit ["then "^next_call,"else db)"])))
             eqs
        ; decr ()
-       ; emit ["db", Strings.tuple inputs_to_fold]
+       ; emit ["db db "^Strings.tuple inputs_to_fold]
        ; decr ()
        ; decr ())
       end

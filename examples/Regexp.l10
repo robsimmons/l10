@@ -42,6 +42,9 @@ foo: nat -> nat -> nat -> rel @ w0.
 foo X X X, foo X Y Y, foo Z Y X -> foo (X+6) Y Z, foo 9 12 (Y+X).
 contr: rel @ w0.
 
+w3: regexp -> regexp -> nat -> world.
+b: {RE: regexp} rel @ w3 (alt RE (tok "a")) (seq RE emp) (19 + 12).
+
 {-# QUERY poschar token - + #-}
 {-# QUERY wholestring token - - #-}
 {-# QUERY ismatch match + + + #-}
