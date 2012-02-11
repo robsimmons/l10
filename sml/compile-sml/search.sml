@@ -111,7 +111,7 @@ fun filter shapes (pos, ((_, (w', args)), prems), SOME _) =
       NONE => NONE
     | SOME subst => SOME (pos, (w', args), subst, prems)
 
-fun emitDependencyVisitor shapes (pos, conc, subst, prems) = 
+fun emitDependencyVisitor shapes (fst, (pos, conc, subst, prems)) = 
 let
    (* Little helper function for printing out the individual substitutions *) 
    fun str (t, substs) =
@@ -155,14 +155,15 @@ let
       Strings.eq t (Path.toVar x) (Path.toVar y)
 
 in
- ( emit ["", "(* " ^ Pos.toString pos ^ " - " ^ Atom.toString conc ^ " *)"]
+ ( emit fst
+ ; emit ["(* " ^ Pos.toString pos ^ " - " ^ Atom.toString conc ^ " *)"]
  ; appSuper (fn () => ())
       (fn (x, s) => emit ["(* { " ^ Symbol.toValue x ^ str s ^ " } *)"])
       ((fn (x, s) => emit ["(* { " ^ Symbol.toValue x ^ str s ^ ","]),
        (fn (x, s) => emit [" *   " ^ Symbol.toValue x ^ str s ^ ","]),
        (fn (x, s) => emit [" *   " ^ Symbol.toValue x ^ str s ^ " } *)"]))
       subst_list
- ; emit ["val bundle ="]
+ ; emit ["val db ="]
  ; incr ()
  ; appSuper (fn () => ())
       (fn cnstr => (emit ["if " ^ getEquality cnstr ^ " then"]; incr ()))
@@ -170,13 +171,13 @@ in
        (fn cnstr =>  emit ["   " ^ getEquality cnstr ^ " andalso"]),
        (fn cnstr => (emit ["   " ^ getEquality cnstr ^ " then"]; incr ())))
       equalities
- ; appSuper (fn () => emit ["bundle"])
-      (fn (_, prem) => emit [getSaturate prem ^ " bundle"])
+ ; appSuper (fn () => emit ["db"])
+      (fn (_, prem) => emit [getSaturate prem ^ " db"])
       ((fn (_, prem) => emit ["(" ^ getSaturate prem ^ " o"]),
        (fn (_, prem) => emit [" " ^ getSaturate prem ^ " o"]),
-       (fn (_, prem) => emit [" " ^ getSaturate prem ^ ") bundle"]))
+       (fn (_, prem) => emit [" " ^ getSaturate prem ^ ") db"]))
       prems
-  ; if null equalities then () else (decr (); emit ["else bundle"])
+  ; if null equalities then () else (decr (); emit ["else db"])
   ; decr ())
 end
 
@@ -193,28 +194,30 @@ let
    val tuple = Strings.optTuple (map (fn (i, _) => Path.toVar [ i ]) splits)
    val prefix = 
       (if isAnd then "and" else "fun") ^ " saturate_" ^ Symbol.toValue w
-      ^ tuple ^ " (visited, database) ="
+      ^ tuple ^ " db ="
 in
  ( emit [prefix, "let"]
  ; incr ()
  ; emit ["val w = " ^ Strings.builder w ^ tuple]
- ; emit ["val visited' = World.Dict.insert visited w ()"]
+ ; emit ["fun insert_w (db as {worlds=ref worlds, ...}: L10_Tables.tables) = "]
+ ; emit [" ( #worlds db := World.Dict.insert worlds w ()"," ; db)"]
  ; decr ()
- ; emit ["in if World.Dict.member visited w"]
- ; emit ["   then (visited, database) else"]
+ ; emit ["in if World.Dict.member (!(#worlds db)) w"]
+ ; emit ["   then db else"]
  ; incr ()
  ; CaseAnalysis.emit ""
       (fn (postfix, shapes) =>
         ( emit ["(* " ^ Atom.toString (w, shapes) ^ " *)"]
         ; emit ["let"]
         ; incr ()
-        ; emit ["val bundle = (visited', database)"]
-        ; app (emitDependencyVisitor shapes) 
+        ; appFirst (fn () => ()) (emitDependencyVisitor shapes) ([],[""])
              (rev (List.mapPartial (filter shapes) depends))
-        ; emit ["val (visited, database) = bundle"]
         ; decr ()
-        ; emit ["in", "   (visited,"]
-        ; emit ["    saturate (fn x => x) database)","end" ^ postfix]))
+        ; emit ["in"]
+        ; incr ()
+        ; emit ["insert_w (saturate (fn x => x) db)"]
+        ; decr ()
+        ; emit ["end" ^ postfix]))
       (CaseAnalysis.cases splits)
  ; decr ()
  ; emit ["end"])
