@@ -8,6 +8,8 @@ structure Read:> sig
 end = 
 struct
 
+open Util
+
 (*[ val stream_front: 
        Decl.decl_t Stream.stream 
        -> Decl.decl_t Stream.front ]*)
@@ -126,9 +128,13 @@ in
            in           
             ( Interface.emitSig "L10"
             ; Datatypes.emit ()
+            ; Interface.emitStructHead "L10" "L10"
+            ; incr ()
             ; Indices.emit tables
             ; Rules.emit tables rules
-            ; Search.emit ())
+            ; Search.emit ()
+            ; decr ()
+            ; Interface.emitStruct ())
            end)
  ; TextIO.closeOut out)
 end 

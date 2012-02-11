@@ -278,7 +278,7 @@ end
 
 fun emit' (numbered_indices, lookups) =
 let in
- ( emit ["", "", "(* L10 databases with required indexing (indices.sml) *)"]
+ ( emit ["(* L10 databases with required indexing (indices.sml) *)"]
  ; emit ["","structure L10_Tables =","struct"]
  ; incr ()
  ; emit_dbtype numbered_indices

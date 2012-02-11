@@ -1,9 +1,14 @@
 
-structure Interface:> sig
- 
+structure Interface:> 
+sig
    (* emitSig MODULE_NAME *)
    val emitSig: string -> unit
+ 
+   (* emitStructHead ModuleName MODULE_NAME *)
+   val emitStructHead: string -> string -> unit
 
+   (* emitStruct () *)
+   val emitStruct: unit -> unit
 end =
 struct
 
@@ -23,7 +28,54 @@ in
    end
 end
 
+fun emitStructHead ModuleName MODULE_NAME = 
+let 
+   fun filter (t, Class.Extensible) = false
+     | filter (t, Class.Builtin) = false
+     | filter (t, Class.Type) =
+         (case Tab.find Tab.representations t of
+             SOME Type.External => false
+           | _ => true) 
+in
+ ( emit ["","","(* L10 Logic programming *)",""]
+ ; emit ["structure "^ModuleName^":> "^MODULE_NAME]
+ ; incr ()
+ ; appFirst (fn () => ())
+      (fn (decl, (t, knd)) => 
+          emit [decl^" type "^Symbol.toValue t^" = "^Strings.typ t])
+      ("where", "and")
+      (List.filter filter (Tab.list Tab.types))
+ ; decr ()
+ ; emit ["=","struct"])
+end
 
+fun emitStruct () = 
+let
+   (*[ val assert: Class.rel -> unit ]*)
+   fun assert (a, knd) = 
+      emit ["fun "^Symbol.toValue a^" _ = raise Match"]
+
+   (*[ val queries: Pos.t * Atom.moded_t -> unit ]*)
+   fun queries (qry, (_, index)) =
+      emit ["fun "^Symbol.toValue qry^" _ = raise Match"]
+in
+ ( incr ()
+ ; emit ["","","(* L10 public interface (interface.sml *)",""]
+ ; emit ["type tables = L10_Tables.tables"]
+ ; app (fn (t, knd) => emit ["type "^Symbol.toValue t^" = "^Strings.typ t]) 
+      (Tab.list Tab.types)
+ ; emit ["","structure Assert =","struct"]
+ ; incr ()
+ ; app assert (Tab.list Tab.rels)
+ ; decr ()
+ ; emit ["end","","structure Query =","struct"]
+ ; incr ()
+ ; app queries (Tab.list Tab.queries)
+ ; decr ()
+ ; emit ["end"]
+ ; decr ()
+ ; emit ["end"])
+end
 
 fun emitSig MODULE_NAME = 
 let 
