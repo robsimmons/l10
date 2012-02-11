@@ -1,0 +1,6 @@
+w: world.
+record: {First: string} {Last: string} {Age: nat} rel @ w.
+
+{-# QUERY age record + + - #-}
+{-# QUERY lastname record - + _ #-}
+{-# QUERY fullname record - - + #-}

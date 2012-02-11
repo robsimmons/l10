@@ -86,7 +86,8 @@ let
 in
  ( emit ["signature "^MODULE_NAME^" =","sig"]
  ; incr ()
- ; emit ["type tables (* Type of L10 databases *)",""]
+ ; emit ["type tables (* Type of L10 databases *)"]
+ ; emit ["val empty: unit -> tables",""]
  ; app typedecl (Tab.list Tab.types)
  ; emit ["","structure Assert:","sig"]
  ; incr ()
@@ -188,6 +189,7 @@ in
  ; emit ["type tables = L10_Tables.tables"]
  ; app (fn (t, knd) => emit ["type "^Symbol.toValue t^" = "^Strings.typ t]) 
       (Tab.list Tab.types)
+ ; emit ["val empty = L10_Tables.empty"]
  ; emit ["","structure Assert =","struct"]
  ; incr ()
  ; appFirst (fn () => ()) assert ([], [""]) (Tab.list Tab.rels)

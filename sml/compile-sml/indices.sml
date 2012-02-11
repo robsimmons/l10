@@ -121,13 +121,22 @@ let
       val ins = 
          rev (map (fn (_, x) => Strings.dict x^".dict ") (Path.Dict.toList ins))
    in emit [Int.toString i^": "^outs^" "^String.concat ins^"ref,"] end
+
+   fun tableemp (i, atom) = 
+      case Path.Dict.toList (#1 (query_paths atom)) of
+         [] => emit [Int.toString i^"=ref [],"]
+       | (_, x) :: _ => emit [Int.toString i^"=ref "^Strings.dict x^".empty,"]
 in
  ( emit ["type tables = {"]
  ; incr ()
  ; app tabletyp numbered_indices
  ; emit ["worlds: unit World.Dict.dict ref,","flag: bool ref}"]
  ; decr ()
- ; emit [""])
+ ; emit ["","fun empty (): tables = {"]
+ ; incr ()
+ ; app tableemp numbered_indices
+ ; emit ["worlds=ref World.Dict.empty,","flag=ref false}"]
+ ; decr ())
 end
 
 (* The folds are semi-public: they're used by the search functionality. 
@@ -226,8 +235,9 @@ let
          a_indices
 in
  (* insert_rel *)
- ( emit ["fun insert_"^Symbol.toValue a^" "^args^" ((), db: tables) ="]
- ; emit ["let val () = (#flag db) := true","in"]
+ ( emit ["fun insert_"^Symbol.toValue a^" "^args^" (db: tables) ="]
+ ; emit ["let","   val () = (#flag db) := true"]
+ ; emit ["in"]
  ; CaseAnalysis.emit "" 
       (fn (postfix, shapes) => 
        let 
@@ -274,8 +284,10 @@ in
 
  (* assert_rel *)
  ; emit ["fun assert_"^Symbol.toValue a^" "^args^" db ="]
- ; emit ["   fold_"^Int.toString i
-         ^" (insert_"^Symbol.toValue a^" "^args^") db db "^args]
+ ; incr ()
+ ; emit ["if fold_"^Int.toString i^" (fn _ => true) false db "^args^" then db"]
+ ; emit ["else insert_"^Symbol.toValue a^" "^args^" db"]
+ ; decr ()
  ; emit [""])
 end
 
