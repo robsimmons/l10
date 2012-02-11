@@ -53,13 +53,13 @@ let
    (*[ val assert: Class.rel -> unit ]*)
    fun assert (t, knd) = 
       case map Symbol.toValue (Class.argtyps knd) of 
-         [] => emit ["val "^Symbol.toValue t^relBuf t^": table -> table"]
+         [] => emit ["val "^Symbol.toValue t^relBuf t^": tables -> tables"]
        | [ arg ] => 
             emit ["val "^Symbol.toValue t^relBuf t
-                  ^": "^arg^" * table -> table"]
+                  ^": "^arg^" * tables -> tables"]
        | args =>
             emit ["val "^Symbol.toValue t^":"^relBuf t
-                  ^" ("^String.concatWith " * " args^") * table -> table"]
+                  ^" ("^String.concatWith " * " args^") * tables -> tables"]
 
    (*[ val queries: Pos.t * Atom.moded_t -> unit ]*)
    fun queries (qry, (_, index)) =
@@ -73,17 +73,17 @@ let
    in
       case map (Symbol.toValue o #2) (Path.Dict.toList outs) of 
          [] => emit ["val "^Symbol.toValue qry^":"^queryBuf qry
-                     ^" table "^instr^"-> bool"]
+                     ^" tables "^instr^"-> bool"]
        | [ t ] => emit ["val "^Symbol.toValue qry^":"^queryBuf qry
-                        ^" ("^t^" * 'a -> 'a) -> 'a -> table "^instr^"-> 'a"]
+                        ^" ("^t^" * 'a -> 'a) -> 'a -> tables "^instr^"-> 'a"]
        | ts => emit ["val "^Symbol.toValue qry^":"^queryBuf qry
                      ^" (("^String.concatWith " * " ts ^")"
-                     ^" * 'a -> 'a) -> 'a -> table "^instr^"-> 'a"]
+                     ^" * 'a -> 'a) -> 'a -> tables "^instr^"-> 'a"]
    end
 in
  ( emit ["signature "^MODULE_NAME^" =","sig"]
  ; incr ()
- ; emit ["type table (* Type of L10 databases *)",""]
+ ; emit ["type tables (* Type of L10 databases *)",""]
  ; app typedecl (Tab.list Tab.types)
  ; emit ["","structure Assert:","sig"]
  ; incr ()

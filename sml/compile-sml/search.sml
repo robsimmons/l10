@@ -198,7 +198,7 @@ in
  ( emit [prefix, "let"]
  ; incr ()
  ; emit ["val w = " ^ Strings.builder w ^ tuple]
- ; emit ["val visited = World.Dict.insert visited w ()"]
+ ; emit ["val visited' = World.Dict.insert visited w ()"]
  ; decr ()
  ; emit ["in if World.Dict.member visited w"]
  ; emit ["   then (visited, database) else"]
@@ -208,22 +208,28 @@ in
         ( emit ["(* " ^ Atom.toString (w, shapes) ^ " *)"]
         ; emit ["let"]
         ; incr ()
-        ; emit ["val bundle = (visited, database)"]
+        ; emit ["val bundle = (visited', database)"]
         ; app (emitDependencyVisitor shapes) 
              (rev (List.mapPartial (filter shapes) depends))
+        ; emit ["val (visited, database) = bundle"]
         ; decr ()
-        ; emit ["in", "   bundle", "end" ^ postfix]))
+        ; emit ["in", "   (visited,"]
+        ; emit ["    saturate (fn x => x) database)","end" ^ postfix]))
       (CaseAnalysis.cases splits)
  ; decr ()
  ; emit ["end"])
 end   
 
-fun emit () = 
+fun emit' () = 
 let
 in
- ( Util.emit ["", "", "(* L10 Generated Tabled Search (search.sml) *)", ""]
- ; Util.emit ["structure L10_Search = ", "struct"]
+ ( emit ["", "", "(* L10 Generated Tabled Search (search.sml) *)", ""]
+ ; emit ["structure L10_Search = ", "struct"]
  ; incr ()
+ ; emit ["fun saturate fs (table: L10_Tables.tables) = "]
+ ; emit ["let","   val () = #flag table := false"]
+ ; emit ["   val table = fs table"] 
+ ; emit ["in","   if !(#flag table) then saturate fs table else table","end",""]
  ; appSuper 
       (fn () => ()) 
       (fn x => emitWorld (false, x))
@@ -232,8 +238,10 @@ in
        (fn x => (emitWorld (true, x))))
       (rev (Tab.list Tab.depends))
  ; decr ()
- ; Util.emit ["end"])
+ ; emit ["end"])
 end
+
+val emit = emit'
 
 (*
    val name = Symbol.name w
