@@ -37,13 +37,13 @@ let
       val knds = 
          case knd of 
             Class.Type => "(* = "^Strings.typ t^", sealed *)"
-          | Class.Builtin => "= "^Strings.typ t^" (* builtin *)"
-          | Class.Extensible => "= Symbol.symbol (* extensible *)"
+          | Class.Builtin => "   = "^Strings.typ t^" (* builtin *)"
+          | Class.Extensible => "   = Symbol.symbol (* extensible *)"
       val representation =
          case Tab.find Tab.representations t of
             SOME Type.Transparent => "(* = "^Strings.typ t^" *)"
           | SOME Type.HashConsed => "(* = "^Strings.typ t^", hashconsed *)"
-          | SOME Type.External => "= "^Strings.typ t^" (* external *)"
+          | SOME Type.External => "   = "^Strings.typ t^" (* external *)"
           | SOME Type.Sealed => "(* = "^Strings.typ t^", sealed *)"
           | NONE => knds
    in

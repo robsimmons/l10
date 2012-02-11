@@ -110,6 +110,7 @@ fun emit_dbtype numbered_indices =
 let 
    fun tabletyp (i, atom) = 
    let 
+      val () = emit ["(* "^Int.toString i^ ": "^Atom.toString atom^" *)"]
       val (ins, outs) = query_paths atom
       val outs = 
          case Path.Dict.toList outs of 
@@ -278,11 +279,6 @@ end
 fun emit' (numbered_indices, lookups) =
 let in
  ( emit ["", "", "(* L10 databases with required indexing (indices.sml) *)"]
- ; List.app
-      (fn (n, index) =>
-          emit ["(* "^Int.toString n^ " - "
-                ^Atom.toString index^" *)"])
-      numbered_indices
  ; emit ["","structure L10_Tables =","struct"]
  ; incr ()
  ; emit_dbtype numbered_indices
