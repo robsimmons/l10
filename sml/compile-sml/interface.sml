@@ -28,55 +28,6 @@ in
    end
 end
 
-fun emitStructHead ModuleName MODULE_NAME = 
-let 
-   fun filter (t, Class.Extensible) = false
-     | filter (t, Class.Builtin) = false
-     | filter (t, Class.Type) =
-         (case Tab.find Tab.representations t of
-             SOME Type.External => false
-           | _ => true) 
-in
- ( emit ["","","(* L10 Logic programming *)",""]
- ; emit ["structure "^ModuleName^":> "^MODULE_NAME]
- ; incr ()
- ; appFirst (fn () => ())
-      (fn (decl, (t, knd)) => 
-          emit [decl^" type "^Symbol.toValue t^" = "^Strings.typ t])
-      ("where", "and")
-      (List.filter filter (Tab.list Tab.types))
- ; decr ()
- ; emit ["=","struct"])
-end
-
-fun emitStruct () = 
-let
-   (*[ val assert: Class.rel -> unit ]*)
-   fun assert (a, knd) = 
-      emit ["fun "^Symbol.toValue a^" _ = raise Match"]
-
-   (*[ val queries: Pos.t * Atom.moded_t -> unit ]*)
-   fun queries (qry, (_, index)) =
-      emit ["fun "^Symbol.toValue qry^" _ = raise Match"]
-in
- ( incr ()
- ; emit ["","","(* L10 public interface (interface.sml *)",""]
- ; emit ["type tables = L10_Tables.tables"]
- ; app (fn (t, knd) => emit ["type "^Symbol.toValue t^" = "^Strings.typ t]) 
-      (Tab.list Tab.types)
- ; emit ["","structure Assert =","struct"]
- ; incr ()
- ; app assert (Tab.list Tab.rels)
- ; decr ()
- ; emit ["end","","structure Query =","struct"]
- ; incr ()
- ; app queries (Tab.list Tab.queries)
- ; decr ()
- ; emit ["end"]
- ; decr ()
- ; emit ["end"])
-end
-
 fun emitSig MODULE_NAME = 
 let 
    val typeBuf = buffer Tab.types
@@ -102,7 +53,7 @@ let
       emit ["type "^Symbol.toValue t^typeBuf t^" "^representation]
    end
 
-   (*[ val assert: Class.rel -> unit ]*)
+   (*[ val assert: Symbol.symbol * Class.rel -> unit ]*)
    fun assert (t, knd) = 
       case map Symbol.toValue (Class.argtyps knd) of 
          [] => emit ["val "^Symbol.toValue t^relBuf t^": tables -> tables"]
@@ -113,7 +64,7 @@ let
             emit ["val "^Symbol.toValue t^":"^relBuf t
                   ^" ("^String.concatWith " * " args^") * tables -> tables"]
 
-   (*[ val queries: Pos.t * Atom.moded_t -> unit ]*)
+   (*[ val queries: Symbol.symbol * (Pos.t * Atom.moded_t) -> unit ]*)
    fun queries (qry, (_, index)) =
    let
       val (ins, outs) = Indices.query_paths index
@@ -142,6 +93,71 @@ in
  ; app assert (Tab.list Tab.rels)
  ; decr ()
  ; emit ["end","","structure Query:","sig"]
+ ; incr ()
+ ; app queries (Tab.list Tab.queries)
+ ; decr ()
+ ; emit ["end"]
+ ; decr ()
+ ; emit ["end"])
+end
+
+fun emitStructHead ModuleName MODULE_NAME = 
+let 
+   fun filter (t, Class.Extensible) = false
+     | filter (t, Class.Builtin) = false
+     | filter (t, Class.Type) =
+         (case Tab.find Tab.representations t of
+             SOME Type.External => false
+           | _ => true) 
+in
+ ( emit ["","","(* L10 Logic programming *)",""]
+ ; emit ["structure "^ModuleName^":> "^MODULE_NAME]
+ ; incr ()
+ ; appFirst (fn () => ())
+      (fn (decl, (t, knd)) => 
+          emit [decl^" type "^Symbol.toValue t^" = "^Strings.typ t])
+      ("where", "and")
+      (List.filter filter (Tab.list Tab.types))
+ ; decr ()
+ ; emit ["=","struct"])
+end
+
+fun emitStruct () = 
+let
+   (* XXX rather than invalidating the whole world tree, we should traverse
+    * it in the other direction (with forward links) - much more efficient *)
+   (*[ val assert: Symbol.symbol * Class.rel -> unit ]*)
+   fun assert (fst, (a, rel)) =
+   let 
+      val name = Symbol.toValue a
+      val ts = mapi (fn x => x) (Class.argtyps rel)
+      val args = if null ts then "()" else "args"
+   in 
+     ( emit fst
+     ; case map (fn (x,_) => "x_"^Int.toString x) ts of 
+          [] => emit ["fun "^name^" (db: L10_Tables.tables) ="]
+        | args => emit ["fun "^name^" (args, db: L10_Tables.tables) ="]
+     ; emit ["let","   val () = #flag db := false"]
+     ; emit ["   val db = L10_Tables.assert_"^name^" "^args^" db"]
+     ; emit ["in","   if !(#flag db)"]
+     ; emit ["   then (#worlds db := World.Dict.empty; db)"]
+     ; emit ["   else db","end"])
+   end
+
+   (*[ val queries: Symbol.symbol * (Pos.t * Atom.moded_t) -> unit ]*)
+   fun queries (qry, (_, index)) =
+      emit ["fun "^Symbol.toValue qry^" _ = raise Match"]
+in
+ ( incr ()
+ ; emit ["","","(* L10 public interface (interface.sml *)",""]
+ ; emit ["type tables = L10_Tables.tables"]
+ ; app (fn (t, knd) => emit ["type "^Symbol.toValue t^" = "^Strings.typ t]) 
+      (Tab.list Tab.types)
+ ; emit ["","structure Assert =","struct"]
+ ; incr ()
+ ; appFirst (fn () => ()) assert ([], [""]) (Tab.list Tab.rels)
+ ; decr ()
+ ; emit ["end","","structure Query =","struct"]
  ; incr ()
  ; app queries (Tab.list Tab.queries)
  ; decr ()
