@@ -6,17 +6,20 @@ sig
    (*[ val caonicalize: Atom.moded_t list -> tables ]*)
    val canonicalize: Atom.t list -> tables
 
+   (* Split a function into inputs and outputs *)
+   (*[ val query_paths: Term.moded_t ->
+          Type.t Path.Dict.dict * Type.t Path.Dict.dict ]*)
+   val query_paths: Atom.t -> Type.t Path.Dict.dict * Type.t Path.Dict.dict
+
+   (* Explains how to actually *call* an index. The index must be one of the
+    * ones that was canonicalized. *)
+   (*[ val get_fold: tables -> Atom.prop_t -> 
+          {label: int, 
+           inputs: (Path.t * Type.t) list, 
+           outputs: (Path.t * Type.t) list} ]*)
    val get_fold: tables -> Atom.t -> {label: int,
                                       inputs: (Path.t * Type.t) list, 
                                       outputs: (Path.t * Type.t) list}
-(* 
-   (*[ val lookup: Atom.prop_t ->  ]*)
-   val lookup: tables -> Atom.moded_t ->  
-                  -> {prop: Atom.t, input: SetX.set, output: SetX.set}
-                  -> {id: int,
-                      inputs: Symbol.symbol list,
-                      outputs: Symbol.symbol option list}
-*)
  
    val emit: tables -> unit
 end = 

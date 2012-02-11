@@ -33,6 +33,7 @@ Group is
    compile-sml/search.sml
    compile-sml/indices.sml
    compile-sml/rules.sml
+   compile-sml/interface.sml
 
    (* Parser stuff *)
    l10.cmlex.sml

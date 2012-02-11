@@ -1,6 +1,11 @@
 // Regular expressions
 
-regexp : type.
+baz: type.
+t: extensible.
+whee: type. {-# TYPE whee external #-}
+whoo: nat -> whee.
+wha: whee -> whee -> whee.
+regexp: type. {-# TYPE regexp transparent #-}
 tok:  string -> regexp.                
 emp:  regexp.                     
 some: regexp -> regexp.           
@@ -35,8 +40,10 @@ match RE2 I J -> match (alt RE1 RE2) I J.
 bar: regexp -> nat -> nat -> rel @ w0.
 foo: nat -> nat -> nat -> rel @ w0.
 foo X X X, foo X Y Y, foo Z Y X -> foo (X+6) Y Z, foo 9 12 (Y+X).
+contr: rel @ w0.
 
+{-# QUERY contr contr #-}
 {-# QUERY poschar token - + #-}
-{-# QUERY ischar token + + #-}
+{-# QUERY token token + + #-}
 {-# QUERY wholestring token - - #-}
 {-# QUERY ismatch match + + + #-}

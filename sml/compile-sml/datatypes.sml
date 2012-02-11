@@ -133,7 +133,7 @@ let
          else "(x, y) =")
 in
    appSuper
-      (fn () => emit [prefix ^ " raise Match (* Impossible *)"])
+      (fn () => emit [prefix ^ " raise General.Match (* Impossible *)"])
       (fn x => (emit [prefix ^ " true"]))
       ((fn x => 
          ( emit [prefix, "  (case (x, y) of"]
@@ -173,7 +173,7 @@ let
       ^ (if isPrj rep then ("(inj_" ^ ts ^ " x) =") else "x =")
 in
    appSuper
-      (fn () => emit [prefix ^ " raise Match (* Impossible *)"])
+      (fn () => emit [prefix ^ " raise General.Match (* Impossible *)"])
       (fn x => (emit [prefix]; emitCase "  (case x of " ")" x))
       ((fn x => 
          ( emit [prefix, "  (case x of"]
@@ -218,7 +218,7 @@ let
       ^ (if isPrj rep then ("(inj_" ^ ts ^ " x) =") else "x =")
 in
    appSuper
-      (fn () => emit [prefix ^ " raise Match (* Impossible *)"])
+      (fn () => emit [prefix ^ " raise General.Match (* Impossible *)"])
       (fn x => 
          ( emit [prefix, "  (case x of "]
          ; incr ()

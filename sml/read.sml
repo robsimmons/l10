@@ -124,7 +124,8 @@ in
               val rules = Util.mapi (fn x => x) (map Compile.compile all_rules)
               val tables = Indices.canonicalize (Compile.indices (map #2 rules))
            in           
-            ( Datatypes.emit ()
+            ( Interface.emitSig "L10"
+            ; Datatypes.emit ()
             ; Indices.emit tables
             ; Rules.emit tables rules
             ; Search.emit ())

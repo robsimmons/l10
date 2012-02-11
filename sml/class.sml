@@ -40,6 +40,13 @@ struct
          Arrow (_, class) => 1+arrows class
        | Pi (_, _, class) => 1+arrows class
        | _ => 0
+
+   (*[ val argtyps: rel_t -> Type.t list ]*)
+   fun argtyps class = 
+      case class of
+         Rel _ => []
+       | Arrow (t, class) => t :: argtyps class
+       | Pi (x, SOME t, class) => t :: argtyps class
  
    (*[ val relToTyp: rel_t -> typ ]*)
    fun relToTyp class = 
