@@ -101,9 +101,39 @@ fun get_fold' [] index = raise FoldNotFound
     end       
 fun get_fold (numbered_indices, _) = get_fold' numbered_indices
 
-fun emit_folder (i, world) = 
+(* The main database type is a record, and as such it needs to have a named
+ * type so we don't have to deal with unresolved flex record errors. *)
+fun emit_dbtype numbered_indices = 
+let 
+   fun tabletyp (i, atom) = 
+   let 
+      val (ins, outs) = query_paths atom
+      val outs = 
+         case Path.Dict.toList outs of 
+            [] => "unit list"
+          | [ (path, t) ] => Strings.typ t ^ " list"
+          | outs => 
+            "("^String.concatWith " * " (map (Strings.typ o #2) outs)^") list"
+      val ins = 
+         rev (map (fn (_, x) => Strings.dict x^".dict ") (Path.Dict.toList ins))
+   in emit [Int.toString i^": "^outs^" "^String.concat ins^"ref,"] end
+in
+ ( emit ["type tables = {"]
+ ; incr ()
+ ; app tabletyp numbered_indices
+ ; emit ["worlds: unit World.Dict.dict ref,","flag: bool ref}"]
+ ; decr ()
+ ; emit [""])
+end
+
+(* The folds are semi-public: they're used by the search functionality. 
+ * In the future when I have implemented folds over built-in data types,
+ * we will still need to emit all the fold_n functions that we do now, but
+ * those fold functions may query a number of actual tables that is smaller
+ * than n. *)
+fun emit_folder (i, atom) = 
 let
-   val (ins, outs) = query_paths world
+   val (ins, outs) = query_paths atom
    val ins = Path.Dict.toList ins
    val outs = Path.Dict.toList outs
    val s = Int.toString i
@@ -127,48 +157,115 @@ in
  ; emit [""])
 end
 
-fun emit_dbtype numbered_indices = 
-let 
-   fun tabletyp (i, world) = 
-   let 
-      val (ins, outs) = query_paths world
-      val outs = 
-         case Path.Dict.toList outs of 
-            [] => "unit list"
-          | [ (path, t) ] => Strings.typ t ^ " list"
-          | outs => 
-            "("^String.concatWith " * " (map (Strings.typ o #2) outs)^") list"
-      val ins = 
-         rev (map (fn (_, x) => Strings.dict x^".dict ") (Path.Dict.toList ins))
-   in emit [Int.toString i^": "^outs^" "^String.concat ins^"ref,"] end
+(* The insertion functions are not public: they directly add things to the 
+ * database. Incidentally, this is one of the few places where we admit that
+ * we're actually implementing the database imperatively (funcitonal record
+ * updates seem expensive), and one of the few things that would need to 
+ * change to make dbs actually functional. *)
+(* XXX the eager generation of singletons should be replaced *)
+fun emit_insert (i, atom) =
+let
+   val (ins, outs) = query_paths atom
+   val ins = Path.Dict.toList ins
+   val s = Int.toString i
+   fun singletons [] = ()
+     | singletons [ (path, _) ] = 
+          emit ["val single_"^Path.toString path^" = [data]"]
+     | singletons ((path, _) :: (ins as (nextpath, t) :: _)) = 
+        ( singletons ins
+        ; emit ["val single_"^Path.toString path^" = "
+                ^Strings.dict t^".singleton "^Path.toVar nextpath^" "
+                ^"single_"^Path.toString nextpath])
+   fun insertions prefix postfix [] = emit [prefix^"data :: this"^postfix]
+     | insertions prefix postfix ((path, t) :: ins) =
+        ( emit [prefix^"("^Strings.dict t^".insertMerge this "
+                ^Path.toVar path^" single_"^Path.toString path]
+        ; emit [prefix^" (fn this =>"]
+        ; insertions (prefix^"  ") (postfix^"))") ins)
 in
- ( emit ["type tables = {"]
+ ( emit ["fun ins_"^s^Strings.optTuple (map (Path.toVar o #1) ins)
+         ^" data (db as {"^s^"=ref this, ...}: tables) ="]
+ ; emit ["let"]
  ; incr ()
- ; app tabletyp numbered_indices
- ; emit ["worlds: unit World.Dict.dict ref,","flag: bool ref}"]
+ ; singletons ins
  ; decr ()
- ; emit [""])
+ ; emit ["in"," ( #"^s^" db :="]
+ ; incr (); incr ()
+ ; insertions "" "" ins
+ ; decr (); decr ()
+ ; emit [" ; db)","end",""])
 end
 
+(* Outputs the insert_rel function and assert_rel function for one relation *)
+(* "a" is the name of the relation, 
+ * "i" is the index of the "all-lookups" fold for the relation "a" (the
+ *    fold associated with the query "a + ... +", in other words)
+ * "ts" is the actual indices and types [ (0, t_0), ..., (n-1,t_n-1) ] 
+ *    corresponding to the n arguments of relation "a".
+ *
+ * Asserts are semi-public, but the inserts are internal, because they 
+ * actually do definitely-the-work of inserting things into the appropriate
+ * data structures. *)
 fun emit_assert numbered_indices (a, (i, ts)) = 
 let 
    val args = 
       Strings.tuple (mapi (fn (i, _) => "x_"^Int.toString i) ts)
+   val a_indices =
+      List.filter (fn (_, (a', _)) => Symbol.eq (a, a')) numbered_indices
    val splits = 
       List.foldl 
-         (fn ((i, (a', terms)), splits) => 
-             if Symbol.eq (a, a') 
-             then (Splitting.insertList splits terms)
-             else (splits))
+         (fn ((i, (a', terms)), splits) => Splitting.insertList splits terms)
          (Splitting.unsplit (Tab.lookup Tab.rels a))
-         numbered_indices
+         a_indices
 in
+ (* insert_rel *)
  ( emit ["fun insert_"^Symbol.toValue a^" "^args^" ((), db: tables) ="]
  ; emit ["let val () = (#flag db) := true","in"]
  ; CaseAnalysis.emit "" 
-      (fn (postfix, shapes) => emit ["db"^postfix])
+      (fn (postfix, shapes) => 
+       let 
+          fun get_insert (i, index, eqsubst) =
+          let 
+             val (ins, outs) = query_paths index
+             val (ins, outs) = (Path.Dict.domain ins, Path.Dict.domain outs)
+             (* One resolution of the ugly term.sml hack. This is almost 
+              * certainly general enough. 
+             val de_hack path = 
+                Strings.build
+                   (#2 (hd (#2 (DictX.lookup eqsubst 
+                                   (Symbol.fromValue (Path.toVar path))))))
+             val ins = Strings.optTuple (map de_hack ins)
+             val outs = Strings.tuple (map de_hack outs)
+             *)
+             (* Another resolution of the ugly term.sml hack. I think this
+              * is fully general? *)
+             val ins = Strings.optTuple (map Path.toVar ins)
+             val outs = Strings.tuple (map Path.toVar outs)
+          in
+             "ins_"^Int.toString i^ins^" "^outs
+          end
+
+          fun insert prefix postfix' [] = emit ["db"] (* Impossible? *)
+            | insert prefix postfix' [ match ] = 
+                 emit [prefix^"("^get_insert match^" db)"^postfix'^postfix]
+            | insert prefix postfix' (match :: matches) =
+               ( emit [prefix^"("^get_insert match]
+               ; insert (prefix^" ") (postfix'^")") matches)
+       in
+        ( emit ["(* "^Atom.toString (a, shapes)^" *)"]
+        ; insert "" "" 
+             (List.mapPartial 
+                 (fn (i, (a, terms)) => 
+                   ( flush ()
+                   ; case Term.gens (shapes, terms) of 
+                        NONE => NONE
+                      | SOME eqsubst => SOME (i, (a, terms), eqsubst)))
+                 a_indices))
+       end)
       (CaseAnalysis.cases splits)
  ; emit ["end"]
+
+ (* assert_rel *)
  ; emit ["fun assert_"^Symbol.toValue a^" "^args^" db ="]
  ; emit ["   fold_"^Int.toString i
          ^" (insert_"^Symbol.toValue a^" "^args^") db "^args]
@@ -191,6 +288,7 @@ let in
  ; emit ["fun mapPartial lookup x NONE = NONE"]
  ; emit ["  | mapPartial lookup x (SOME dict) = lookup dict x",""]
  ; app emit_folder numbered_indices
+ ; app emit_insert numbered_indices
  ; DictX.app (emit_assert numbered_indices) lookups
  ; decr ()
  ; emit ["end"])

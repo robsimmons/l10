@@ -158,7 +158,7 @@ struct
 
    (* Generalization:
     *
-    * genTerm (s (s x_0_0)) (s N)        = SOME { N |-> [ (s x_0) ] }
+    * genTerm (s (s x_0_0)) (s N)        = SOME { N |-> [ (s x_0_0) ] }
     * genTerm (s (s x_0_0)) (s (s N))    = SOME { N |-> [ x_0_0 ] }
     * genTerm (s (s x_0_0)) (s z)        = NONE (clash)
     * genTerm (s (s x_0_0)) (s (s (s N)) = NONE (not more general)
@@ -181,6 +181,22 @@ struct
                    if not (Symbol.eq (t, t'))
                    then raise Fail "inconsistent types in gen'"
                    else (t', pathshapes @ [(path, shape)]))
+       (* XXX BIG UGLY HACK TO DEAL WITH MODES (for indices.sml)
+        * If we reach a mode, we just pretend that mode is the variable
+        * representing its path. Probably, the right resolution is to have
+        * genTerm return maps from paths to variables, and then have a 
+        * separate function that reads a regular-old Term.term_t and finds
+        * the various paths where that variabe occurs. *)
+       | (shape, Mode (_, SOME t)) =>
+         let
+            val x = "x_"^String.concatWith "_" (map Int.toString path)
+         in
+            DictX.insertMerge subst (Symbol.fromValue x) (t, [ (path, shape) ])
+               (fn (t', pathshapes) =>
+                   if not (Symbol.eq (t, t'))
+                   then raise Fail "inconsistent types in gen'"
+                   else (t', pathshapes @ [(path, shape)]))
+         end
        | (SymConst c, SymConst c') =>
             if Symbol.eq (c, c') then subst else raise Gen' (* clash *)
        | (NatConst n, NatConst n') =>
