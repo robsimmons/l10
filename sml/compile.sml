@@ -253,25 +253,10 @@ let
        | Binrel {common, ...} => loop (#cont common, indices)
        | Conclusion {...} => indices
  
-   (* Make sure every type has an "all outputs" index. *)
-   (*[ val rel_to_modes: Class.rel_t -> Term.moded_t list ]*)
-   fun rel_to_modes class =
-      case class of
-         Class.Rel _ => []
-       | Class.Arrow (t, rel) =>
-            (Term.Mode (Mode.Input, SOME t)) :: rel_to_modes rel
-       | Class.Pi (_, SOME t, rel) =>
-            (Term.Mode (Mode.Input, SOME t)) :: rel_to_modes rel
-   val lookup_indices = 
-      Tab.fold (fn (a, rel, indices) => add indices (a, rel_to_modes rel))
-         []
-         Tab.rels
-
    (* Make sure that all the user-specified indices are present. *)
    val initial = 
       Tab.fold (fn (_, (_, index), indices) => add indices index) 
-         lookup_indices
-         Tab.queries
+         [] Tab.queries
 in
    List.foldr (fn ((_, _, rule), indices) => loop (rule, indices)) initial x
 end

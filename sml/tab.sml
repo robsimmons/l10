@@ -125,10 +125,16 @@ struct
         ( SymbolHashTable.insert consts c class
         ; mergeTypecon t c)
        end
-     | bind (Decl.Rel (_, r, class)) = 
+     | bind (Decl.Rel (pos, r, class)) = 
+       let 
+          val outputs = 
+             map (fn t => Term.Mode (Mode.Input, SOME t)) (Class.argtyps class)
+       in
         ( SymbolHashTable.insert rels r class 
         ; SymbolHashTable.insert consts r (Class.relToTyp class)
+        ; SymbolHashTable.insert queries r (pos, (r, outputs))
         ; mergeTypecon Type.rel r)
+       end
      | bind (Decl.Type (_, a, class)) = 
         ( SymbolHashTable.insert types a class
         ; SymbolHashTable.insert typecon a SetX.empty)

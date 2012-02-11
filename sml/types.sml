@@ -552,10 +552,16 @@ fun check decl =
       end
 
     | Decl.Query (pos, qry, mode as (r, _)) =>
-        (case Tab.find Tab.rels r of 
-            NONE => raise TypeError (pos, "Relation `" ^ Symbol.toValue r 
-                                        ^ "` never declared")
-          | SOME class => 
+        (case (Tab.find Tab.rels r, Tab.find Tab.rels qry) of 
+            (NONE, _) => raise TypeError (pos, "Relation `" ^ Symbol.toValue r 
+                                               ^ "` never declared")
+          | (_, SOME _) => raise TypeError (pos, "Query `"^Symbol.toValue qry
+                                                 ^"' has the same name as an\ 
+                                                 \ existing relation, and\ 
+                                                 \ therefore conflicts with\
+                                                 \ default query for that\ 
+                                                 \ relation")
+          | (SOME class, NONE) => 
             let val (_, (pos, mode')) = tc_atom DictX.empty class (pos, mode) 
             in
              ( check_illegal pos qry "query"
