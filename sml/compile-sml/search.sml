@@ -199,10 +199,11 @@ in
  ( emit [prefix, "let"]
  ; incr ()
  ; emit ["val w = " ^ Strings.builder w ^ tuple]
- ; emit ["fun insert_w (db as {worlds=ref worlds, ...}: L10_Tables.tables) = "]
- ; emit [" ( #worlds db := World.Dict.insert worlds w ()"," ; db)"]
+ ; emit ["fun insert_w (db: L10_Tables.tables) = "]
+ ; emit ["   L10_Tables.set_worlds db"]
+ ; emit ["      (World.Dict.insert (L10_Tables.get_worlds db) w ())"]
  ; decr ()
- ; emit ["in if World.Dict.member (!(#worlds db)) w"]
+ ; emit ["in if World.Dict.member (L10_Tables.get_worlds db) w"]
  ; emit ["   then db else"]
  ; incr ()
  ; CaseAnalysis.emit ""
@@ -230,9 +231,9 @@ in
  ; emit ["structure L10_Search = ", "struct"]
  ; incr ()
  ; emit ["fun saturate fs (table: L10_Tables.tables) = "]
- ; emit ["let","   val () = #flag table := false"]
- ; emit ["   val table = fs table"] 
- ; emit ["in","   if !(#flag table) then saturate fs table else table","end",""]
+ ; emit ["let","   val table = fs (L10_Tables.set_flag table false)"] 
+ ; emit ["in","   if L10_Tables.get_flag table"]
+ ; emit ["   then saturate fs table else table","end",""]
  ; appSuper 
       (fn () => ()) 
       (fn x => emitWorld (false, x))

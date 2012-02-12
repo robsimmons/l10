@@ -138,10 +138,11 @@ let
      ; case map (fn (x,_) => "x_"^Int.toString x) ts of 
           [] => emit ["fun "^name^" (db: L10_Tables.tables) ="]
         | args => emit ["fun "^name^" (args, db: L10_Tables.tables) ="]
-     ; emit ["let","   val () = #flag db := false"]
-     ; emit ["   val db = L10_Tables.assert_"^name^" "^args^" db"]
-     ; emit ["in","   if !(#flag db)"]
-     ; emit ["   then (#worlds db := World.Dict.empty; db)"]
+     ; emit ["let"]
+     ; emit ["   val db = L10_Tables.assert_"^name^" "^args]
+     ; emit ["               (L10_Tables.set_flag db false)"]
+     ; emit ["in","   if L10_Tables.get_flag db"]
+     ; emit ["   then L10_Tables.set_worlds db World.Dict.empty"]
      ; emit ["   else db","end"])
    end
 
@@ -185,7 +186,7 @@ let
    end
 in
  ( incr ()
- ; emit ["","","(* L10 public interface (interface.sml *)",""]
+ ; emit ["","","(* L10 public interface (interface.sml) *)",""]
  ; emit ["type tables = L10_Tables.tables"]
  ; app (fn (t, knd) => emit ["type "^Symbol.toValue t^" = "^Strings.typ t]) 
       (Tab.list Tab.types)

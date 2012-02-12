@@ -119,24 +119,43 @@ let
           | outs => 
             "("^String.concatWith " * " (map (Strings.typ o #2) outs)^") list"
       val ins = 
-         rev (map (fn (_, x) => Strings.dict x^".dict ") (Path.Dict.toList ins))
-   in emit [Int.toString i^": "^outs^" "^String.concat ins^"ref,"] end
+         rev (map (fn (_, x) => Strings.dict x^".dict") (Path.Dict.toList ins))
+   in emit [Int.toString i^": "^outs^" "^String.concatWith " " ins^","] end
 
    fun tableemp (i, atom) = 
       case Path.Dict.toList (#1 (query_paths atom)) of
-         [] => emit [Int.toString i^"=ref [],"]
-       | (_, x) :: _ => emit [Int.toString i^"=ref "^Strings.dict x^".empty,"]
+         [] => emit [Int.toString i^"=[],"]
+       | (_, x) :: _ => emit [Int.toString i^"="^Strings.dict x^".empty,"]
+
+   val tablelabel = 
+      map (Int.toString o #1) numbered_indices @ ["worlds", "flag"]
+
+   fun tablederef s = emit ["fun get_"^s^" (db: tables) = #"^s^" db"]
+   fun tableupdate s = 
+    ( emit ["fun set_"^s^" (db: tables) x = {"]
+    ; incr ()
+    ; app (fn x => 
+             if x = s 
+             then emit ["   "^x^" = x"^(if x="flag" then "}" else ",")]
+             else emit ["   "^x^" = #"^x^" db"^(if x="flag" then "}" else ",")])
+         tablelabel
+    ; decr ()
+    ; emit [""])
+        
 in
  ( emit ["type tables = {"]
  ; incr ()
  ; app tabletyp numbered_indices
- ; emit ["worlds: unit World.Dict.dict ref,","flag: bool ref}"]
+ ; emit ["worlds: unit World.Dict.dict,","flag: bool}"]
  ; decr ()
  ; emit ["","fun empty (): tables = {"]
  ; incr ()
  ; app tableemp numbered_indices
- ; emit ["worlds=ref World.Dict.empty,","flag=ref false}"]
- ; decr ())
+ ; emit ["worlds=World.Dict.empty,","flag=false}",""]
+ ; decr ()
+ ; app tablederef tablelabel
+ ; emit [""]
+ ; app tableupdate tablelabel)
 end
 
 (* The folds are semi-public: they're used by the search functionality. 
@@ -160,7 +179,7 @@ let
           ( emit [pre^"(mapPartial "^Strings.dict t^".find "^Path.toVar path]
           ; lookups (pre^" ") (post^")") ins)
 in
- ( emit ["fun fold_"^s^" f x (db as {"^s^"=ref dict, ...}: tables) " 
+ ( emit ["fun fold_"^s^" f x (db as {"^s^"= dict, ...}: tables) " 
          ^Strings.tuple (map (Path.toVar o #1) ins)^" ="]
  ; incr ()
  ; if null ins
@@ -192,7 +211,7 @@ let
         ; emit ["val single_"^Path.toString path^" = "
                 ^Strings.dict t^".singleton "^Path.toVar nextpath^" "
                 ^"single_"^Path.toString nextpath])
-   fun insertions prefix postfix [] = emit [prefix^"data :: this"^postfix]
+   fun insertions prefix postfix [] = emit [prefix^"(data :: this)"^postfix]
      | insertions prefix postfix ((path, t) :: ins) =
         ( emit [prefix^"("^Strings.dict t^".insertMerge this "
                 ^Path.toVar path^" single_"^Path.toString path]
@@ -200,16 +219,17 @@ let
         ; insertions (prefix^"  ") (postfix^"))") ins)
 in
  ( emit ["fun ins_"^s^Strings.optTuple (map (Path.toVar o #1) ins)
-         ^" data (db as {"^s^"=ref this, ...}: tables) ="]
+         ^" data (db: tables) ="]
  ; emit ["let"]
  ; incr ()
+ ; emit ["val this =get_"^s^" db"]
  ; singletons ins
  ; decr ()
- ; emit ["in"," ( #"^s^" db :="]
+ ; emit ["in","   set_"^s^" db"]
  ; incr (); incr ()
  ; insertions "" "" ins
  ; decr (); decr ()
- ; emit [" ; db)","end",""])
+ ; emit ["end",""])
 end
 
 (* Outputs the insert_rel function and assert_rel function for one relation *)
@@ -236,8 +256,6 @@ let
 in
  (* insert_rel *)
  ( emit ["fun insert_"^Symbol.toValue a^" "^args^" (db: tables) ="]
- ; emit ["let","   val () = (#flag db) := true"]
- ; emit ["in"]
  ; CaseAnalysis.emit "" 
       (fn (postfix, shapes) => 
        let 
@@ -262,9 +280,11 @@ in
              "ins_"^Int.toString i^ins^" "^outs
           end
 
-          fun insert prefix postfix' [] = emit ["db"] (* Impossible? *)
+          fun insert prefix postfix' [] = (* Impossible? *)
+                 emit [prefix^"set_flag db true"^postfix'^postfix] 
             | insert prefix postfix' [ match ] = 
-                 emit [prefix^"("^get_insert match^" db)"^postfix'^postfix]
+               ( emit [prefix^"("^get_insert match]
+               ; emit [prefix^" (set_flag db true))"^postfix'^postfix])
             | insert prefix postfix' (match :: matches) =
                ( emit [prefix^"("^get_insert match]
                ; insert (prefix^" ") (postfix'^")") matches)
@@ -280,7 +300,6 @@ in
                  a_indices))
        end)
       (CaseAnalysis.cases splits)
- ; emit ["end"]
 
  (* assert_rel *)
  ; emit ["fun assert_"^Symbol.toValue a^" "^args^" db ="]
