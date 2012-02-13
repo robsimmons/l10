@@ -106,10 +106,12 @@ fun emitStartingPoints w terms =
 
 (* Emit the saturation fuction for a given world *)
 
-fun filter shapes (pos, ((_, (w', args)), prems), SOME _) =
+fun filterDependency shapes (pos, ((_, (w', args)), prems), SOME _) =
    case Term.gens (shapes, args) of
       NONE => NONE
     | SOME subst => SOME (pos, (w', args), subst, prems)
+
+fun filterRule shapes _ = NONE
 
 fun emitDependencyVisitor shapes (fst, (pos, conc, subst, prems)) = 
 let
@@ -181,6 +183,8 @@ in
   ; decr ())
 end
 
+fun emitStartingPoints shapes _ = raise Fail "Not implemented!"
+
 fun emitWorld (w, depends) =
 let 
    val splits = 
@@ -199,6 +203,7 @@ in
  ( emit ["",prefix, "let"]
  ; incr ()
  ; emit ["val w = " ^ Strings.builder w ^ tuple]
+ ; emit ["val exec = fn x => x"]
  ; emit ["fun insert_w (db: L10_Tables.tables) = "]
  ; emit ["   L10_Tables.set_worlds db"]
  ; emit ["      (World.Dict.insert (L10_Tables.get_worlds db) w ())"]
@@ -212,11 +217,15 @@ in
         ; emit ["let"]
         ; incr ()
         ; appFirst (fn () => ()) (emitDependencyVisitor shapes) ([],[""])
-             (rev (List.mapPartial (filter shapes) depends))
+             (rev (List.mapPartial (filterDependency shapes) depends))
+        ; flush ()
+        ; app (emitStartingPoints shapes)
+             (rev (List.mapPartial (filterRule shapes) 
+                      (Tab.lookup_list Tab.rules w)))
         ; decr ()
         ; emit ["in"]
         ; incr ()
-        ; emit ["insert_w (loop (fn x => x) db)"]
+        ; emit ["insert_w (loop exec db)"]
         ; decr ()
         ; emit ["end" ^ postfix]))
       (CaseAnalysis.cases splits)
