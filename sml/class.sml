@@ -41,10 +41,12 @@ struct
        | Pi (_, _, class) => 1+arrows class
        | _ => 0
 
-   (*[ val argtyps: rel_t -> Type.t list ]*)
+   (*[ val argtyps: rel_t -> Type.t list
+                  & world -> Type.t list ]*)
    fun argtyps class = 
       case class of
          Rel _ => []
+       | World => []
        | Arrow (t, class) => t :: argtyps class
        | Pi (x, SOME t, class) => t :: argtyps class
  

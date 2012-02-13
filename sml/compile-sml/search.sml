@@ -181,7 +181,7 @@ in
   ; decr ())
 end
 
-fun emitWorld (isAnd, (w, depends)) =
+fun emitWorld (w, depends) =
 let 
    val splits = 
       List.foldl
@@ -193,10 +193,10 @@ let
 
    val tuple = Strings.optTuple (map (fn (i, _) => Path.toVar [ i ]) splits)
    val prefix = 
-      (if isAnd then "and" else "fun") ^ " saturate_" ^ Symbol.toValue w
+      "and saturate_" ^ Symbol.toValue w
       ^ tuple ^ " db ="
 in
- ( emit [prefix, "let"]
+ ( emit ["",prefix, "let"]
  ; incr ()
  ; emit ["val w = " ^ Strings.builder w ^ tuple]
  ; emit ["fun insert_w (db: L10_Tables.tables) = "]
@@ -216,7 +216,7 @@ in
         ; decr ()
         ; emit ["in"]
         ; incr ()
-        ; emit ["insert_w (saturate (fn x => x) db)"]
+        ; emit ["insert_w (loop (fn x => x) db)"]
         ; decr ()
         ; emit ["end" ^ postfix]))
       (CaseAnalysis.cases splits)
@@ -230,17 +230,39 @@ in
  ( emit ["", "", "(* L10 Generated Tabled Search (search.sml) *)", ""]
  ; emit ["structure L10_Search = ", "struct"]
  ; incr ()
- ; emit ["fun saturate fs (table: L10_Tables.tables) = "]
- ; emit ["let","   val table = fs (L10_Tables.set_flag table false)"] 
- ; emit ["in","   if L10_Tables.get_flag table"]
- ; emit ["   then saturate fs table else table","end",""]
- ; appSuper 
-      (fn () => ()) 
-      (fn x => emitWorld (false, x))
-      ((fn x => (emitWorld (false, x); Util.emit [""])),
-       (fn x => (emitWorld (true, x); Util.emit [""])),
-       (fn x => (emitWorld (true, x))))
-      (rev (Tab.list Tab.depends))
+ ; emit ["fun loop fs (db: L10_Tables.tables) = "]
+ ; emit ["let","   val db = fs (L10_Tables.set_flag db false)"] 
+ ; emit ["in","   if L10_Tables.get_flag db"]
+ ; emit ["   then loop fs db else db","end",""]
+
+ (* Callback saturation function *)
+ ; emit ["fun saturate x_0 db ="]
+ ; CaseAnalysis.emit ""
+      (fn (postfix, shapes) =>
+       let 
+          exception WorldFormationInvariant
+          val (w, terms) =
+             case shapes of 
+                [ Term.SymConst w ] => (Symbol.toValue w, [])
+              | [ Term.Root (w, terms) ] => (Symbol.toValue w, terms)
+              | _ => raise WorldFormationInvariant
+       in
+          emit ["saturate_"^w
+                ^Strings.optTuple (map Strings.build terms)^" db"^postfix]
+       end)  
+      (CaseAnalysis.cases 
+          [(0,
+            Tab.fold 
+               (fn (w, Class.World, split) => 
+                      Splitting.insert split (Term.SymConst w)
+                 | (w, class, split) => 
+                      Splitting.insert split 
+                         (Term.Root (w, map (fn t => (Term.Var (NONE, SOME t)))
+                                           (Class.argtyps class))))
+               (Splitting.Unsplit Type.world) 
+               Tab.worlds)])
+
+ ; app emitWorld (rev (Tab.list Tab.depends))
  ; decr ()
  ; emit ["end"])
 end
