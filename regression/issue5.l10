@@ -1,0 +1,14 @@
+//test 
+
+w: world.
+t: extensible.
+
+term: string -> t -> rel @ w.       // T
+nonterm: t -> t -> t -> rel @ w.    // NT
+parse: t -> nat -> nat -> rel @ w.  // PROD
+tok: nat -> string -> rel @ w.      // IN
+
+// Generic rules of parsing
+
+term S T, tok I S -> parse T I I.
+nonterm X Y Z, parse Y I J, parse Z (J+1) K -> parse X I K.
