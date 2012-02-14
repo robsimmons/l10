@@ -1,10 +1,7 @@
-CM.make "/tmp/trans2.sources.cm";
+CM.make "transitive2.l10.cm";
 
-fun generate_input 0 = ()
-  | generate_input i = 
-    (Trans2Tables.assertEdge (IntInf.fromInt i, IntInf.fromInt (i+1))
-     ; generate_input (i-1));
+fun generate_input 0 db = db
+  | generate_input i db = 
+    generate_input (i-1) (L10.Assert.edge ((i-1, i), db));
 
-generate_input SIZE;
-
-Trans2Search.saturateW Trans2Terms.MapWorld.empty;
+val b: bool = L10.Query.patha (generate_input SIZE (L10.empty ())) (0, 1);
