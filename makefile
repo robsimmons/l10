@@ -12,5 +12,6 @@ sml/l10.cmyacc.sml:
 elton: sml/*.sml sml/compile-sml/*.sml
 	$(MLTON) bin/elton sml/elton.mlb
 
-check: 
+.PSEUDO: check
+check: sml/*.sml sml/compile-sml/*.sml
 	echo "Regression.checkDirs [ \"regression\", \"examples\" ]; Regression.reportAndReset ();" | sml -m sml/sources.cm

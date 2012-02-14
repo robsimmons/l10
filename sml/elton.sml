@@ -155,8 +155,12 @@ handle Success => OS.Process.success
           err ("Parse error at end of file.\n")
      | Parser.SyntaxError (SOME pos, s) => 
           err ("Parse error at " ^ Pos.toString pos ^ "\n" ^ s ^ ".\n")
+     | Parser.TypeError (pos, s) =>
+          err ("Type error at " ^ Pos.toString pos ^ "\n" ^ s ^ ".\n")
      | Types.TypeError (pos, s) =>
           err ("Type error at " ^ Pos.toString pos ^ "\n" ^ s ^ ".\n")
+     | Types.Reserved (pos, _, s) => 
+          err ("Parser error at " ^ Pos.toString pos ^ "\n" ^ s ^ ".\n")
      | Worlds.WorldsError (pos, s) =>
           err ("World error at " ^ Pos.toString pos ^ "\n" ^ s ^ ".\n")
      | Modes.ModeError (pos, s) =>

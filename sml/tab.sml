@@ -173,6 +173,7 @@ struct
                  (Type.nat, (Class.Arrow (Type.nat, Class.Base Type.nat))))
 
       val n = 1000 
+      val default_world = Symbol.fromValue "world"
    in
    fun reset () = 
     ( ruleid := 1
@@ -191,6 +192,7 @@ struct
     ; bind (Decl.Type (pos, Type.string, Class.Builtin))
     ; bind (Decl.Type (pos, Type.world, Class.Type))
     ; bind (Decl.Type (pos, Type.rel, Class.Type))
+    ; bind (Decl.World (pos, default_world, Class.World))
     ; bind (Decl.Representation (pos, Type.world, Type.Transparent))
     ; bind (Decl.Representation (pos, Type.rel, Type.Transparent)))
    end

@@ -44,7 +44,9 @@ fun check args =
    (Tab.reset (); Elton.go_no_handle ("elton", args); Success)
    handle Lexer.LexError _ => SyntaxError
         | Parser.SyntaxError _ => SyntaxError
+        | Parser.TypeError _ => TypeError
         | Types.TypeError _ => TypeError
+        | Types.Reserved _ => SyntaxError
         | Worlds.WorldsError _ => ModeError
         | Modes.ModeError _ => ModeError
         | Fail s => InternalError s

@@ -4,6 +4,7 @@
 structure Types :> 
 sig
    exception TypeError of Pos.t * string
+   exception Reserved of Pos.t * Symbol.symbol * string
 
    (*[ val check: Decl.decl -> Decl.decl_t ]*)
    (* Takes a raw parsed declarations, makes sure scope, arity,
@@ -15,6 +16,7 @@ struct
 
 exception Invariant
 exception TypeError of Pos.t * string
+exception Reserved of Pos.t * Symbol.symbol * string
 
 (* == Signature invariants == *)
 
@@ -79,9 +81,8 @@ val () =
 (* Some classifiers *)
 fun check_illegal pos x thing = 
    if SetX.member (!illegal) x
-   then raise Parser.SyntaxError (SOME pos, 
-                                  "Identifier `"^Symbol.toValue x 
-                                  ^"` is reserved and illegal as a "^thing)
+   then raise Reserved (pos,x,"Identifier `"^Symbol.toValue x 
+                              ^"` is reserved and illegal as a "^thing)
    else ()
 
 (*[ val tc_namespace: Pos.t -> string -> Symbol.symbol -> unit ]*)

@@ -1,12 +1,14 @@
 structure Parser:> 
 sig
    exception SyntaxError of Pos.t option * string
+   exception TypeError of Pos.t * string
    
    (*[ val parse: Token.t Stream.stream -> Decl.decl Stream.stream ]*)
    val parse: Token.t Stream.stream -> Decl.t Stream.stream
 end = struct
 
    exception SyntaxError of Pos.t option * string
+   exception TypeError of Pos.t * string
 
    (* The "surface parser", which interacts with the CMLex infrastructure *)
    structure Arg = 
@@ -219,8 +221,8 @@ end = struct
          let val w = Symbol.fromValue x in 
             if isWorld psig w
             then (getpos syn, (w, map p_term syns))
-            else raise SyntaxError 
-               (SOME pos, 
+            else raise TypeError 
+               (pos, 
                 "Not a declared world constant: `" ^ x ^ "`")
          end
        | _ => raise SyntaxError (SOME (getpos syn), "Ill-formed world `"
@@ -233,8 +235,8 @@ end = struct
          let val a = Symbol.fromValue x in 
             if isRel psig a
             then (a, map p_term syns)
-            else raise SyntaxError 
-               (SOME pos, 
+            else raise TypeError 
+               (pos, 
                 "Not a declared relation constant: `" ^ x ^ "`")
          end
        | _ => raise SyntaxError (SOME (getpos syn), "Ill-formed atomic\ 
@@ -248,8 +250,8 @@ end = struct
          let val w = Symbol.fromValue x in 
             if isWorld psig w
             then (getpos syn, (w, map p_ground syns))
-            else raise SyntaxError 
-               (SOME pos, 
+            else raise TypeError 
+               (pos, 
                 "Not a declared world constant: `" ^ x ^ "`")
          end
        | _ => raise SyntaxError (SOME (getpos syn), "Ill-formed world `"
@@ -262,8 +264,8 @@ end = struct
          let val a = Symbol.fromValue x in 
             if isRel psig a
             then (getpos syn, (a, map p_ground syns))
-            else raise SyntaxError 
-               (SOME pos, 
+            else raise TypeError 
+               (pos, 
                 "Not a declared relation constant: `" ^ x ^ "`")
          end
        | _ => raise SyntaxError (SOME (getpos syn), "Ill-formed atomic\ 
@@ -403,6 +405,9 @@ end = struct
                          (SOME (getpos syn1), 
                           "Expected-`rel` to the left of `@` in a classifier,\
                           \ got `" ^ str syn1 ^ "`"))
+                | Rel pos => 
+                     Decl.Rel (pos, id, 
+                               Class.Rel (pos, (Symbol.fromValue "world", []))) 
                 | _ => 
                   raise SyntaxError
                      (SOME (getpos syn), 
