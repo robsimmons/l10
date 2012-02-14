@@ -35,10 +35,10 @@ fun load stream =
       let 
          val depend = Worlds.ofRule rule 
          val fvWorld = Atom.fv (#2 (#1 depend))
+         val _ = Modes.checkDepend depend
+         val _ = Modes.checkRule rule fvWorld 
       in 
-         ( Modes.checkDepend depend
-         ; Modes.checkRule rule fvWorld 
-         ; Tab.bind (Decl.Depend (pos, depend, fv))
+         ( Tab.bind (Decl.Depend (pos, depend, fv))
          ; Tab.bind decl
          ; Decl.print decl 
          ; load stream)
@@ -86,26 +86,6 @@ in
    (filter (not o waiton) declstream, filter waiton declstream)
 end
 
-
-fun handler exn = 
-   case exn of 
-       Lexer.LexError (c, s) =>
-          print ("Lex error at " ^ Coord.toString c ^ "\n" ^ s ^ ".\n")
-     | Parser.SyntaxError (NONE, s) =>
-          print ("Parse error at end of file.\n")
-     | Parser.SyntaxError (SOME pos, s) => 
-          print ("Parse error at " ^ Pos.toString pos ^ "\n" ^ s ^ ".\n")
-     | Types.TypeError (pos, s) =>
-          print ("Type error at " ^ Pos.toString pos ^ "\n" ^ s ^ ".\n")
-     | Worlds.WorldsError (pos, s) =>
-          print ("World error at " ^ Pos.toString pos ^ "\n" ^ s ^ ".\n")
-     | Modes.ModeError (pos, s) =>
-          print ("Mode error at " ^ Pos.toString pos ^ "\n" ^ s ^ ".\n")
-     | IO.Io {cause, function, name} =>
-          print ( "I/O error trying to " ^ function ^ " " ^ name ^ "\n"
-                ^ exnMessage cause ^ "\n")
-     | exn => print ( "Unexpected error: " ^ exnName exn ^ "\n" 
-                    ^ exnMessage exn ^ "\n") 
 (* Files *)
 fun readfile filename = 
 let 
@@ -113,35 +93,16 @@ let
    val stream = 
       stream_map Types.check 
          (Parser.parse (Lexer.lex filename (Stream.fromTextInstream file))) 
-   val out = TextIO.openOut (filename ^ ".sml")
 in
  ( print ("[ == Opening " ^ filename ^ " == ]\n")
  ; load stream
    handle exn => ((TextIO.closeIn file handle _ => ()); raise exn)
- ; print ("[ == Closing " ^ filename ^ " == ]\n\n")
- ; Util.write
-      out (fn () => 
-           let
-              val all_rules = List.concat (Tab.range Tab.rules)
-              val rules = map (fn (i, r) => (i, Compile.compile r)) all_rules
-              val tables = Indices.canonicalize (Compile.indices (map #2 rules))
-           in           
-            ( Interface.emitSig "L10"
-            ; Datatypes.emit ()
-            ; Interface.emitStructHead "L10" "L10"
-            ; incr ()
-            ; Indices.emit tables
-            ; Rules.emit tables rules
-            ; Search.emit ()
-            ; decr ()
-            ; Interface.emitStruct tables)
-           end)
- ; TextIO.closeOut out)
+ ; print ("[ == Closing " ^ filename ^ " == ]\n\n"))
 end 
 
 fun readfiles files = app readfile files
 
-fun file s = readfile s handle exn => handler exn
-fun files s = readfiles s handle exn => handler exn
+fun file s = readfile s 
+fun files s = readfiles s
 
 end

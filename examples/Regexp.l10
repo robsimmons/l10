@@ -1,10 +1,6 @@
 // Regular expressions
 
-baz: type.
 t: extensible.
-whee: type. {-# TYPE whee external #-}
-whoo: nat -> whee.
-wha: whee -> whee -> whee.
 regexp: type. {-# TYPE regexp transparent #-}
 tok:  string -> regexp.                
 emp:  regexp.                     

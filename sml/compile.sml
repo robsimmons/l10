@@ -5,27 +5,37 @@ structure Compile:> sig
 
    type eqconstraint = Type.t * Path.t * Path.t
 
+   (* XXX there is some why in standard ml to get this to work... *)
    datatype rule =  
       Normal of 
-         {common: common,
+         {common: {label: string, (* Debugging information only *)
+       incoming: SetX.set, (* This call's args! *)
+       outgoing: (Symbol.symbol * Path.t option) list, (* Next call's args! *)
+       cont: rule},
           index: Atom.t, (* Atom.moded_t - which index do we need to call? *) 
           input: Symbol.symbol Path.Dict.dict, (* Index takes symbols... *)
           output: Symbol.symbol Path.Dict.dict, (* ...returns others... *)
           eqs: eqconstraint list} (* ...that must pass cstrs. *)
     | Negated of 
-         {common: common,
+         {common: {label: string, (* Debugging information only *)
+       incoming: SetX.set, (* This call's args! *)
+       outgoing: (Symbol.symbol * Path.t option) list, (* Next call's args! *)
+       cont: rule},
           index: Atom.t, (* Atom.moded_t - which index do we need to call? *) 
           input: Symbol.symbol Path.Dict.dict, (* Index takes symbols... *)
           eqs: eqconstraint list} (* ...and must fail cstrs. *)
     | Binrel of 
-         {common: common,
+         {common: {label: string, (* Debugging information only *)
+       incoming: SetX.set, (* This call's args! *)
+       outgoing: (Symbol.symbol * Path.t option) list, (* Next call's args! *)
+       cont: rule},
           binrel: Binrel.t, 
           term1: Term.t,
           term2: Term.t,
           t: Type.t}
     | Conclusion of {incoming: SetX.set, facts: (Pos.t * Atom.t) list}
 
-   withtype common = 
+   type common = 
       {label: string, (* Debugging information only *)
        incoming: SetX.set, (* This call's args! *)
        outgoing: (Symbol.symbol * Path.t option) list, (* Next call's args! *)
