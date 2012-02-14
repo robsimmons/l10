@@ -243,7 +243,7 @@ List.concat (List.map
 "         (modify (lookup dict key)",
 "             handle NotThere => default)",
 "",
-"   fun member dict key = (ignore (P.sub key dict); true)",
+"   fun member dict key = (ignore (prj (P.sub key dict)); true)",
 "      handle NotThere => false",
 "",
 "   exception NotImpl",

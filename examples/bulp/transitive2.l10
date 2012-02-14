@@ -1,10 +1,15 @@
 w: world.
+wa: world.
+wb: world.
 
 edge: nat -> nat -> rel @ w.
-path: nat -> nat -> rel @ w.
+patha: nat -> nat -> rel @ wa.
+pathb: nat -> nat -> rel @ wb. 
 
-edge X Y -> path X Y.
-path X Y, path Y Z -> path X Z.
+edge X Y -> patha X Y.
+edge X Y -> pathb X Y.
+patha X Y, patha Y Z -> patha X Z.
+pathb X Y, pathb Y Z -> pathb X Z.
 
-{-# QUERY forwards path + - #-}
-{-# QUERY backwards path - + #-}
+{-# QUERY forwards patha + - #-}
+{-# QUERY backwards patha - + #-}
