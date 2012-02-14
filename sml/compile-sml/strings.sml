@@ -93,8 +93,8 @@ fun prjOrInj which t s =
               "(" ^ embiggen t ^ "." ^ which ^ " " ^ s ^ ")")
     | Class.Extensible => (* ugh *)
          if which = "inj" 
-         then "(Symbol.toValue " ^ s ^ ")"
-         else "(Symbol.fromValue " ^ s ^ ")"
+         then "(Symbol.fromValue " ^ s ^ ")"
+         else "(Symbol.toValue " ^ s ^ ")"
     | Class.Builtin => s 
 
 val prj = prjOrInj "prj"

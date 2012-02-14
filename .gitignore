@@ -14,3 +14,4 @@ bin/*
 .svn
 .cm
 *.l10.sml
+regression/test.sml

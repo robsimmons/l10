@@ -12,6 +12,7 @@ datatype outcome =
  | InternalError of string
  | UnexpectedError of string
  | Success
+ | BadSML
 
 fun str SyntaxError = "syntax error"
   | str TypeError = "type error" 
@@ -19,6 +20,7 @@ fun str SyntaxError = "syntax error"
   | str (InternalError s) = ("internal error: `"^s^"'")
   | str (UnexpectedError exnname) = ("unexpected error: `"^exnname^"'")
   | str Success = "success"
+  | str BadSML = "generated invalid SML code"
 
 val success: int ref = ref 0
 val ignored: int ref = ref 0
@@ -41,7 +43,12 @@ fun reportAndReset () =
  ; failure := [])    
 
 fun check args = 
-   (Tab.reset (); Elton.go_no_handle ("elton", args); Success)
+   ( Tab.reset ()
+   ; Elton.go_no_handle ("elton", args @ ["-o","regression/test.l10.sml"])
+   ; if OS.Process.isSuccess 
+           (OS.Process.system "mlton -stop tc regression/test.mlb")
+     then Success
+     else BadSML)
    handle Lexer.LexError _ => SyntaxError
         | Parser.SyntaxError _ => SyntaxError
         | Parser.TypeError _ => TypeError
@@ -58,7 +65,7 @@ fun checkFile filename =
       val file = TextIO.openIn filename
       val fstline = TextIO.inputLine file before TextIO.closeIn file
       val spec = 
-         case Option.map (String.isPrefix "//test ") fstline of
+         case Option.map (String.isPrefix "//test") fstline of
             SOME true => String.extract (valOf fstline, 7, NONE)
           | _ => raise Ignore
       val (args, expected) = 
@@ -69,12 +76,20 @@ fun checkFile filename =
           | [ args, [ "TYPE-ERROR" ] ] => (args, TypeError)
           | [ args, [ "MODE-ERROR" ] ] => (args, ModeError)
           | _ => ([], InternalError ("could not parse `"^spec^"'"))
+      val smlfile = 
+         OS.Path.joinBaseExt {base = #base (OS.Path.splitBaseExt filename),
+                              ext = SOME "sml"}
+      val () = 
+         if OS.FileSys.access (smlfile, [ OS.FileSys.A_READ ])
+         then ignore (OS.Process.system ("cp "^smlfile^" regression/test.sml"))
+         else ignore (OS.Process.system ("cp /dev/null regression/test.sml"))
       val got = check (filename :: args)
    in
       if expected = got
       then success := !success + 1
       else failure := (filename, spec, expected, got) :: !failure
-   end handle Ignore => ignored := !ignored + 1
+   end handle Ignore => ( print ("\n\n[ == Ignoring "^filename^" == ]\n\n")
+                        ; ignored := !ignored + 1)
 
 
 fun checkDirs [] = ()

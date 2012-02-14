@@ -1,0 +1,7 @@
+//test 
+
+w: nat -> world.
+a: rel.
+b: {N} rel @ w N.
+
+a -> b _.

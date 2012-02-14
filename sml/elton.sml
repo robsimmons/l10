@@ -120,6 +120,7 @@ fun process_args (state as (output, filename, MName, M_NAME)) args =
              ( print ("Error: No extension on input file `"^input^"'.\n")
              ; raise Failure))
 
+val outstream = ref TextIO.stdOut
 fun go_no_handle (name, args) = 
 let
    val (output, input, MName, M_NAME) = 
@@ -130,7 +131,8 @@ let
    val rules = map (fn (i, r) => (i, Compile.compile r)) all_rules
    val tables = Indices.canonicalize (Compile.indices (map #2 rules))
 in
- ( Util.write out
+ ( outstream := out
+ ; Util.write out
       (fn () =>
         ( Interface.emitSig M_NAME
         ; Datatypes.emit ()
@@ -144,7 +146,7 @@ in
  ; TextIO.closeOut out)
 end
 
-fun err s = (print s; OS.Process.failure)
+fun err s = (print s; TextIO.closeOut (!outstream); OS.Process.failure)
 
 fun go (name, args) = (go_no_handle (name, args); OS.Process.success)
 handle Success => OS.Process.success
