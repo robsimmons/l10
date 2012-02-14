@@ -1,3 +1,5 @@
+//test -s L10 ~ TYPE-ERROR 
+
 t: extensible.
 c: t.
 {-# QUERY q r #-}
