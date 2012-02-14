@@ -50,7 +50,7 @@ in case state of
          if not goodFile then (output, SOME input, NONE, M_NAME)
          else (output, SOME input, SOME File, toSig File M_NAME)
     | (output, NONE, SOME MName, M_NAME) =>
-         if not goodFile then (output, NONE, SOME MName, M_NAME)
+         if not goodFile then (output, SOME input, SOME MName, M_NAME)
          else (output, SOME input, SOME MName, toSig File M_NAME)  
 end    
 
@@ -78,7 +78,7 @@ fun finalize (NONE, SOME filename, SOME MName, SOME M_NAME) =
      ( print "Error: No module name given, use `-s Name'.\n\n"
      ; raise Failure) 
   | finalize (_, _, _, NONE) = 
-     ( print "Error: No module name given, use `-S NAME'.\n\n"
+     ( print "Error: No signature name given, use `-S NAME'.\n\n"
      ; raise Failure) 
 
 fun process_args (state as (output, filename, MName, M_NAME)) args = 

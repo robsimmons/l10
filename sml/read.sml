@@ -44,10 +44,13 @@ fun load stream =
          ; load stream)
       end
     | Stream.Cons (decl as (Decl.Depend (_, depend, _)), stream) => 
-         ( Modes.checkDepend depend
-         ; Tab.bind decl
+      let
+         val _ = Modes.checkDepend depend
+      in
+         ( Tab.bind decl
          ; Decl.print decl
          ; load stream)
+      end
     | Stream.Cons (decl, stream) => 
          ( Tab.bind decl
          ; Decl.print decl
