@@ -232,7 +232,7 @@ in
  ; incr ()
  ; emit ["val w = " ^ Strings.builder w ^ tuple]
  ; emit ["val worldset = L10_Tables.get_worlds db"]
- ; emit ["val () = print \"Entering "^Symbol.toValue w^"\\n\""]
+ ; emit ["(* val () = print \"Entering "^Symbol.toValue w^"\\n\" *)"]
  ; emit ["val exec = fn x => x"]
  ; decr ()
  ; emit ["in if World.Dict.member worldset w then db else"]
@@ -270,11 +270,11 @@ in
  ; incr ()
  ; emit ["fun loop fs (db: L10_Tables.tables) = "]
  ; emit ["let"]
- ; emit ["   val () = print \"Beginning saturation loop...\""]
+ ; emit ["   (* val () = print \"Beginning saturation loop...\" *)"]
  ; emit ["   val db = fs (L10_Tables.set_flag db false)"] 
  ; emit ["in","   if L10_Tables.get_flag db"]
- ; emit ["   then (print \"continue!\\n\"; loop fs db)"]
- ; emit ["   else (print \"done.\\n\"; db)","end",""]
+ ; emit ["   then ((* print \"continue!\\n\"; *) loop fs db)"]
+ ; emit ["   else ((* print \"done.\\n\"; *) db)","end",""]
 
  (* Callback saturation function *)
  ; emit ["fun saturate x_0 db ="]
