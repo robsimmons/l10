@@ -15,6 +15,7 @@ sig
 
    (* Gives a string comparing two things for equality *)
    val eq: Type.t -> string -> string -> string
+   val eqpath: Type.t * Path.t * Path.t -> string
 
    (* Gives a toString function *)
    val str: Type.t -> string -> string
@@ -133,6 +134,7 @@ fun eq t thing1 thing2 =
          else if Symbol.eq (t, Type.string)
          then "(EQUAL = String.compare (" ^ thing1 ^ ", " ^ thing2 ^ "))"
          else raise Fail ("Dunno about builtin `" ^ Symbol.toValue t ^ "`")
+fun eqpath (t, path1, path2) = eq t (Path.toVar path1) (Path.toVar path2)
 
 fun str t thing = 
    case Tab.lookup Tab.types t of

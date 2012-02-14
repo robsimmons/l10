@@ -50,3 +50,22 @@ buzz RE RE 4.
 {-# QUERY poschar token - + #-}
 {-# QUERY wholestring token - - #-}
 {-# QUERY ismatch match + + + #-}
+
+neg:  regexp -> regexp.          
+
+token _ I, 
+token _ J, 
+// I <= J, 
+not (match RE I J) -> 
+   match (neg RE) I J.
+
+w9: world.
+w10: world.
+q: regexp -> regexp -> regexp -> rel @ w9.
+r: rel @ w0.
+sss: rel @ w10.
+not (Ex R. q R R R) -> r.
+not (r) -> sss.
+
+not (Ex I. match RE I I) ->
+   match (neg RE) 0 0.

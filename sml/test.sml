@@ -1,6 +1,14 @@
 CM.make "$SMACKAGE/cmlib/v1/cmlib.cm";
 CM.make "sml/sources.cm";
 
+structure Whee = struct
+datatype t = Whoo of IntInf.int | Wha of t * t;
+end;
+
+Tab.reset ();
+Read.file "examples/Regexp.l10"; 
+use "examples/Regexp.l10.sml"; 
+
 fun assert b = 
    if b then () 
    else ( print "ASSERTION FAILED!\n"
@@ -16,8 +24,8 @@ val db1 = linear 5 db0;
 val db2 = linear 500 db0;
 assert (125250 = L10.Query.forwards (op +) 0 db2 0);
 
-Read.file "examples/Back3.l10";
 Tab.reset (); 
+Read.file "examples/Back3.l10";
 use "examples/Back3.l10.sml"; 
 
 datatype mode = Input | Output | Ignore;
@@ -27,20 +35,12 @@ and bar = Branch of foo * foo;
 structure Foo = struct datatype t = datatype foo end;
 structure Bar = struct datatype t = datatype bar end;
 
-Read.file "regression/data.l10"; 
 Tab.reset ();
+Read.file "regression/data.l10"; 
 use "regression/data.l10.sml"; 
 
-structure Whee = struct
-datatype t = Whoo of IntInf.int | Wha of t * t;
-end;
-
-Read.file "examples/Regexp.l10"; 
 Tab.reset ();
-use "examples/Regexp.l10.sml"; 
-
 Read.file "examples/Indexing.l10"; 
-Tab.reset ();
 use "examples/Indexing.l10.sml"; 
 
 

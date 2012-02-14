@@ -151,10 +151,6 @@ in
  ; List.foldr process_subst ([], DictX.empty) subst_list)
 end
 
-fun getEquality (t, x, y) =
-   Strings.eq t (Path.toVar x) (Path.toVar y)
-
-
 fun emitDependencyVisitor shapes (fst, (pos, conc, subst, prems)) = 
 let
    val () = emit fst
@@ -177,10 +173,10 @@ in
  ( emit ["val db ="]
  ; incr ()
  ; appSuper (fn () => ())
-      (fn cnstr => (emit ["if " ^ getEquality cnstr ^ " then"]; incr ()))
-      ((fn cnstr =>  emit ["if " ^ getEquality cnstr ^ " andalso"]),
-       (fn cnstr =>  emit ["   " ^ getEquality cnstr ^ " andalso"]),
-       (fn cnstr => (emit ["   " ^ getEquality cnstr ^ " then"]; incr ())))
+      (fn cnstr => (emit ["if "^Strings.eqpath cnstr^" then"]; incr ()))
+      ((fn cnstr =>  emit ["if "^Strings.eqpath cnstr^" andalso"]),
+       (fn cnstr =>  emit ["   "^Strings.eqpath cnstr^" andalso"]),
+       (fn cnstr => (emit ["   "^Strings.eqpath cnstr^" then"]; incr ())))
       equalities
  ; appSuper (fn () => emit ["db"])
       (fn (_, prem) => emit [getSaturate prem ^ " db"])
@@ -207,7 +203,7 @@ in
  then emit ["val exec = "^starting_point^" o exec"]
  else
    ( appFirst (fn () => raise Fail "Invariant: impossible except in easy case")
-        (fn (pre,cnstr) => emit [pre^getEquality cnstr])
+        (fn (pre,cnstr) => emit [pre^Strings.eqpath cnstr])
         ("val b = ", "        andalso")
         equalities
    ; emit ["val exec = if b then "^starting_point^" o exec else exec"])

@@ -16,8 +16,7 @@ structure Compile:> sig
          {common: common,
           index: Atom.t, (* Atom.moded_t - which index do we need to call? *) 
           input: Symbol.symbol Path.Dict.dict, (* Index takes symbols... *)
-          output: Symbol.symbol Path.Dict.dict, (* ...returns others... *)
-          eqs: eqconstraint list} (* ...that must fail cstrs. *)
+          eqs: eqconstraint list} (* ...and must fail cstrs. *)
     | Binrel of 
          {common: common,
           binrel: Binrel.t, 
@@ -54,8 +53,7 @@ datatype rule =
       {common: common,
        index: Atom.t, (* Atom.moded_t - which index do we need to call? *) 
        input: Symbol.symbol Path.Dict.dict, (* Index takes symbols... *)
-       output: Symbol.symbol Path.Dict.dict, (* ...returns others... *)
-       eqs: eqconstraint list} (* ...that must fail cstrs. *)
+       eqs: eqconstraint list} (* ...and must fail cstrs. *)
  | Binrel of 
       {common: common,
        binrel: Binrel.t, 
@@ -206,15 +204,16 @@ fun compile' (known, prems, concs) =
             let 
                val {index, eqs, lookup, input, output} = indexPat known pat
             in
-               Negated 
+             ( if Path.Dict.isEmpty output then ()
+               else raise Fail "Non-empty outputs for negated premise?!"
+             ; Negated 
                   { common = { label = label
                              , incoming = incoming
                              , outgoing = outgoing
                              , cont = cont}
                   , index = index 
                   , input = input
-                  , output = output
-                  , eqs = eqs}
+                  , eqs = eqs})
             end
           | Prem.Binrel (binrel, t1, t2, SOME typ) => 
                Binrel 

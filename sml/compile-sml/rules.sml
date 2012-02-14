@@ -27,20 +27,19 @@ let
       Strings.tuple (map fake_functions outgoing)
    fun optemit [] = ()
      | optemit ts = emit [Strings.tuple ts]
+   fun next_call (common: Compile.common) =
+      next^" "^tuple_outgoing (#outgoing common)^" db"
 in
    case rule of 
       Compile.Normal {common,index,input,output,eqs} =>
       let
          val {label, inputs, outputs} = Indices.get_fold tables index
          val inputs_to_fold = 
-            map (fn (path, t) =>
-                    Symbol.toValue (Path.Dict.lookup input path))
-               inputs
+            Strings.tuple
+               (map (fn (path, t) =>
+                       Symbol.toValue (Path.Dict.lookup input path)) inputs)
          val outputs_from_fold = 
-            map (fn (path, t) => Path.toVar path) outputs
-         fun eqstr (t, path1, path2) = 
-            Strings.eq t (Path.toVar path1) (Path.toVar path2)
-         val next_call = next^" "^tuple_outgoing (#outgoing common)^" db"
+            Strings.tuple (map (fn (path, t) => Path.toVar path) outputs)
       in
        ( emitrule' tables n (i+1) (#cont common)
        ; emit ["(* "^(#label common)^" *)"]
@@ -48,29 +47,53 @@ in
        ; incr ()
        ; emit ["L10_Tables.fold_"^Int.toString label]
        ; incr ()
-       ; emit ["(fn ("^Strings.tuple outputs_from_fold^", db) => "]
+       ; emit ["(fn ("^outputs_from_fold^", db) => "]
        ; incr ()
        ; appSuper
-            (fn () => emit [next_call^")"])
-            (fn cstr => emit ["if "^eqstr cstr,"then "^next_call,"else db)"])
-            ((fn cstr => emit ["if "^eqstr cstr]),
-             (fn cstr => emit ["   andalso "^eqstr cstr]),
-             (fn cstr => 
-               ( emit ["   andalso "^eqstr cstr]
-               ; emit ["then "^next_call,"else db)"])))
+            (fn () => emit [next_call common^")"])
+            (fn cstr => emit ["if "^Strings.eqpath cstr,
+                              "then "^next_call common,"else db)"])
+            ((fn cstr => emit ["if "^Strings.eqpath cstr]),
+             (fn cstr => emit ["   andalso "^Strings.eqpath cstr]),
+             (fn cstr => emit ["   andalso "^Strings.eqpath cstr,
+                               "then "^next_call common,"else db)"]))
             eqs
        ; decr ()
-       ; emit ["db db "^Strings.tuple inputs_to_fold]
+       ; emit ["db db "^inputs_to_fold]
        ; decr ()
        ; decr ())
       end
-    | Compile.Negated {common,index,input,output,eqs} =>
+    | Compile.Negated {common,index,input,eqs} =>
+      let
+         val {label, inputs, outputs} = Indices.get_fold tables index
+         val inputs_to_fold = 
+            Strings.tuple 
+               (map (fn (path, t) =>
+                        Symbol.toValue (Path.Dict.lookup input path)) inputs)
+         val outputs_from_fold = 
+            Strings.tuple (map (fn (path, t) => Path.toVar path) outputs)
+      in
        ( emitrule' tables n (i+1) (#cont common)
        ; emit ["(* "^(#label common)^" *)"]
        ; emit ["fun "^this^" "^tuple_incoming (#incoming common)^" db ="]
        ; incr ()
-       ; emit ["   db (* XXX UNFINISHED *)"]
+       ; emit ["if L10_Tables.fold_"^Int.toString label]
+       ; incr (); incr ()
+       ; appSuper
+            (fn () => emit ["(fn _ => true) false db "^inputs_to_fold])
+            (fn cstr => emit ["(fn ("^outputs_from_fold^", b) =>",
+                              "    b orelse "^Strings.eqpath cstr^")",
+                              "false db "^inputs_to_fold])
+            ((fn cstr => emit ["(fn ("^outputs_from_fold^", b) => b orelse",
+                                "    ("^Strings.eqpath cstr]),
+             (fn cstr => emit ["     andalso "^Strings.eqpath cstr]),
+             (fn cstr => emit ["     andalso "^Strings.eqpath cstr^"))",
+                               "false db "^inputs_to_fold]))
+            eqs
+       ; decr (); decr ()
+       ; emit ["then db else "^next_call common]
        ; decr ())
+      end
     | Compile.Binrel {common,binrel,term1,term2,t} =>
        ( emitrule' tables n (i+1) (#cont common)
        ; emit ["(* "^(#label common)^" *)"]
