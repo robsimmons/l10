@@ -21,19 +21,11 @@ ann "nonexhaustiveMatch ignore" in
    worlds.sml
    modes.sml
 
-   (* SML compiler stuff *)
+   (* Compiler stuff *)
    util.sml
    path.sml
    splitting.sml
    compile.sml
-   compile-sml/strings.sml
-   compile-sml/disctree.sml
-   compile-sml/datatypes.sml
-   compile-sml/caseanalysis.sml
-   compile-sml/search.sml
-   compile-sml/indices.sml
-   compile-sml/rules.sml
-   compile-sml/interface.sml
 
    (* Parser stuff *)
    l10.cmlex.sml
@@ -41,9 +33,6 @@ ann "nonexhaustiveMatch ignore" in
    l10.cmyacc.sml
    parser.sml
    read.sml
-
-   elton.sml
-   mlton-go.sml
 
 end
 

@@ -118,7 +118,7 @@ in
 end
 
 (*[ val emit: string -> (string * Term.shape list -> unit) -> cases -> unit ]*)
-fun emit postfix f cases = 
+fun emit postfix (f: string * Term.t list -> unit) cases = 
    case cases of 
       Done shapes => 
        ( Util.incr ()

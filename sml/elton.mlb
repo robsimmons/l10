@@ -1,17 +1,19 @@
 sources.mlb
 
-compile/fv.sml
-compile/path.sml
-compile/indexing.sml
-compile/rule.sml
-compile/state.sml
+ann "nonexhaustiveMatch ignore" in
 
-compile-sml/util.sml
-compile-sml/types.sml
-compile-sml/terms.sml 
-compile-sml/tables.sml
-compile-sml/search.sml
+   (* SML Compiler stuff *)
+   compile-sml/strings.sml
+   compile-sml/disctree.sml
+   compile-sml/datatypes.sml
+   compile-sml/caseanalysis.sml
+   compile-sml/search.sml
+   compile-sml/indices.sml
+   compile-sml/rules.sml
+   compile-sml/interface.sml
 
-frontend/elton-main.sml
-frontend/elton.sml
-frontend/elton-mlton.sml
+   (* Frontend *)
+   elton.sml
+   mlton-go.sml
+
+end

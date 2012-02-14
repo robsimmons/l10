@@ -39,7 +39,7 @@ fun mapi f xs = mapi' f 0 xs []
 
 fun intify xs = mapi (fn x => x) xs
 
-fun 'a appSuper none one (first, middle, last) xs: unit = 
+fun appSuper none one (first: 'a -> unit, middle: 'a -> unit, last) xs: unit = 
 let 
    (*[ val loop: ('a conslist) -> unit ]*)
    fun loop [ x ] = last x
@@ -84,7 +84,7 @@ in
          "" => raise Fail "Unbalanced increment/decrement"
        | s => ind := String.extract (!ind, 3, NONE)
 
-   fun write stream f = 
+   fun write stream (f: unit -> unit) = 
       case !outstream of 
          NONE => 
          let in

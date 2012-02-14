@@ -26,14 +26,6 @@ Group is
    path.sml
    splitting.sml
    compile.sml
-   compile-sml/strings.sml
-   compile-sml/disctree.sml
-   compile-sml/datatypes.sml
-   compile-sml/caseanalysis.sml
-   compile-sml/search.sml
-   compile-sml/indices.sml
-   compile-sml/rules.sml
-   compile-sml/interface.sml
 
    (* Parser stuff *)
    l10.cmlex.sml
@@ -42,4 +34,18 @@ Group is
    parser.sml
    read.sml
 
+   (* SML Compiler stuff *)
+   compile-sml/strings.sml
+   compile-sml/disctree.sml
+   compile-sml/datatypes.sml
+   compile-sml/caseanalysis.sml
+   compile-sml/search.sml
+   compile-sml/indices.sml
+   compile-sml/rules.sml
+   compile-sml/interface.sml
+ 
+   (* Frontend *)
    elton.sml
+
+   (* Testing *)
+   regression.sml
