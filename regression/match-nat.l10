@@ -1,2 +1,4 @@
+//test -s L10
+
 w: nat -> world.
 w (X+5) <- w X.

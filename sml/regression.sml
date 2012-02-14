@@ -8,7 +8,6 @@ struct
 datatype outcome = 
    SyntaxError
  | TypeError
- | WorldsError
  | ModeError
  | InternalError of string
  | UnexpectedError of string
@@ -16,8 +15,7 @@ datatype outcome =
 
 fun str SyntaxError = "syntax error"
   | str TypeError = "type error" 
-  | str WorldsError = "worlds checking error"
-  | str ModeError = "mode checking error"
+  | str ModeError = "mode/worlds checking error"
   | str (InternalError s) = ("internal error: `"^s^"'")
   | str (UnexpectedError exnname) = ("unexpected error: `"^exnname^"'")
   | str Success = "success"
@@ -34,18 +32,20 @@ fun reportAndReset () =
  ; if null (!failure) then () else print "\n=== Failed tests: ===\n"
  ; app (fn (filename, string, expected, got) =>
          ( print ("In file: "^filename^"\n")
-         ; print ("Test: "^string^"\n")
-         ; print ("Got: "^str got^"\n"))) (!failure)
+         ; print ("Test: "
+                  ^String.concatWith " " (String.tokens Char.isSpace string)
+                  ^"\n")
+         ; print ("Got: "^str got^"\n\n"))) (!failure)
  ; success := 0
  ; ignored := 0
  ; failure := [])    
 
 fun check args = 
-   (Elton.go_no_handle ("elton", args); Success)
+   (Tab.reset (); Elton.go_no_handle ("elton", args); Success)
    handle Lexer.LexError _ => SyntaxError
         | Parser.SyntaxError _ => SyntaxError
         | Types.TypeError _ => TypeError
-        | Worlds.WorldsError _ => WorldsError
+        | Worlds.WorldsError _ => ModeError
         | Modes.ModeError _ => ModeError
         | Fail s => InternalError s
         | exn => UnexpectedError (exnName exn)
@@ -65,7 +65,6 @@ fun checkFile filename =
             [ args ] => (args, Success)
           | [ args, [ "SYNTAX-ERROR" ] ] => (args, SyntaxError)
           | [ args, [ "TYPE-ERROR" ] ] => (args, TypeError)
-          | [ args, [ "WORLDS-ERROR" ] ] => (args, WorldsError)
           | [ args, [ "MODE-ERROR" ] ] => (args, ModeError)
           | _ => ([], InternalError ("could not parse `"^spec^"'"))
       val got = check (filename :: args)

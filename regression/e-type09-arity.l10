@@ -1,3 +1,5 @@
+//test -s L10 ~ TYPE-ERROR
+
 t: type.
 s: type.
 w: t -> world.

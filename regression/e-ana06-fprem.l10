@@ -1,3 +1,5 @@
+//test -s L10 ~ MODE-ERROR
+
 w: nat -> world.
 a: {X: nat} {Y: nat} rel @ w X.
 a Y Y -> a X Y.

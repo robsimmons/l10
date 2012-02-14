@@ -1,3 +1,5 @@
+//test -s L10 ~ SYNTAX-ERROR
+
 w: world.
 a: rel @ w.
 w -> a.

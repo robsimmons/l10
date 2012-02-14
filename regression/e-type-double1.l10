@@ -1,3 +1,5 @@
+//test -s L10 ~ TYPE-ERROR
+
 // Should be an error: relations and worlds inhabit the same namespace
 // Necessary for syntatic differentiation of rules and explicit dependencies
 t: extensible.

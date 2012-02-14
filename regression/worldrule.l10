@@ -1,3 +1,5 @@
+//test -s L10
+
 n: type.
 z: n.
 s: n -> n.

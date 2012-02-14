@@ -1,3 +1,5 @@
+//test -s L10 ~ TYPE-ERROR
+
 // Should be an error: relations and types inhabit the same namespace
 // Not neccessary, but to do otherwise makes dependent type-ists nervous
 t: extensible.

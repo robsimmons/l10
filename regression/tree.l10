@@ -1,3 +1,5 @@
+//test -s L10
+
 empty: type.
 
 tree: type.

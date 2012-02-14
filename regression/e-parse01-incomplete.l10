@@ -1,1 +1,3 @@
+//test -s L10 ~ SYNTAX-ERROR
+
 foo: type

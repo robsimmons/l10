@@ -1,3 +1,5 @@
+//test -s L10
+
 // We can have tildes in uppercase identifiers, but this means
 // that they can potentially conflict with the embiggened term constructors
 // in the emitted code. 

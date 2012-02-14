@@ -1,3 +1,5 @@
+//test -s L10 ~ TYPE-ERROR
+
 t: type.
 {-# TYPE t hashconsed #-}
 {-# TYPE t external #-}

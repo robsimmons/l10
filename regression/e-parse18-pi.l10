@@ -1,2 +1,4 @@
+//test -s L10 ~ TYPE-ERROR
+
 w: world.
 a: {X} rel @ w.

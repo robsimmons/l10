@@ -1,3 +1,5 @@
+//test -s L10 ~ TYPE-ERROR
+
 t: extensible.
 w: world.
 wt: t -> world.

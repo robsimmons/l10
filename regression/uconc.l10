@@ -1,3 +1,5 @@
+//test -s L10
+
 t: type.
 node: t -> t -> t.
 w: t -> world.

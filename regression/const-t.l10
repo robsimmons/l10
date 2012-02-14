@@ -1,3 +1,5 @@
+//test -s L10
+
 t: extensible.
 w: t -> world.
 w X <- w bar.

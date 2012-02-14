@@ -1,3 +1,5 @@
+//test -s L10 ~ TYPE-ERROR
+
 // Should be an error: worlds and types inhabit the same namespaces
 // Transitive consequence of types <--> relations <--> worlds
 

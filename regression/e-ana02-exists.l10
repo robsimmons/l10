@@ -1,3 +1,5 @@
+//test -s L10 ~ MODE-ERROR
+
 w: string -> world.
 a: {X: string} rel @ w X.
 b: rel @ w "foo".

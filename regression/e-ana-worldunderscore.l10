@@ -1,3 +1,5 @@
+//test -s L10 ~ MODE-ERROR
+
 n: type.
 z: n.
 s: n -> n.

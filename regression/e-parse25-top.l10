@@ -1,3 +1,5 @@
+//test -s L10 ~ SYNTAX-ERROR
+
 w: world.
 t: extensible.
 10.

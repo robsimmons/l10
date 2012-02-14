@@ -1,3 +1,5 @@
+//test -s L10 ~ MODE-ERROR
+
 t: extensible.
 w: world.
 r: t -> t -> rel @ w.

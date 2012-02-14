@@ -1,3 +1,5 @@
+//test -s L10 ~ SYNTAX-ERROR
+
 foo: type.
 w: world.
 r: foo -> foo -> rel @ w.

@@ -1,3 +1,5 @@
+//test -s L10 ~ MODE-ERROR
+
 w: nat -> world.
 w2: world.
 b: nat -> rel @ w2.

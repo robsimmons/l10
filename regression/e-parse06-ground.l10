@@ -1,3 +1,5 @@
+//test -s L10 ~ SYNTAX-ERROR
+
 t: extensible.
 w: world.
 a: t -> rel @ w.

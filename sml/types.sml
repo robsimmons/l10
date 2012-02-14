@@ -79,8 +79,9 @@ val () =
 (* Some classifiers *)
 fun check_illegal pos x thing = 
    if SetX.member (!illegal) x
-   then raise TypeError (pos, "Identifier `" ^ Symbol.toValue x 
-                              ^ "` is reserved and illegal as a " ^ thing)
+   then raise Parser.SyntaxError (SOME pos, 
+                                  "Identifier `"^Symbol.toValue x 
+                                  ^"` is reserved and illegal as a "^thing)
    else ()
 
 (*[ val tc_namespace: Pos.t -> string -> Symbol.symbol -> unit ]*)

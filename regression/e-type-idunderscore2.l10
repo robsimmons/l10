@@ -1,3 +1,5 @@
+//test -s L10 ~ TYPE-ERROR
+
 // While it probably would be okay for types to have single quotes at the 
 // end, it is more regular from the perspective of the language definition
 // if that's not the case.
