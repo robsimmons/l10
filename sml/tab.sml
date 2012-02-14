@@ -79,7 +79,8 @@ struct
 
    (*[ sortdef rule = (Pos.t * Rule.rule_t * Type.env some) ]*)
    (*[ val rules: rule list tab ]*)
-   val rules: (Pos.t * Rule.t * Type.env option) list tab =
+   val ruleid: int ref = ref 1
+   val rules: (int * (Pos.t * Rule.t * Type.env option)) list tab =
       (SymbolHashTable.table
          (*[ <: int -> (Pos.t * Rule.rule_t * Type.env some) list tab ]*))
          1
@@ -148,8 +149,10 @@ struct
           val class = SymbolHashTable.lookup rels r
           val (w, _) = Class.rel class
        in 
-         (merge (*[ <: rule list tab -> Symbol.symbol -> rule -> unit ]*))
-             rules w rule
+         (merge
+            (*[ <: (int * rule) list tab -> Symbol.symbol -> rule -> unit ]*))
+            rules w (!ruleid, rule) 
+         before ruleid := !ruleid + 1
        end
      | bind (Decl.Query (pos, m, mode)) = 
           SymbolHashTable.insert queries m (pos, mode)
@@ -172,7 +175,8 @@ struct
       val n = 1000 
    in
    fun reset () = 
-    ( SymbolHashTable.reset types n
+    ( ruleid := 1
+    ; SymbolHashTable.reset types n
     ; SymbolHashTable.reset worlds n
     ; SymbolHashTable.reset rels n
     ; SymbolHashTable.reset consts n

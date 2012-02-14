@@ -256,6 +256,7 @@ let
 in
  (* insert_rel *)
  ( emit ["fun insert_"^Symbol.toValue a^" "^args^" (db: tables) ="]
+ ; emit ["let val () = print (\"insert_"^Symbol.toValue a^"\") in"]
  ; CaseAnalysis.emit "" 
       (fn (postfix, shapes) => 
        let 
@@ -300,6 +301,7 @@ in
                  a_indices))
        end)
       (CaseAnalysis.cases splits)
+ ; emit ["end"]
 
  (* assert_rel *)
  ; emit ["fun assert_"^Symbol.toValue a^" "^args^" db ="]

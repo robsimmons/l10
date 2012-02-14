@@ -5,3 +5,6 @@ path: nat -> nat -> rel @ w.
 
 edge X Y -> path X Y.
 path X Y, path Y Z -> path X Z.
+
+{-# QUERY forwards path + - #-}
+{-# QUERY backwards path - + #-}

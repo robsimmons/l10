@@ -111,20 +111,15 @@ fun filterDependency shapes (pos, ((_, (w', args)), prems), SOME _) =
       NONE => NONE
     | SOME subst => SOME (pos, (w', args), subst, prems)
 
-fun filterRule shapes _ = NONE
+fun filterRule shapes (i, (pos, (prems, concs), _)) =
+let val (_, (w, args)) = Worlds.ofProp (hd concs)
+in case Term.gens (shapes, args) of
+      NONE => NONE
+    | SOME subst => SOME (i, pos, (w, args), subst, prems, concs)
+end
 
-fun emitDependencyVisitor shapes (fst, (pos, conc, subst, prems)) = 
+fun substEqualities subst = 
 let
-   (* Little helper function for printing out the individual substitutions *) 
-   fun str (t, substs) =
-      " |-> [ " 
-      ^ String.concatWith ", " 
-           (map (fn (path, Term.Path _) => Path.toVar path
-                  | (path, term) => 
-                       Path.toVar path ^ "=" ^ Term.toString term)
-               substs) 
-      ^ " ]"
-  
    (* XXX TODO - Prevent dumb stuff like (z = s X) equalities *) 
    fun simplify_equalities t [] eqs_out = eqs_out
      | simplify_equalities t [ _ ] eqs_out = eqs_out
@@ -137,8 +132,34 @@ let
 
    val subst_list = DictX.toList subst
 
-   val (equalities, subst) =
-      List.foldr process_subst ([], DictX.empty) subst_list
+   (* Little helper function for printing out the individual substitutions *) 
+   fun str (t, substs) =
+      " |-> [ " 
+      ^ String.concatWith ", " 
+           (map (fn (path, Term.Path _) => Path.toVar path
+                  | (path, term) => 
+                       Path.toVar path ^ "=" ^ Term.toString term)
+               substs) 
+      ^ " ]"
+in
+ ( appSuper (fn () => ())
+      (fn (x, s) => emit ["(* { " ^ Symbol.toValue x ^ str s ^ " } *)"])
+      ((fn (x, s) => emit ["(* { " ^ Symbol.toValue x ^ str s ^ ","]),
+       (fn (x, s) => emit [" *   " ^ Symbol.toValue x ^ str s ^ ","]),
+       (fn (x, s) => emit [" *   " ^ Symbol.toValue x ^ str s ^ " } *)"]))
+      subst_list
+ ; List.foldr process_subst ([], DictX.empty) subst_list)
+end
+
+fun getEquality (t, x, y) =
+   Strings.eq t (Path.toVar x) (Path.toVar y)
+
+
+fun emitDependencyVisitor shapes (fst, (pos, conc, subst, prems)) = 
+let
+   val () = emit fst
+   val () = emit ["(* "^Atom.toString conc^" - "^Pos.toString pos^" *)"]
+   val (equalities, subst) = substEqualities subst
 
    fun getSaturate prem =
    let
@@ -152,20 +173,8 @@ let
            (map (fn term => Strings.build (valOf (Term.subst (subst, term))))
                args)
    end
-
-   fun getEquality (t, x, y) =
-      Strings.eq t (Path.toVar x) (Path.toVar y)
-
 in
- ( emit fst
- ; emit ["(* " ^ Pos.toString pos ^ " - " ^ Atom.toString conc ^ " *)"]
- ; appSuper (fn () => ())
-      (fn (x, s) => emit ["(* { " ^ Symbol.toValue x ^ str s ^ " } *)"])
-      ((fn (x, s) => emit ["(* { " ^ Symbol.toValue x ^ str s ^ ","]),
-       (fn (x, s) => emit [" *   " ^ Symbol.toValue x ^ str s ^ ","]),
-       (fn (x, s) => emit [" *   " ^ Symbol.toValue x ^ str s ^ " } *)"]))
-      subst_list
- ; emit ["val db ="]
+ ( emit ["val db ="]
  ; incr ()
  ; appSuper (fn () => ())
       (fn cnstr => (emit ["if " ^ getEquality cnstr ^ " then"]; incr ()))
@@ -179,11 +188,30 @@ in
        (fn (_, prem) => emit [" " ^ getSaturate prem ^ " o"]),
        (fn (_, prem) => emit [" " ^ getSaturate prem ^ ") db"]))
       prems
-  ; if null equalities then () else (decr (); emit ["else db"])
-  ; decr ())
+ ; if null equalities then () else (decr (); emit ["else db"])
+ ; decr ())
 end
 
-fun emitStartingPoints shapes _ = raise Fail "Not implemented!"
+fun emitStartingPoints shapes (i, pos, world, subst, prems, concs) =
+let
+   val (opar, cpar) = if null (#2 world) then ("", "") else ("(", ")") 
+   val () = emit ["","(* Rule #"^Int.toString i^", world "^opar
+                  ^Atom.toString world^cpar^" *)","(* "^Pos.toString pos^" *)"]
+   val (equalities, subst) = substEqualities subst
+   val easy_case = null equalities
+   val starting_point = 
+      "L10_Consequence.exec_"^Int.toString i^" "
+      ^Strings.tuple (map (Strings.build o #2) (DictX.toList subst))
+in
+ if easy_case 
+ then emit ["val exec = "^starting_point^" o exec"]
+ else
+   ( appFirst (fn () => raise Fail "Invariant: impossible except in easy case")
+        (fn (pre,cnstr) => emit [pre^getEquality cnstr])
+        ("val b = ", "        andalso")
+        equalities
+   ; emit ["val exec = if b then "^starting_point^" o exec else exec"])
+end
 
 fun emitWorld (w, depends) =
 let 
@@ -203,14 +231,14 @@ in
  ( emit ["",prefix, "let"]
  ; incr ()
  ; emit ["val w = " ^ Strings.builder w ^ tuple]
+ ; emit ["val worldset = L10_Tables.get_worlds db"]
+ ; emit ["val () = print \"Entering "^Symbol.toValue w^"\\n\""]
  ; emit ["val exec = fn x => x"]
- ; emit ["fun insert_w (db: L10_Tables.tables) = "]
- ; emit ["   L10_Tables.set_worlds db"]
- ; emit ["      (World.Dict.insert (L10_Tables.get_worlds db) w ())"]
  ; decr ()
- ; emit ["in if World.Dict.member (L10_Tables.get_worlds db) w"]
- ; emit ["   then db else"]
+ ; emit ["in if World.Dict.member worldset w then db else"]
  ; incr ()
+ ; emit ["let val db=L10_Tables.set_worlds db (World.Dict.insert worldset w ())"]
+ ; emit ["in"]
  ; CaseAnalysis.emit ""
       (fn (postfix, shapes) =>
         ( emit ["(* " ^ Atom.toString (w, shapes) ^ " *)"]
@@ -225,10 +253,11 @@ in
         ; decr ()
         ; emit ["in"]
         ; incr ()
-        ; emit ["insert_w (loop exec db)"]
+        ; emit ["loop exec db"]
         ; decr ()
         ; emit ["end" ^ postfix]))
       (CaseAnalysis.cases splits)
+ ; emit ["end"]
  ; decr ()
  ; emit ["end"])
 end   
@@ -240,9 +269,12 @@ in
  ; emit ["structure L10_Search = ", "struct"]
  ; incr ()
  ; emit ["fun loop fs (db: L10_Tables.tables) = "]
- ; emit ["let","   val db = fs (L10_Tables.set_flag db false)"] 
+ ; emit ["let"]
+ ; emit ["   val () = print \"Beginning saturation loop...\""]
+ ; emit ["   val db = fs (L10_Tables.set_flag db false)"] 
  ; emit ["in","   if L10_Tables.get_flag db"]
- ; emit ["   then loop fs db else db","end",""]
+ ; emit ["   then (print \"continue!\\n\"; loop fs db)"]
+ ; emit ["   else (print \"done.\\n\"; db)","end",""]
 
  (* Callback saturation function *)
  ; emit ["fun saturate x_0 db ="]

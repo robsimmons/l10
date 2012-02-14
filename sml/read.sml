@@ -123,7 +123,7 @@ in
       out (fn () => 
            let
               val all_rules = List.concat (Tab.range Tab.rules)
-              val rules = Util.mapi (fn x => x) (map Compile.compile all_rules)
+              val rules = map (fn (i, r) => (i, Compile.compile r)) all_rules
               val tables = Indices.canonicalize (Compile.indices (map #2 rules))
            in           
             ( Interface.emitSig "L10"
