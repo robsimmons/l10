@@ -56,13 +56,13 @@ let
    (*[ val assert: Symbol.symbol * Class.rel -> unit ]*)
    fun assert (t, knd) = 
       case map Symbol.toValue (Class.argtyps knd) of 
-         [] => emit ["val "^Symbol.toValue t^relBuf t^": tables -> tables"]
+         [] => emit ["val "^Symbol.toValue t^relBuf t^": db -> db"]
        | [ arg ] => 
             emit ["val "^Symbol.toValue t^relBuf t
-                  ^": "^arg^" * tables -> tables"]
+                  ^": "^arg^" * db -> db"]
        | args =>
             emit ["val "^Symbol.toValue t^":"^relBuf t
-                  ^" ("^String.concatWith " * " args^") * tables -> tables"]
+                  ^" ("^String.concatWith " * " args^") * db -> db"]
 
    (*[ val queries: Symbol.symbol * (Pos.t * Atom.moded_t) -> unit ]*)
    fun queries (qry, (_, index)) =
@@ -76,18 +76,18 @@ let
    in
       case map (Symbol.toValue o #2) (Path.Dict.toList outs) of 
          [] => emit ["val "^Symbol.toValue qry^":"^queryBuf qry
-                     ^" tables "^instr^"-> bool"]
+                     ^" db "^instr^"-> bool"]
        | [ t ] => emit ["val "^Symbol.toValue qry^":"^queryBuf qry
-                        ^" ("^t^" * 'a -> 'a) -> 'a -> tables "^instr^"-> 'a"]
+                        ^" ("^t^" * 'a -> 'a) -> 'a -> db "^instr^"-> 'a"]
        | ts => emit ["val "^Symbol.toValue qry^":"^queryBuf qry
                      ^" (("^String.concatWith " * " ts ^")"
-                     ^" * 'a -> 'a) -> 'a -> tables "^instr^"-> 'a"]
+                     ^" * 'a -> 'a) -> 'a -> db "^instr^"-> 'a"]
    end
 in
  ( emit ["signature "^MODULE_NAME^" =","sig"]
  ; incr ()
- ; emit ["type tables (* Type of L10 databases *)"]
- ; emit ["val empty: unit -> tables",""]
+ ; emit ["type db (* Type of L10 databases *)"]
+ ; emit ["val empty: unit -> db",""]
  ; app typedecl (Tab.list Tab.types)
  ; emit ["","structure Assert:","sig"]
  ; incr ()
@@ -136,13 +136,13 @@ let
    in 
      ( emit fst
      ; case map (fn (x,_) => "x_"^Int.toString x) ts of 
-          [] => emit ["fun "^name^" (db: tables) ="]
-        | args => emit ["fun "^name^" (args, db: tables) ="]
+          [] => emit ["fun "^name^" (db: db) ="]
+        | args => emit ["fun "^name^" (args, db: db) ="]
      ; emit ["let"]
-     ; emit ["   val db' = L10_Tables.assert_"^name^" "^args]
-     ; emit ["               (L10_Tables.set_flag (!db) false)"]
-     ; emit ["in","   if L10_Tables.get_flag db'"]
-     ; emit ["   then ref (L10_Tables.set_worlds db' World.Dict.empty)"]
+     ; emit ["   val pristine = L10_Tables.assert_"^name^" "^args]
+     ; emit ["                     (L10_Tables.set_flag (#pristine db) false)"]
+     ; emit ["in","   if L10_Tables.get_flag pristine"]
+     ; emit ["   then {pristine=pristine, public=ref pristine}"]
      ; emit ["   else db","end"])
    end
 
@@ -169,16 +169,16 @@ let
       val (w, wargs) = getwargs 0 DictX.empty (Tab.lookup Tab.rels (#1 index))
    in
     ( emit fst
-    ; emit ["fun "^qrys^" f x (db: tables)"
+    ; emit ["fun "^qrys^" f x (db: db)"
             ^Strings.optTuple args^" ="]
     ; emit ["let"]
     ; incr ()
-    ; emit ["val db' = L10_Search.saturate_"^w
-            ^Strings.optTuple (map Strings.build wargs)^" (!db)"]
+    ; emit ["val public = L10_Search.saturate_"^w
+            ^Strings.optTuple (map Strings.build wargs)^" (!(#public db))"]
     ; decr ()
     ; emit ["in"]
-    ; emit [" ( db := db'"]
-    ; emit [" ; L10_Tables.fold_"^Int.toString label^" f x db' "
+    ; emit [" ( #public db := public"]
+    ; emit [" ; L10_Tables.fold_"^Int.toString label^" f x public "
             ^Strings.tuple (map (Path.toVar o #1) inputs)^")"]
     ; emit ["end"]
     ; if null outputs
@@ -188,10 +188,13 @@ let
 in
  ( incr ()
  ; emit ["","","(* L10 public interface (interface.sml) *)",""]
- ; emit ["type tables = L10_Tables.tables ref"]
+ ; emit ["type db = {pristine: L10_Tables.tables,"]
+ ; emit ["           public: L10_Tables.tables ref}"]
  ; app (fn (t, knd) => emit ["type "^Symbol.toValue t^" = "^Strings.typ t]) 
       (Tab.list Tab.types)
- ; emit ["val empty = fn () => ref (L10_Tables.empty ())"]
+ ; emit ["fun empty () = "]
+ ; emit ["   let val table = L10_Tables.empty ()"]
+ ; emit ["   in {pristine=table, public=ref table} end"]
  ; emit ["","structure Assert =","struct"]
  ; incr ()
  ; appFirst (fn () => ()) assert ([], [""]) (Tab.list Tab.rels)
