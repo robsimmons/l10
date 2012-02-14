@@ -31,7 +31,7 @@ let
       next^" "^tuple_outgoing (#outgoing common)^" db"
 in
    case rule of 
-      Compile.Normal {common,index,input,output,eqs} =>
+      Compile.Normal {common, index, input, output, eqs} =>
       let
          val {label, inputs, outputs} = Indices.get_fold tables index
          val inputs_to_fold = 
@@ -63,7 +63,7 @@ in
        ; decr ()
        ; decr ())
       end
-    | Compile.Negated {common,index,input,eqs} =>
+    | Compile.Negated {common, index, input, eqs} =>
       let
          val {label, inputs, outputs} = Indices.get_fold tables index
          val inputs_to_fold = 
@@ -94,12 +94,14 @@ in
        ; emit ["then db else "^next_call common]
        ; decr ())
       end
-    | Compile.Binrel {common,binrel,term1,term2,t} =>
+    | Compile.Binrel {common, binrel, term1, term2, t} =>
        ( emitrule' tables n (i+1) (#cont common)
        ; emit ["(* "^(#label common)^" *)"]
        ; emit ["fun "^this^" "^tuple_incoming (#incoming common)^" db ="]
        ; incr ()
-       ; emit ["   db (* XXX UNFINISHED *)"]
+       ; emit ["if "^Strings.binrel t binrel 
+                        (Strings.build term1) (Strings.build term2)]
+       ; emit ["then "^next_call common^" else db"]
        ; decr ())
     | Compile.Conclusion {facts,incoming} => 
       let

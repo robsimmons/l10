@@ -1,0 +1,71 @@
+// Regular expressions, with misc. bits of testing code
+
+baz: type.
+t: extensible.
+whee: type. {-# TYPE whee external #-}
+whoo: nat -> whee.
+wha: whee -> whee -> whee.
+regexp: type. {-# TYPE regexp transparent #-}
+tok:  string -> regexp.                
+emp:  regexp.                     
+some: regexp -> regexp.           
+seq:  regexp -> regexp -> regexp. 
+alt:  regexp -> regexp -> regexp. 
+
+// Parsing regular expressions
+
+w0: world.
+w1: regexp -> world.
+token: string -> nat -> rel @ w0.
+match: {RE: regexp} nat -> nat -> rel @ w1 RE.
+
+token T I -> match (tok T) I (I+1).
+
+token _ I -> match emp I I.
+
+match RE I J -> match (some RE) I J.
+
+match RE I J, 
+match (some RE) J K -> 
+   match (some RE) I K.
+
+match RE1 I J, 
+match RE2 J K -> 
+   match (seq RE1 RE2) I K.
+
+match RE1 I J -> match (alt RE1 RE2) I J.
+
+match RE2 I J -> match (alt RE1 RE2) I J.
+
+bar: regexp -> nat -> nat -> rel @ w0.
+foo: nat -> nat -> nat -> rel @ w0.
+foo X X X, foo X Y Y, foo Z Y X -> foo (X+6) Y Z, foo 9 12 (Y+X).
+contr: rel @ w0.
+
+w3: regexp -> regexp -> nat -> world.
+b: {RE: regexp} rel @ w3 (alt RE (tok "a")) (seq RE emp) (19 + 12).
+buzz: {RE1: regexp} {RE2: regexp} {N: nat} rel @ w3 RE1 RE2 N.
+buzz RE RE 4.
+
+{-# QUERY poschar token - + #-}
+{-# QUERY wholestring token - - #-}
+{-# QUERY ismatch match + + + #-}
+
+neg:  regexp -> regexp.          
+
+token _ I, 
+token _ J, 
+I <= J, 
+not (match RE I J) -> 
+   match (neg RE) I J.
+
+w9: world.
+w10: world.
+q: regexp -> regexp -> regexp -> rel @ w9.
+r: rel @ w0.
+sss: rel @ w10.
+not (Ex R. q R R R) -> r.
+not (r) -> sss.
+
+not (Ex I. match RE I I) ->
+   match (neg RE) 0 0.

@@ -17,6 +17,9 @@ sig
    val eq: Type.t -> string -> string -> string
    val eqpath: Type.t * Path.t * Path.t -> string
 
+   (* Gives a string for an arbitrary binary operation *)
+   val binrel: Type.t -> Binrel.t -> string -> string -> string
+
    (* Gives a toString function *)
    val str: Type.t -> string -> string
 
@@ -135,6 +138,19 @@ fun eq t thing1 thing2 =
          then "(EQUAL = String.compare (" ^ thing1 ^ ", " ^ thing2 ^ "))"
          else raise Fail ("Dunno about builtin `" ^ Symbol.toValue t ^ "`")
 fun eqpath (t, path1, path2) = eq t (Path.toVar path1) (Path.toVar path2)
+
+fun binrel t binrel thing1 thing2 =
+   case binrel of
+      Binrel.Eq => eq t thing1 thing2
+    | Binrel.Neq => "(not "^eq t thing1 thing2^")"
+    | Binrel.Gt => 
+         if Symbol.eq (t, Type.nat)
+         then "(IntInf.> ("^thing1^", "^thing2^"))"
+         else raise Fail ("Don't know > for type "^Symbol.toValue t)
+    | Binrel.Geq =>
+         if Symbol.eq (t, Type.nat)
+         then "(IntInf.>= ("^thing1^", "^thing2^"))"
+         else raise Fail ("Don't know >= for type "^Symbol.toValue t)
 
 fun str t thing = 
    case Tab.lookup Tab.types t of

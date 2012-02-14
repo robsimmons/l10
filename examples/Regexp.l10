@@ -36,36 +36,3 @@ match RE2 J K ->
 match RE1 I J -> match (alt RE1 RE2) I J.
 
 match RE2 I J -> match (alt RE1 RE2) I J.
-
-bar: regexp -> nat -> nat -> rel @ w0.
-foo: nat -> nat -> nat -> rel @ w0.
-foo X X X, foo X Y Y, foo Z Y X -> foo (X+6) Y Z, foo 9 12 (Y+X).
-contr: rel @ w0.
-
-w3: regexp -> regexp -> nat -> world.
-b: {RE: regexp} rel @ w3 (alt RE (tok "a")) (seq RE emp) (19 + 12).
-buzz: {RE1: regexp} {RE2: regexp} {N: nat} rel @ w3 RE1 RE2 N.
-buzz RE RE 4.
-
-{-# QUERY poschar token - + #-}
-{-# QUERY wholestring token - - #-}
-{-# QUERY ismatch match + + + #-}
-
-neg:  regexp -> regexp.          
-
-token _ I, 
-token _ J, 
-// I <= J, 
-not (match RE I J) -> 
-   match (neg RE) I J.
-
-w9: world.
-w10: world.
-q: regexp -> regexp -> regexp -> rel @ w9.
-r: rel @ w0.
-sss: rel @ w10.
-not (Ex R. q R R R) -> r.
-not (r) -> sss.
-
-not (Ex I. match RE I I) ->
-   match (neg RE) 0 0.
