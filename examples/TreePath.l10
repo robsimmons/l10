@@ -1,0 +1,17 @@
+tree: type.
+leaf: nat -> tree.
+node: tree -> tree -> tree.
+
+path: type.
+top: path.
+right: path -> path.
+left: path -> path.
+
+pathTo: tree -> path -> rel.
+
+pathTo (node TreeL TreeR) P 
+  -> pathTo TreeL (left P),
+     pathTo TreeR (right P).
+
+{-# QUERY pathsToTree pathTo + - #-}
+
