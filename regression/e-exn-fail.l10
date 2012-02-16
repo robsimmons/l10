@@ -1,0 +1,8 @@
+//test -s L10 ~ TYPE-ERROR
+
+t: extensible.
+s: extensible.
+
+foo: t -> s -> rel.
+foo x y.
+foo y z.

@@ -1,0 +1,40 @@
+//test
+
+{- 
+  Trees and paths into trees.
+
+  Used at https://github.com/robsimmons/l10/wiki/Structured-terms to illustrate 
+  that it's nice to have structured terms when doing forward chaining, 
+  sometimes.
+-}
+
+tree: type.
+leaf: nat -> tree.
+node: tree -> tree -> tree.
+
+{- 
+  Read paths backwards: (right (left (left top))) means "from the top, go left,
+  go left again, then go right. Alternatively, starting from the relevant 
+  subtree, you can read this term as "you are the right child of the left child
+  of the left child of the top."
+-}
+path: type.
+top: path.
+right: path -> path.
+left: path -> path.
+
+{-
+  The database should be seeded with one fact "pathTo TREE top", where TREE 
+  is the term we're interested in 
+-} 
+pathTo: tree -> path -> rel.
+
+pathTo (node TreeL TreeR) P 
+  -> pathTo TreeL (left P),
+     pathTo TreeR (right P).
+
+{-# QUERY pathsToTree pathTo + - #-}
+
+example = pathTo (node (node (node (leaf 3) (leaf 4)) (leaf 3))
+                       (node (leaf 6) (node (leaf 3) (leaf 4)))) top.
+

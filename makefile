@@ -1,4 +1,9 @@
 MLTON = mlton -const "Exn.keepHistory true" -default-ann "redundantMatch error" -default-ann "sequenceNonUnit error" -output 
+SML = sml
+
+all:
+	@echo "Elton - a compiler from L10 to Standard ML"
+	@echo "Run 'make mlton' or 'make smlnj' or 'make check'"
 
 bin:
 	mkdir bin
@@ -9,8 +14,12 @@ sml/l10.cmlex.sml:
 sml/l10.cmyacc.sml:
 	cmyacc sml/l10.cmyacc
 
-elton: sml/*.sml sml/compile-sml/*.sml
+mlton: sml/*.sml sml/compile-sml/*.sml
 	$(MLTON) bin/elton sml/elton.mlb
+
+smlnj: sml/*.sml sml/compile-sml/*.sml
+	$(SML) < sml/go-smlnj.sml
+	bin/.mkexec `which sml` `pwd`/bin elton 
 
 .PSEUDO: check
 check: sml/*.sml sml/compile-sml/*.sml

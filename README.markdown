@@ -5,14 +5,16 @@ This is a source repository for the L10 programming language. It contains a lot
 of stuff, the most interesting of which (currently) is the 
 [Elton compiler](https://github.com/robsimmons/l10/wiki/Elton-compiler)
 from L10 to Standard ML. There are also lots of pieces of a compiler from L10 
-to the X10 distributed programming language.
-
-See the [wiki](https://github.com/robsimmons/l10/wiki) for more.
+to the X10 distributed programming language. See the 
+[GitHub wiki](https://github.com/robsimmons/l10/wiki) for more.
 
 # Using Elton, the L10-to-Standard ML Compiler
 
 ```code
-$ make elton
+$ make 
+Elton - a compiler from L10 to Standard ML
+Run 'make mlton' or 'make smlnj' or 'make chec
+$ make mlton
 $ bin/elton examples/EdgePath1.l10
 ```
 

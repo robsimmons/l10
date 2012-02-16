@@ -14,6 +14,6 @@ ann "nonexhaustiveMatch ignore" in
 
    (* Frontend *)
    elton.sml
-   mlton-go.sml
+   go-mlton.sml
 
 end
