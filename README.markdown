@@ -59,7 +59,7 @@ val c = - : StringSymbol.symbol
 val d = - : StringSymbol.symbol
 - foldr EdgePath1.Assert.edge (EdgePath1.empty ()) [(a,b), (c,d), (b,c)];
 val it = - : db
-- val db = it
+- val db = it;
 val db = - : db
 - EdgePath1.Query.edge db (a, d);
 val it = false : bool
