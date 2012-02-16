@@ -57,7 +57,8 @@ end
 
 The signature `EDGE_PATH1` appears at the top of the generated file.
 
-The generated code from Elton depends on the CMlib v1, which can be obtained
+The generated code from Elton depends on the 
+[CMlib](https://github.com/standardml/cmlib) version 1, which can be obtained
 with [Smackage](https://github.com/standardml/smackage). It can be run like 
 this:
 
