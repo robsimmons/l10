@@ -1,10 +1,7 @@
 t: extensible.
-w1: world.
 
-edge: {X : t} {Y : t} rel @ w1.
-path: t -> t -> rel @ w1.
+edge: {X : t} {Y : t} rel.
+path: t -> t -> rel.
 
 edge X Y -> path X Y.
 edge X Y, path Y Z -> path X Z.
-
-db1 = (edge a b, edge b c, edge c d, edge e f) @ w1.

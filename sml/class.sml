@@ -79,7 +79,9 @@ struct
    fun toString typ = 
       case typ of 
          Base t => Symbol.toValue t
-       | Rel (_, world) => "rel @ " ^ Atom.toString' false world
+       | Rel (_, world) => 
+            if Symbol.eq (#1 world, Symbol.fromValue "world") then "rel"
+            else "rel @ " ^ Atom.toString' false world
        | World => "world"
        | Type => "type"
        | Builtin => "builtin"
