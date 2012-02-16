@@ -3,11 +3,11 @@ L10 Logic Programming Language
 
 This is a source repository for the L10 programming language. It contains a lot
 of stuff, the most interesting of which (currently) is the 
-(Elton compiler)[https://github.com/robsimmons/l10/wiki/Elton-compiler]
+[Elton compiler](https://github.com/robsimmons/l10/wiki/Elton-compiler)
 from L10 to Standard ML. There are also lots of pieces of a compiler from L10 
 to the X10 distributed programming language.
 
-See the (wiki)[https://github.com/robsimmons/l10/wiki] for more.
+See the [wiki](https://github.com/robsimmons/l10/wiki) for more.
 
 # Compiling Elton
 
@@ -46,7 +46,7 @@ end
 ```
 
 The generated code from Elton depends on the CMlib v1, which can be obtained
-with (smackage)[https://github.com/standardml/smackage]. It can be run like 
+with [Smackage](https://github.com/standardml/smackage). It can be run like 
 this:
 
 ```code
