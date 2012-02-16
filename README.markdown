@@ -9,7 +9,7 @@ to the X10 distributed programming language.
 
 See the [wiki](https://github.com/robsimmons/l10/wiki) for more.
 
-# Compiling Elton
+# Using Elton, the L10-to-Standard ML Compiler
 
 ```code
 $ make elton
@@ -28,8 +28,8 @@ edge X Y, path Y Z -> path X Z.
 example = edge "a" "b", edge "b" "c", edge "b" "d", edge "a" "e", edge "d" "f".
 ```
 
-... and create a file `EdgePath1.l10.sml`. That generated file
-a structure `EdgePath1` satisfying the following signature:
+... and create a file `EdgePath1.l10.sml`. This Elton-generated file
+contains a structure `EdgePath1` satisfying the following signature:
 
 ```sml
 signature EDGE_PATH1 =
@@ -55,7 +55,8 @@ sig
 end
 ```
 
-The signature `EDGE_PATH1` appears at the top of the generated file.
+The signature `EDGE_PATH1` appears at the top of the Elton-generated file
+`EdgePath1.l10.sml`.
 
 The generated code from Elton depends on the 
 [CMlib](https://github.com/standardml/cmlib) version 1, which can be obtained
