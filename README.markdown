@@ -28,7 +28,7 @@ edge X Y, path Y Z -> path X Z.
 example = edge "a" "b", edge "b" "c", edge "b" "d", edge "a" "e", edge "d" "f".
 ```
 
-... and create a file `examples/EdgePath1.l10.sml`, which implements 
+... and create a file `EdgePath1.l10.sml`, which implements 
 a structure EdgePath1 satisfying the following signature, which appears
 at the top of the generated file:
 
