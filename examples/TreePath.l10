@@ -33,3 +33,6 @@ pathTo (node TreeL TreeR) P
 
 {-# QUERY pathsToTree pathTo + - #-}
 
+example = pathTo (node (node (node (leaf 3) (leaf 4)) (leaf 3))
+                       (node (leaf 6) (node (leaf 3) (leaf 4)))) top.
+

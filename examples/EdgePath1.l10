@@ -1,7 +1,5 @@
-t: extensible.
-
-edge: {X : t} {Y : t} rel.
-path: t -> t -> rel.
+edge: string -> string -> rel.
+path: string -> string -> rel.
 
 edge X Y -> path X Y.
 edge X Y, path Y Z -> path X Z.

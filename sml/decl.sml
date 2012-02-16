@@ -3,7 +3,7 @@ structure Decl = struct
    (*[ sortdef db = 
           Symbol.symbol 
           * (Pos.t * Atom.ground_prop) list 
-          * (Pos.t * Atom.ground_world) ]*)
+          * (Pos.t * Atom.ground_world) option ]*)
 
    (*[ sortdef depend = 
           (Pos.t * Atom.world) * (Pos.t * Prem.wprem) list ]*)
@@ -16,7 +16,9 @@ structure Decl = struct
     | Const of Pos.t * Symbol.symbol * Class.t
     | Rel of Pos.t * Symbol.symbol * Class.t
     | Type of Pos.t * Symbol.symbol * Class.t
-    | DB of Pos.t * (Symbol.symbol * (Pos.t * Atom.t) list * (Pos.t * Atom.t))
+    | DB of Pos.t * (Symbol.symbol 
+                     * (Pos.t * Atom.t) list
+                     * (Pos.t * Atom.t) option) (* Last part ignored *)
     | Depend of 
          Pos.t 
          * ((Pos.t * Atom.t) * (Pos.t * Prem.t) list)
@@ -64,9 +66,11 @@ val print =
        print (Symbol.toValue a ^ ": " ^ Class.toString class ^ ".\n")
   | Type (_, t, class) => 
        print (Symbol.toValue t ^ ": " ^ Class.toString class ^ ".\n")
-  | DB (_, (db, _, world)) => 
-       print ( "{-# DATABASE " ^ Symbol.toValue db ^ " (...) @ " 
-             ^ Atom.toString (#2 world) ^ " #-}\n")
+  | DB (_, (db, _, SOME world)) => 
+       print (Symbol.toValue db^" = (...) @ " 
+              ^Atom.toString (#2 world)^".\n")
+  | DB (_, (db, _, NONE)) => 
+       print (Symbol.toValue db ^ " = (...).\n")
   | Depend (_, (conc, prems), _) => 
      ( print (Atom.toString (#2 conc) ^ " <- ")
      ; print (String.concatWith ", " (map (Prem.toString o #2) prems))

@@ -528,14 +528,18 @@ fun check decl =
        ; check_illegal pos t "type"
        ; Decl.Type (pos, t, tc_closed_class pos class))
 
-    | Decl.DB (pos, (db, props, world)) => 
+    | Decl.DB (pos, (db, props, SOME world)) => 
       let  
          val (_, props') = tc_props DictX.empty props
          val (_, world') = tc_world DictX.empty world
       in
        ( check_illegal pos db "database"
-       ; Decl.DB (pos, (db, props', world')))
+       ; Decl.DB (pos, (db, props', SOME world')))
       end
+
+    | Decl.DB (pos, (db, props, NONE)) =>
+       ( check_illegal pos db "database"
+       ; Decl.DB (pos, (db, #2 (tc_props DictX.empty props), NONE)))
 
     | Decl.Depend (pos, (world, worlds), NONE) => 
       let

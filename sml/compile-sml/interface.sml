@@ -34,7 +34,7 @@ let
    val relBuf = buffer Tab.rels
    val queryBuf = buffer Tab.queries
   
-   (*[ val typedecl: Class.knd -> unit ]*)
+   (*[ val typedecl: Type.t * Class.knd -> unit ]*)
    fun typedecl (t, knd) = 
    let 
       val knds = 
@@ -50,10 +50,11 @@ let
           | SOME Type.Sealed => "(* = "^Strings.typ t^", sealed *)"
           | NONE => knds
    in
-      emit ["type "^Symbol.toValue t^typeBuf t^" "^representation]
+      if Symbol.eq (t, Type.world) orelse Symbol.eq (t, Type.rel) then ()
+      else emit ["type "^Symbol.toValue t^typeBuf t^" "^representation]
    end
 
-   (*[ val assert: Symbol.symbol * Class.rel -> unit ]*)
+   (*[ val assert: Type.t * Class.rel -> unit ]*)
    fun assert (t, knd) = 
       case map Symbol.toValue (Class.argtyps knd) of 
          [] => emit ["val "^Symbol.toValue t^relBuf t^": db -> db"]
@@ -87,7 +88,11 @@ in
  ( emit ["signature "^MODULE_NAME^" =","sig"]
  ; incr ()
  ; emit ["type db (* Type of L10 databases *)"]
- ; emit ["val empty: unit -> db",""]
+ ; if Tab.member Tab.dbs (Symbol.fromValue "empty") then ()
+   else emit ["val empty: db"]
+ ; app (fn (s, _) => emit ["val "^Symbol.toValue s^": db"]) 
+      (Tab.list Tab.dbs)
+ ; emit [""] 
  ; app typedecl (Tab.list Tab.types)
  ; emit ["","structure Assert:","sig"]
  ; incr ()
@@ -109,7 +114,8 @@ let
      | filter (t, Class.Type) =
          (case Tab.find Tab.representations t of
              SOME Type.External => false
-           | _ => true) 
+           | _ => not (Symbol.eq (t, Type.world)
+                       orelse Symbol.eq (t, Type.rel)))
 in
  ( emit ["","","(* L10 Logic programming *)",""]
  ; emit ["structure "^ModuleName^":> "^MODULE_NAME]
@@ -125,6 +131,19 @@ end
 
 fun emitStruct tables = 
 let
+   fun dbs (db, facts) = 
+   let
+      fun loop prefix postfix [] = emit [prefix^"(L10_Tables.empty ())"^postfix]
+        | loop prefix postfix ((_, (a, terms)) :: facts) =
+           ( emit [prefix^"(L10_Tables.assert_"^Symbol.toValue a^" "
+                   ^Strings.tuple (map Strings.build terms)]
+           ; loop (prefix^" ") (postfix^")") facts)
+   in
+    ( emit ["","val "^Symbol.toValue db^" = ", "   let val table ="]
+    ; loop "   " "" facts
+    ; emit ["in {pristine=table, public=ref table} end"])
+   end
+
    (* XXX rather than invalidating the whole world tree, we should traverse
     * it in the other direction (with forward links) - much more efficient *)
    (*[ val assert: Symbol.symbol * Class.rel -> unit ]*)
@@ -192,9 +211,10 @@ in
  ; emit ["           public: L10_Tables.tables ref}"]
  ; app (fn (t, knd) => emit ["type "^Symbol.toValue t^" = "^Strings.typ t]) 
       (Tab.list Tab.types)
- ; emit ["fun empty () = "]
+ ; emit ["","val empty = "]
  ; emit ["   let val table = L10_Tables.empty ()"]
  ; emit ["   in {pristine=table, public=ref table} end"]
+ ; app dbs (Tab.list Tab.dbs)
  ; emit ["","structure Assert =","struct"]
  ; incr ()
  ; appFirst (fn () => ()) assert ([], [""]) (Tab.list Tab.rels)

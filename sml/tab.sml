@@ -61,9 +61,8 @@ struct
    (*[ val typecon: SetX.set tab ]*)
    val typecon: SetX.set tab = SymbolHashTable.table 1
 
-   (*[ val dbs: Decl.db tab ]*)
-   val dbs: (Symbol.symbol * (Pos.t * Atom.t) list * (Pos.t * Atom.t)) tab =
-      SymbolHashTable.table 1
+   (*[ val dbs: Atom.ground_prop tab ]*)
+   val dbs: (Pos.t * Atom.t) list tab = SymbolHashTable.table 1
 
    (* Both dependencies and rules are indexed by the "head world" *)
 
@@ -139,7 +138,8 @@ struct
      | bind (Decl.Type (_, a, class)) = 
         ( SymbolHashTable.insert types a class
         ; SymbolHashTable.insert typecon a SetX.empty)
-     | bind (Decl.DB (pos, (db as (d, _, _)))) = SymbolHashTable.insert dbs d db
+     | bind (Decl.DB (pos, (d, props, _))) = 
+          SymbolHashTable.insert dbs d props
      | bind (Decl.Depend (depend as (_, ((_, (w, _)), _), _))) =
          (merge (*[ <: depend list tab -> Symbol.symbol -> depend -> unit ]*)) 
              depends w depend

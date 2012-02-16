@@ -23,24 +23,21 @@ a structure EdgePath1 satisfying the following signature:
 signature EDGE_PATH1 =
 sig
    type db (* Type of L10 databases *)
-   val empty: unit -> db
+   val empty: db
    
-   type t         = Symbol.symbol (* extensible *)
-   type rel    (* = Rel.t *)
-   type world  (* = World.t *)
    type string    = String.string (* builtin *)
    type nat       = IntInf.int (* builtin *)
    
    structure Assert:
    sig
-      val path: (t * t) * db -> db
-      val edge: (t * t) * db -> db
+      val path: (string * string) * db -> db
+      val edge: (string * string) * db -> db
    end
    
    structure Query:
    sig
-      val path: db -> (t * t) -> bool
-      val edge: db -> (t * t) -> bool
+      val path: db -> (string * string) -> bool
+      val edge: db -> (string * string) -> bool
    end
 end
 ```

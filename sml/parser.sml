@@ -423,7 +423,7 @@ end = struct
             (decl, psig')
          end
 
-       | Assign ((_, id), At (syn1, syn2)) => 
+       | Assign ((_, id), syn) => 
          let 
             (*[ val p_props: syn -> (Pos.t * Atom.ground_prop) list ]*)
             fun p_props syn =
@@ -431,17 +431,20 @@ end = struct
                   Conj (syn1, syn2) => p_props syn1 @ p_props syn2
                 | _ => [ p_ground_prop syn psig ]
          in 
-            (Decl.DB (pos, 
-                      (Symbol.fromValue id, 
-                       p_props syn1,
-                       p_ground_world syn2 psig)),
-             psig)
+            case syn of 
+               At (syn1, syn2) =>
+                  (Decl.DB (pos, 
+                            (Symbol.fromValue id, 
+                             p_props syn1,
+                             SOME (p_ground_world syn2 psig))),
+                   psig)
+             | _ => 
+                  (Decl.DB (pos, 
+                            (Symbol.fromValue id, 
+                             p_props syn,
+                             NONE)),
+                   psig)
          end
-
-       | Assign (id, syn) => 
-         raise SyntaxError  
-            (SOME (getpos syn),
-             "Database assignment not of the form `(...) @ ...`")
 
        | Arrow (syn1, syn2) =>
          (case p_world' syn2 psig of
