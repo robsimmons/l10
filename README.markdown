@@ -16,8 +16,21 @@ $ make elton
 $ bin/elton examples/EdgePath1.l10
 ```
 
-These two commands create a file `examples/EdgePath1.l10.sml`, which implements 
-a structure EdgePath1 satisfying the following signature:
+These two commands read the file `EdgePath1.l10`...
+
+```l10
+edge: string -> string -> rel.
+path: string -> string -> rel.
+
+edge X Y -> path X Y.
+edge X Y, path Y Z -> path X Z.
+
+example = edge "a" "b", edge "b" "c", edge "b" "d", edge "a" "e", edge "d" "f".
+```
+
+... and create a file `examples/EdgePath1.l10.sml`, which implements 
+a structure EdgePath1 satisfying the following signature, which appears
+at the top of the generated file:
 
 ```sml
 signature EDGE_PATH1 =
