@@ -28,9 +28,8 @@ edge X Y, path Y Z -> path X Z.
 example = edge "a" "b", edge "b" "c", edge "b" "d", edge "a" "e", edge "d" "f".
 ```
 
-... and create a file `EdgePath1.l10.sml`, which implements 
-a structure EdgePath1 satisfying the following signature, which appears
-at the top of the generated file:
+... and create a file `EdgePath1.l10.sml`. That generated file
+a structure `EdgePath1` satisfying the following signature:
 
 ```sml
 signature EDGE_PATH1 =
@@ -55,6 +54,8 @@ sig
    end
 end
 ```
+
+The signature `EDGE_PATH1` appears at the top of the generated file.
 
 The generated code from Elton depends on the CMlib v1, which can be obtained
 with [Smackage](https://github.com/standardml/smackage). It can be run like 
