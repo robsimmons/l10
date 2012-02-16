@@ -240,7 +240,7 @@ List.concat (List.map
 "",
 "   fun insertMerge dict key default modify =",
 "      insert dict key",
-"         (modify (lookup dict key)",
+"         (modify (prj (P.sub key dict))",
 "             handle NotThere => default)",
 "",
 "   fun member dict key = (ignore (prj (P.sub key dict)); true)",
