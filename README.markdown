@@ -24,6 +24,7 @@ signature EDGE_PATH1 =
 sig
    type db (* Type of L10 databases *)
    val empty: db
+   val example: db
    
    type string    = String.string (* builtin *)
    type nat       = IntInf.int (* builtin *)
@@ -49,18 +50,9 @@ this:
 ```code
 $ sml '$SMACKAGE/cmlib/v1/cmlib.cm' examples/EdgePath1.l10.sml
 <snip>
-- val [a,b,c,d] = map Symbol.fromValue ["a","b","c","d"];
-val a = - : StringSymbol.symbol
-val b = - : StringSymbol.symbol
-val c = - : StringSymbol.symbol
-val d = - : StringSymbol.symbol
-- foldr EdgePath1.Assert.edge (EdgePath1.empty ()) [(a,b), (c,d), (b,c)];
-val it = - : db
-- val db = it;
-val db = - : db
-- EdgePath1.Query.edge db (a, d);
+- EdgePath1.Query.edge EdgePath1.example ("a", "f");
 val it = false : bool
-- EdgePath1.Query.path db (a, d);
+- EdgePath1.Query.path EdgePath1.example ("a", "f");
 val it = true : bool
 ```
 
