@@ -1,0 +1,13 @@
+//test 
+// Negated constraints: currently, this does not work.
+
+t: extensible.
+w: world.
+
+a: t -> t -> rel @ w.
+b: rel.
+
+not (Ex X. a X X) -> b.
+
+db1 = (a foo bar, a foo baz, a bar baz, a bar bar) @ w.
+db2 = (a foo bar, a foo baz, a bar baz, a bar foo) @ w.

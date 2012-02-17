@@ -1,0 +1,5 @@
+//test -s L10 ~ NOT-STRATIFIED
+
+a: rel.
+
+not (a) -> a.

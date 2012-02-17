@@ -2,7 +2,7 @@
  * SymConst does not. I'd rather have SymConst not be parsed from the syntax,
  * but to be introduced in typechecking for things that are, it turns out,
  * symbolic constants (contstants whose classifer has kind "extensible" and
- * not kind "type". *)
+ * not kind "type"). *)
 
 structure Term = 
 struct
