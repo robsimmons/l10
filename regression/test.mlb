@@ -1,3 +1,4 @@
 $(SMACKAGE)/cmlib/v1/cmlib.mlb
 test.sml
 test.l10.sml
+test2.sml

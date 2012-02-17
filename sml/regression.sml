@@ -14,6 +14,7 @@ datatype outcome =
  | UnexpectedError of string
  | Success
  | BadSML
+ | TestFailed
 
 fun str SyntaxError = "syntax error"
   | str TypeError = "type error" 
@@ -23,6 +24,7 @@ fun str SyntaxError = "syntax error"
   | str (UnexpectedError exnname) = ("unexpected error: `"^exnname^"'")
   | str Success = "success"
   | str BadSML = "generated invalid SML code"
+  | str TestFailed = "compiled test failed"
 
 val success: int ref = ref 0
 val ignored: int ref = ref 0
@@ -44,14 +46,23 @@ fun reportAndReset () =
  ; ignored := 0
  ; failure := [])    
 
-fun check args = 
-   ( Tab.reset ()
-   ; Elton.go_no_handle ("elton", args @ ["-o","regression/test.l10.sml"])
-   ; if OS.Process.isSuccess 
-           (OS.Process.system "mlton -stop tc regression/test.mlb")
-     then Success
-     else BadSML)
-   handle Lexer.LexError _ => SyntaxError
+fun check run args = 
+let
+   val () = Tab.reset ()
+   val () = Elton.go_no_handle 
+               ("elton", args @ ["-o","regression/test.l10.sml"])
+   val success = 
+      OS.Process.isSuccess 
+         (OS.Process.system
+             (if run then "mlton regression/test.mlb"
+              else "mlton -stop tc regression/test.mlb"))
+in
+   if success andalso run
+   then (if OS.Process.isSuccess (OS.Process.system "regression/test")
+         then Success
+         else TestFailed)
+   else if success then Success else BadSML
+end handle Lexer.LexError _ => SyntaxError
         | Parser.SyntaxError _ => SyntaxError
         | Parser.TypeError _ => TypeError
         | Types.TypeError _ => TypeError
@@ -85,12 +96,21 @@ fun checkFile filename =
       val smlfile = 
          OS.Path.joinBaseExt {base = #base (OS.Path.splitBaseExt filename),
                               ext = SOME "sml"}
+      val testfile = 
+         OS.Path.joinBaseExt {base = #base (OS.Path.splitBaseExt filename),
+                              ext = SOME "test.sml"}
+      val () = ignore (OS.Process.system ("rm -f regression/test"))
+      val () = ignore (OS.Process.system ("rm -f regression/test2.sml"))
       val () = ignore (OS.Process.system ("rm -f regression/test.l10.sml"))
       val () = 
          if OS.FileSys.access (smlfile, [ OS.FileSys.A_READ ])
-         then ignore (OS.Process.system ("cp "^smlfile^" regression/test.sml"))
-         else ignore (OS.Process.system ("cp /dev/null regression/test.sml"))
-      val got = check (filename :: args)
+         then (OS.Process.system ("cp "^smlfile^" regression/test.sml"); ())
+         else (OS.Process.system ("cp /dev/null regression/test.sml"); ())
+      val run =
+         if OS.FileSys.access (testfile, [ OS.FileSys.A_READ ])
+         then (OS.Process.system ("cp "^testfile^" regression/test2.sml"); true)
+         else (OS.Process.system ("cp /dev/null regression/test2.sml"); false)
+      val got = check run (filename :: args)
    in
       if expected = got
       then success := !success + 1
@@ -102,19 +122,16 @@ fun checkFile filename =
 fun checkDirs [] = ()
   | checkDirs (dirname :: dirnames) = 
     let 
-       val dir = OS.FileSys.openDir dirname
-       fun loop () =
+       fun readDir dir =
           case OS.FileSys.readDir dir of
-             NONE => OS.FileSys.closeDir dir
-           | SOME filename =>
-              ( case #ext (OS.Path.splitBaseExt filename) of 
+             NONE => (OS.FileSys.closeDir dir; [])
+           | SOME filename => 
+               (case #ext (OS.Path.splitBaseExt filename) of 
                    SOME "l10" => 
-                      checkFile 
-                         (OS.Path.joinDirFile {dir=dirname, file=filename})
-                 | _ => ()
-              ; loop ())
-    in 
-       loop ()
+                      OS.Path.joinDirFile {dir=dirname, file=filename}
+                      :: readDir dir
+                 | _ => readDir dir)
+    in
+       app checkFile (readDir (OS.FileSys.openDir dirname))
     end
-
 end
