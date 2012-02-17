@@ -2,11 +2,11 @@ CM.make "$SMACKAGE/cmlib/v1/cmlib.cm";
 CM.make "sml/sources.cm";
 
 Tab.reset ();
-Elton.go_no_handle ("elton", [ "examples/EdgePath1.l10" ]);
+Elton.go ("elton", [ "examples/EdgePath1.l10" ]);
 use "examples/EdgePath1.l10.sml";
 
 Tab.reset ();
-Elton.go_no_handle ("elton", [ "examples/TreePath.l10" ]);
+Elton.go ("elton", [ "examples/TreePath.l10" ]);
 use "examples/TreePath.l10.sml";
 
 (*

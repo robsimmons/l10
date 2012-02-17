@@ -307,7 +307,7 @@ let
             then raise ModeError (pos, "Underscore in illegal position \
                                        \in conclusion")
             else ()
-          ; checkConcArgs pos (tl terms) class
+          ; hd terms :: checkConcArgs pos (tl terms) class
          end
        | Class.Pi (_, _, class) =>
          (* This index is grounded by the world, and can be ignored. *)
@@ -329,9 +329,9 @@ let
    val () = checkConcWorlds world concs
 (* val world = ground_modify_atom SetX.empty world *)
 
-   val groundVars = Atom.fv world 
-   val (checked_prems, ground) = 
-      checkPrems isDyn (world, []) prems groundVars groundVars 
+   val worldVars = Atom.fv world 
+   val (checked_prems, groundVars) = 
+      checkPrems isDyn (world, []) prems worldVars worldVars 
 in
    (world, (checked_prems, checkConcs groundVars concs))
 end
