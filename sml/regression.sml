@@ -46,12 +46,14 @@ fun reportAndReset () =
  ; ignored := 0
  ; failure := [])    
 
-fun check run args = 
+fun check run filename args = 
 let
    val () = Tab.reset ()
-   val () = Elton.go_no_handle 
-               ("elton", args @ ["-o","regression/test.l10.sml"])
+   val () = Elton.go_no_handle ("elton", filename :: args)
    val success = 
+      OS.Process.isSuccess
+         (OS.Process.system ("cp "^filename^".sml regression/test.l10.sml"))
+      andalso
       OS.Process.isSuccess 
          (OS.Process.system
              (if run then "mlton regression/test.mlb"
@@ -102,15 +104,15 @@ fun checkFile filename =
       val () = ignore (OS.Process.system ("rm -f regression/test"))
       val () = ignore (OS.Process.system ("rm -f regression/test2.sml"))
       val () = ignore (OS.Process.system ("rm -f regression/test.l10.sml"))
-      val () = 
+      val _ = 
          if OS.FileSys.access (smlfile, [ OS.FileSys.A_READ ])
-         then (OS.Process.system ("cp "^smlfile^" regression/test.sml"); ())
-         else (OS.Process.system ("cp /dev/null regression/test.sml"); ())
+         then OS.Process.system ("cp "^smlfile^" regression/test.sml")
+         else OS.Process.system ("cp /dev/null regression/test.sml")
       val run =
          if OS.FileSys.access (testfile, [ OS.FileSys.A_READ ])
          then (OS.Process.system ("cp "^testfile^" regression/test2.sml"); true)
          else (OS.Process.system ("cp /dev/null regression/test2.sml"); false)
-      val got = check run (filename :: args)
+      val got = check run filename args
    in
       if expected = got
       then success := !success + 1
@@ -122,6 +124,7 @@ fun checkFile filename =
 fun checkDirs [] = ()
   | checkDirs (dirname :: dirnames) = 
     let 
+       val _ = OS.Process.system ("rm "^dirname^"/*.l10.sml")
        fun readDir dir =
           case OS.FileSys.readDir dir of
              NONE => (OS.FileSys.closeDir dir; [])
