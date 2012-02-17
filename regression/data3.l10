@@ -1,9 +1,10 @@
-//test 
+//test
 
 unit: type.
 one: unit. 
 
 w: world.
+a: rel @ w.
 
 foo: type. {-# TYPE foo external #-}
 bar: type. {-# TYPE bar external #-}
@@ -38,10 +39,23 @@ z: n.
 s: n -> n.
 
 w2: n -> world.
+a2: {N: n} rel @ w2 N.
+
+a2 (s X) <- a2 X, a.
+a2 z <- a.
 
 w5: world.
+a5: rel @ w5.
 w3: n -> n -> world.
+a3: {N: n} {M:n} rel @ w3 N M.
+a3 (s X) z <- a2 X.
+a3 X X <- a, a2 X.
+a3 (s X) (s Y) <- a5.
+
+a5 <- a.
 
 w4: n -> n -> n -> world.
 
 w6: n -> n -> n -> n -> n -> world.
+a6: {N1}{N2}{N3}{N4}{N5} rel @ w6 N1 N2 N3 N4 N5.
+a6 X X Y Y Y <- a.

@@ -1,4 +1,5 @@
 //test -s L10
 
 w: nat -> world.
-w (X+5) <- w X.
+a: {N: nat} rel @ w N.
+a (X+5) <- a X.

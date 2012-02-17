@@ -199,21 +199,6 @@ end = struct
        | _ => raise SyntaxError (SOME (getpos syn), "Ill-formed term `" 
                                                     ^ str syn ^ "`")
 
-   (*[ val p_world': syn -> psig -> (Pos.t * Atom.world) option ]*)
-   fun p_world' syn psig =
-      case strip syn of 
-         App ((_, x), syns) =>
-         let val w = Symbol.fromValue x in 
-            if isWorld psig w
-            then SOME (getpos syn, (w, map p_term syns))
-            else NONE
-         end
-       | _ => NONE
-
-
-   (* XXX STYLE: Parsing worlds, props, ground worlds, and ground props with 
-    * refinement types ends up being a bit cut-paste-y. -rjs Oct 12 2011 *)
-
    (*[ val p_world: syn -> psig -> (Pos.t * Atom.world) ]*)
    fun p_world syn psig = 
       case strip syn of 
@@ -431,41 +416,12 @@ end = struct
                   Conj (syn1, syn2) => p_props syn1 @ p_props syn2
                 | _ => [ p_ground_prop syn psig ]
          in 
-            case syn of 
-               At (syn1, syn2) =>
-                  (Decl.DB (pos, 
-                            (Symbol.fromValue id, 
-                             p_props syn1,
-                             SOME (p_ground_world syn2 psig))),
-                   psig)
-             | _ => 
-                  (Decl.DB (pos, 
-                            (Symbol.fromValue id, 
-                             p_props syn,
-                             NONE)),
-                   psig)
+            (Decl.DB (pos, (Symbol.fromValue id, p_props syn)), psig)
          end
 
-       | Arrow (syn1, syn2) =>
-         (case p_world' syn2 psig of
-             NONE => (Decl.Rule (pos, p_rule syn psig, NONE), psig)
-           | SOME (p, world) => 
-             let 
-                (*[ val p_worlds: syn -> (Pos.t * Prem.wprem) list ]*)
-                fun p_worlds (Conj (syn1, syn2)) = p_worlds syn1 @ p_worlds syn2
-                  | p_worlds syn = 
-                    let val (pos, world) = p_world syn psig in
-                       [ (pos, Prem.Normal (Pat.Atom world)) ]
-                    end
-             in
-                (Decl.Depend (pos, ((p, world), p_worlds syn1), NONE), psig)
-             end)
+       | Arrow (syn1, syn2) => (Decl.Rule (pos, p_rule syn psig, NONE), psig)
                     
-       | App _ =>
-         (case p_world' syn psig of 
-             NONE => (Decl.Rule (pos, p_rule syn psig, NONE), psig)
-           | SOME (p, world) => 
-                (Decl.Depend (pos, ((p, world), []), NONE), psig))
+       | App _ => (Decl.Rule (pos, p_rule syn psig, NONE), psig)
 
        | _ => raise SyntaxError (SOME pos, "Ill-formed top-level statement `"
                                            ^ str syn ^ "`")

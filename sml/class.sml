@@ -1,3 +1,4 @@
+(* Classifiers, classifiers, everything's got a classifier. *)
 
 structure Class = 
 struct

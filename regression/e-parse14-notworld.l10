@@ -1,5 +1,0 @@
-//test -s L10 ~ TYPE-ERROR
-
-w: world.
-a: rel @ w.
-db = a @ whoo.

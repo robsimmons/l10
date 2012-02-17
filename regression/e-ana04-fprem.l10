@@ -1,4 +1,4 @@
-//test -s L10 ~ MODE-ERROR
+//test -s L10 ~ TYPE-ERROR
 
 w: nat -> world.
 w Y -> w X.

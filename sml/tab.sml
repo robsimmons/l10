@@ -1,5 +1,4 @@
 (* Tables - state that is updated as signatures are loaded and checked *)
-(* Robert J. Simmons *)
 
 (* All stored information from the signature should be referenced here 
  * and reset with the master Reset.reset () *)
@@ -64,18 +63,7 @@ struct
    (*[ val dbs: Atom.ground_prop tab ]*)
    val dbs: (Pos.t * Atom.t) list tab = SymbolHashTable.table 1
 
-   (* Both dependencies and rules are indexed by the "head world" *)
-
-   (*[ sortdef depend = (Pos.t * Decl.depend_t * Type.env some) ]*)
-   (*[ val depends: depend list tab ]*)
-   val depends: 
-      ( Pos.t 
-      * ((Pos.t * Atom.t) * (Pos.t * Prem.t) list)
-      * Type.env option) list tab = 
-      (SymbolHashTable.table  
-         (*[ <: int -> depend list tab ]*))
-         1 
-
+   (* Rules are indexed by the "head world" *)
    (*[ sortdef rule = int * Pos.t * Atom.world_t * Rule.rule_checked ]*)
    (*[ val rules: rule list tab ]*)
    val ruleid: int ref = ref 1
@@ -115,7 +103,6 @@ struct
    fun bind (Decl.World (_, w, class)) = 
         ( SymbolHashTable.insert worlds w class
         ; SymbolHashTable.insert consts w (Class.worldToTyp class)
-        ; (init (*[ <: depend list tab -> Symbol.symbol -> unit ]*)) depends w 
         ; mergeTypecon Type.world w)
      | bind (Decl.Const (_, c, class)) =
        let val t = Class.base class 
@@ -136,11 +123,8 @@ struct
      | bind (Decl.Type (_, a, class)) = 
         ( SymbolHashTable.insert types a class
         ; SymbolHashTable.insert typecon a SetX.empty)
-     | bind (Decl.DB (pos, (d, props, _))) = 
+     | bind (Decl.DB (pos, (d, props))) = 
           SymbolHashTable.insert dbs d props
-     | bind (Decl.Depend (depend as (_, ((_, (w, _)), _), _))) =
-         (merge (*[ <: depend list tab -> Symbol.symbol -> depend -> unit ]*)) 
-             depends w depend
      | bind (Decl.Rule (rule as (_, (_, concs), _))) = 
           raise Fail "Rules should only be added with Tab.bindDecl"
      | bind (Decl.Query (pos, m, mode)) = 
@@ -177,7 +161,6 @@ struct
     ; SymbolHashTable.reset consts n
     ; SymbolHashTable.reset typecon n
     ; SymbolHashTable.reset dbs n
-    ; SymbolHashTable.reset depends n
     ; SymbolHashTable.reset rules n
     ; SymbolHashTable.reset queries n
     ; SymbolHashTable.reset representations n

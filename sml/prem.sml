@@ -1,3 +1,4 @@
+(* Premises come to the left of an arrow. *)
 
 structure Prem = struct
    datatype t = 

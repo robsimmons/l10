@@ -1,3 +1,4 @@
+(* Binary relations *)
 
 structure Binrel = struct
    datatype t = Eq | Neq | Gt | Geq 

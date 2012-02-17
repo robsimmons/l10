@@ -1,3 +1,5 @@
+(* Terms *)
+
 (* I would do this differently now. As it is, "root" takes a conslist and
  * SymConst does not. I'd rather have SymConst not be parsed from the syntax,
  * but to be introduced in typechecking for things that are, it turns out,

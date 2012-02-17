@@ -2,10 +2,14 @@
 
 t: extensible.
 w: world.
+a: rel@w.
 wt: t -> world.
+at: {X}rel@wt X.
 wstring: string -> world.
+astring: {X}rel@wstring X.
 wnat: nat -> world.
+anat: {X}rel@wnat X.
 
-wt foo <- w.
-wstring "hey" <- w.
-wnat 4 <- w.
+at foo <- a.
+astring "hey" <- a.
+anat 4 <- a.

@@ -1,3 +1,5 @@
+(* Rules prem1,...,premn -> conc1,...,concm are the core computational objects
+ * in L10 *)
 
 structure Rule = struct
    type t = (Pos.t * Prem.t) list * (Pos.t * Atom.t) list   

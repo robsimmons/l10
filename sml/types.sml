@@ -1,5 +1,4 @@
 (* Type checking *)
-(* Robert J. Simmons *)
 
 structure Types :> 
 sig
@@ -557,27 +556,9 @@ fun check decl =
        ; check_illegal pos t "type"
        ; Decl.Type (pos, t, tc_closed_class pos class))
 
-    | Decl.DB (pos, (db, props, SOME world)) => 
-      let  
-         (* The refinements ensure that the returned dbs are empty *)
-         val (_, props') = tc_props (DictX.empty, 0) props
-         val (_, world') = tc_world (DictX.empty, 0) world
-      in
+    | Decl.DB (pos, (db, props)) =>
        ( check_illegal pos db "database"
-       ; Decl.DB (pos, (db, props', SOME world')))
-      end
-
-    | Decl.DB (pos, (db, props, NONE)) =>
-       ( check_illegal pos db "database"
-       ; Decl.DB (pos, (db, #2 (tc_props (DictX.empty, 0) props), NONE)))
-
-    | Decl.Depend (pos, (world, worlds), NONE) => 
-      let
-         val (env, world') = tc_world (DictX.empty, 1) world
-         val (env, worlds') = tc_worlds env worlds
-      in
-         Decl.Depend (pos, (world', worlds'), SOME (good_env pos env))
-      end
+       ; Decl.DB (pos, (db, #2 (tc_props (DictX.empty, 0) props))))
 
     | Decl.Rule (pos, (prems, concs), NONE) => 
       let

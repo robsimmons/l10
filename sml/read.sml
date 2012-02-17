@@ -41,14 +41,6 @@ fun load stream =
          ; Decl.print decl 
          ; load stream)
       end
-    | Stream.Cons (decl as (Decl.Depend (_, depend, _)), stream) => 
-      let
-         val _ = Modes.checkDepend depend
-      in
-         ( Tab.bind decl
-         ; Decl.print decl
-         ; load stream)
-      end
     | Stream.Cons (decl, stream) => 
          ( Tab.bind decl
          ; Decl.print decl

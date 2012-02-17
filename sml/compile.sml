@@ -1,5 +1,4 @@
 (* Intermediate form for compiled terms *)
-(* Robert J. Simmons *)
 
 structure Compile:> sig
 

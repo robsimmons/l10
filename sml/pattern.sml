@@ -1,3 +1,5 @@
+(* Patterns are individual premises; it is something we can ask either
+ * the truth or falsehood of (in a normal or negated premise, respectively) *)
 
 structure Pat = struct
    datatype t =

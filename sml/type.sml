@@ -1,3 +1,4 @@
+(* Base types (just symbols) *)
 
 structure Type = 
 struct

@@ -1,5 +1,4 @@
 (* Managing the relationship between worlds and relations *)
-(* Robert J. Simmons *)
 
 structure Worlds:> 
 sig
@@ -10,9 +9,6 @@ sig
    
    (*[ val ofPat: Pos.t -> Pat.pat_t -> Atom.world_t * SetX.set ]*)
    val ofPat: Pos.t -> Pat.t -> Atom.t * SetX.set
-
-   (*[ val ofRule: Rule.rule_t -> Decl.depend_t ]*)
-   val ofRule: Rule.t -> ((Pos.t * Atom.t) * (Pos.t * Prem.t) list)
 end = 
 struct
 
@@ -64,29 +60,4 @@ fun ofPrem (pos, prem) =
     | Prem.Negated pat => 
          SOME (pos, Prem.Negated (Pat.Atom (#1 (ofPat pos pat))))
     | Prem.Binrel _ => NONE
-
-(*[ val ofRule: Rule.rule_t -> Decl.depend_t ]*)
-fun ofRule ((prems, conc :: concs): Rule.t) =
-let 
-   val world = ofProp conc
-
-   (*[ val checkconc: Pos.t * Atom.prop_t -> unit ]*)
-   fun checkconc conc' = 
-   let val world' = ofProp conc' 
-   in if Atom.eq (#2 world, #2 world') then ()
-      else raise WorldsError (#1 world', "World associated with conclusion `" 
-                                         ^Atom.toString (#2 conc')
-                                         ^"` is `"
-                                         ^Atom.toString (#2 world')
-                                         ^"`, which differs from \
-                                         \earlier conclusion `"
-                                         ^Atom.toString (#2 conc)
-                                         ^"` with associated world `"
-                                         ^Atom.toString (#2 world)
-                                         ^"`")
-   end
-in
- ( app checkconc concs
- ; (world, List.mapPartial ofPrem prems))
-end
 end

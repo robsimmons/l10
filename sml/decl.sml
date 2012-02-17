@@ -1,28 +1,14 @@
+(* Declarations are what make up L10 files and programs *)
 
 structure Decl = struct
-   (*[ sortdef db = 
-          Symbol.symbol 
-          * (Pos.t * Atom.ground_prop) list 
-          * (Pos.t * Atom.ground_world) option ]*)
-
-   (*[ sortdef depend = 
-          (Pos.t * Atom.world) * (Pos.t * Prem.wprem) list ]*)
-
-   (*[ sortdef depend_t = 
-          (Pos.t * Atom.world_t) * (Pos.t * Prem.wprem_t) list ]*)
+   (*[ sortdef db = Symbol.symbol * (Pos.t * Atom.ground_prop) list ]*)
 
    datatype t = 
       World of Pos.t * Symbol.symbol * Class.t
     | Const of Pos.t * Symbol.symbol * Class.t
     | Rel of Pos.t * Symbol.symbol * Class.t
     | Type of Pos.t * Symbol.symbol * Class.t
-    | DB of Pos.t * (Symbol.symbol 
-                     * (Pos.t * Atom.t) list
-                     * (Pos.t * Atom.t) option) (* Last part ignored *)
-    | Depend of 
-         Pos.t 
-         * ((Pos.t * Atom.t) * (Pos.t * Prem.t) list)
-         * Type.env option
+    | DB of Pos.t * (Symbol.symbol * (Pos.t * Atom.t) list)
     | Rule of Pos.t * Rule.t * Type.env option
     | Query of Pos.t * Symbol.symbol * Atom.t
     | Representation of Pos.t * Symbol.symbol * Type.representation
@@ -33,7 +19,6 @@ structure Decl = struct
     | Rel of Pos.t * Symbol.symbol * Class.rel
     | Type of Pos.t * Symbol.symbol * Class.knd
     | DB of Pos.t * db
-    | Depend of Pos.t * depend * Type.env none
     | Rule of Pos.t * Rule.rule * Type.env none
     | Query of Pos.t * Symbol.symbol * Atom.moded
     | Representation of Pos.t * Symbol.symbol * Type.representation
@@ -44,7 +29,6 @@ structure Decl = struct
     | Rel of Pos.t * Symbol.symbol * Class.rel_t
     | Type of Pos.t * Symbol.symbol * Class.knd
     | DB of Pos.t * db
-    | Depend of Pos.t * depend_t * Type.env some
     | Rule of Pos.t * Rule.rule_t * Type.env some
     | Query of Pos.t * Symbol.symbol * Atom.moded_t
     | Representation of Pos.t * Symbol.symbol * Type.representation
@@ -66,15 +50,8 @@ val print =
        print (Symbol.toValue a ^ ": " ^ Class.toString class ^ ".\n")
   | Type (_, t, class) => 
        print (Symbol.toValue t ^ ": " ^ Class.toString class ^ ".\n")
-  | DB (_, (db, _, SOME world)) => 
-       print (Symbol.toValue db^" = (...) @ " 
-              ^Atom.toString (#2 world)^".\n")
-  | DB (_, (db, _, NONE)) => 
+  | DB (_, (db, _)) => 
        print (Symbol.toValue db ^ " = (...).\n")
-  | Depend (_, (conc, prems), _) => 
-     ( print (Atom.toString (#2 conc) ^ " <- ")
-     ; print (String.concatWith ", " (map (Prem.toString o #2) prems))
-     ; print ".\n")
   | Rule (_, (prems, concs), _) =>
      ( print (String.concatWith ", " (map (Prem.toString o #2) prems))
      ; print " -> "

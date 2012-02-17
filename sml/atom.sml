@@ -1,3 +1,4 @@
+(* Worlds and atomic propositions are 'atoms' *)
 
 structure Atom = struct
    type t = Symbol.symbol * Term.t list

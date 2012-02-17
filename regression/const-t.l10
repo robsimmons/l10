@@ -2,4 +2,5 @@
 
 t: extensible.
 w: t -> world.
-w X <- w bar.
+a:{X}rel@w X.
+a X <- a bar.
