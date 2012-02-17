@@ -189,6 +189,8 @@ fun checkConcWorlds world [] = ()
 fun worldPat isDyn isNeg seenWorlds worldVars groundVars pat pos = 
 let
    val (world, vars) = Worlds.ofPat pos pat
+(* val () = print ("    Head world: "^ Atom.toString (hd seenWorlds) ^ "\n")
+   val () = print ("    This world: "^ Atom.toString world ^ "\n") *)
 in
    if isNeg andalso Atom.eq (world, hd seenWorlds)
    then raise NegationError (pos, "The world associated with the conclusion, `"
@@ -204,6 +206,10 @@ in
                   ^Symbol.toValue 
                       (hd (SetX.toList (SetX.difference vars groundVars)))
                   ^"` determines the world in this premise but is not ground.")
+   else if Atom.hasUscore world
+   then raise WorldsError (pos, ("Underscore present where argument\
+                                 \ is needed to determine world"))
+       
    else if SetX.subset (vars, worldVars)
    then (hd seenWorlds, world :: tl seenWorlds, 
          [ (pos, Prem.WorldStatic world) ])
@@ -241,12 +247,19 @@ fun checkPrems isDyn seenWorlds prems worldVars groundVars =
          val (concWorld, premWorlds, newprems) = 
             worldPat isDyn true ((op ::) seenWorlds) worldVars groundVars
                pat pos
+         val () = 
+            case SetX.toList (SetX.difference (Pat.fv pat) groundVars) of
+               [] => ()
+             | x :: _ => raise ModeError (pos, ("Variable `" 
+                                                ^Symbol.toValue x
+                                                ^"` in negated premise not \
+                                                \ground"))
          val (prems', groundVars') = 
             checkPrems isDyn (concWorld, premWorlds) prems worldVars
                (SetX.union groundVars (Pat.fv pat))
       (* val pat = ground_modify_pat groundVars pat *)
       in
-         (newprems @ (pos, Prem.Negated pat) :: prems', groundVars')
+         (newprems @ (pos, Prem.Negated pat) :: prems', groundVars')         
       end
     | (pos, Prem.Binrel (Binrel.Eq, term1, term2, SOME t)) :: prems => 
       let 

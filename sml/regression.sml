@@ -9,6 +9,7 @@ datatype outcome =
    SyntaxError
  | TypeError
  | ModeError
+ | NotStratified
  | InternalError of string
  | UnexpectedError of string
  | Success
@@ -17,6 +18,7 @@ datatype outcome =
 fun str SyntaxError = "syntax error"
   | str TypeError = "type error" 
   | str ModeError = "mode/worlds checking error"
+  | str NotStratified = "stratification error"
   | str (InternalError s) = ("internal error: `"^s^"'")
   | str (UnexpectedError exnname) = ("unexpected error: `"^exnname^"'")
   | str Success = "success"
@@ -56,6 +58,8 @@ fun check args =
         | Types.Reserved _ => SyntaxError
         | Worlds.WorldsError _ => ModeError
         | Modes.ModeError _ => ModeError
+        | Modes.WorldsError _ => ModeError
+        | Modes.NegationError _ => NotStratified
         | Fail s => InternalError s
         | exn => UnexpectedError (exnName exn)
 
@@ -65,20 +69,23 @@ fun checkFile filename =
       val file = TextIO.openIn filename
       val fstline = TextIO.inputLine file before TextIO.closeIn file
       val spec = 
-         case Option.map (String.isPrefix "//test") fstline of
+         case Option.map (fn x => String.isPrefix "//test\n" x 
+                                  orelse String.isPrefix "//test " x) fstline of
             SOME true => String.extract (valOf fstline, 7, NONE)
           | _ => raise Ignore
       val (args, expected) = 
          case map (String.tokens Char.isSpace)
-                 (String.tokens (fn c => #"~" = c) spec) of
+                 (String.fields (fn c => #"~" = c) spec) of
             [ args ] => (args, Success)
           | [ args, [ "SYNTAX-ERROR" ] ] => (args, SyntaxError)
           | [ args, [ "TYPE-ERROR" ] ] => (args, TypeError)
           | [ args, [ "MODE-ERROR" ] ] => (args, ModeError)
+          | [ args, [ "NOT-STRATIFIED" ] ] => (args, NotStratified)
           | _ => ([], InternalError ("could not parse `"^spec^"'"))
       val smlfile = 
          OS.Path.joinBaseExt {base = #base (OS.Path.splitBaseExt filename),
                               ext = SOME "sml"}
+      val () = ignore (OS.Process.system ("rm -f regression/test.l10.sml"))
       val () = 
          if OS.FileSys.access (smlfile, [ OS.FileSys.A_READ ])
          then ignore (OS.Process.system ("cp "^smlfile^" regression/test.sml"))

@@ -1,4 +1,4 @@
-MLTON = mlton -verbose 3 -const "Exn.keepHistory true" -default-ann "redundantMatch error" -default-ann "sequenceNonUnit error" -output 
+MLTON = mlton -verbose 1 -const "Exn.keepHistory true" -default-ann "redundantMatch error" -default-ann "sequenceNonUnit error" -output 
 SML = sml
 
 all:

@@ -1,5 +1,5 @@
 structure Mode = struct datatype t = Input | Output | Ignore end
-struct A =
+structure A =
 struct
    datatype foo = Leaf | Next of bar
    and bar = Branch of foo * foo

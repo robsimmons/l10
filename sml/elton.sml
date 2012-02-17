@@ -86,6 +86,7 @@ fun process_args (state as (output, filename, MName, M_NAME)) args =
       [] => finalize state
     | "-h" :: _ => (print_usage (); raise Success)
     | "--help" :: _ => (print_usage (); raise Success)
+    | "-d" :: args => process_args state args
     | "-o" :: s :: args =>
         (case OS.Path.splitBaseExt s of 
             {ext=SOME "sml",...} =>
@@ -171,6 +172,10 @@ handle Success => OS.Process.success
           err ("World error at " ^ Pos.toString pos ^ "\n" ^ s ^ ".\n")
      | Modes.ModeError (pos, s) =>
           err ("Mode error at " ^ Pos.toString pos ^ "\n" ^ s ^ ".\n")
+     | Modes.WorldsError (pos, s) => 
+          err ("World error at " ^ Pos.toString pos ^ "\n" ^ s ^ ".\n")
+     | Modes.NegationError (pos, s) => 
+          err ("Stratification error at " ^ Pos.toString pos ^ "\n" ^ s ^ ".\n")
      | IO.Io {cause, function, name} =>
           err ( "I/O error trying to " ^ function ^ " " ^ name ^ ".\n"
                 ^ exnMessage cause ^ "\n")
