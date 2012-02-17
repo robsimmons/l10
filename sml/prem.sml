@@ -4,6 +4,8 @@ structure Prem = struct
       Normal of Pat.t
     | Negated of Pat.t
     | Binrel of Binrel.t * Term.t * Term.t * Type.t option
+    | WorldStatic of Atom.t
+    | WorldDynamic of Atom.t
 (*[ 
    datasort prem = 
       Normal of Pat.pat
@@ -15,9 +17,12 @@ structure Prem = struct
     | Negated of Pat.pat_t
     | Binrel of Binrel.t * Term.term_t * Term.term_t * Type.t some
 
-   datasort wprem = Normal of Pat.wpat | Negated of Pat.wpat
-   
-   datasort wprem_t = Normal of Pat.wpat_t | Negated of Pat.wpat_t
+   datasort prem_checked = 
+      Normal of Pat.pat_t
+    | Negated of Pat.pat_t
+    | Binrel of Binrel.t * Term.term_t * Term.term_t * Type.t some
+    | WorldStatic of Atom.world_t
+    | WorldDynamic of Atom.world_t
 ]*)
 
    (*[ val fv: prem_t -> SetX.set ]*)
@@ -36,4 +41,6 @@ structure Prem = struct
           ( Term.toString term1 ^ " "
           ^ Binrel.toString br ^ " "
           ^ Term.toString term2)
+       | WorldStatic _ => "<world static>"
+       | WorldDynamic _ => "<world dynamic>"
 end

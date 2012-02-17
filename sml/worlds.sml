@@ -7,7 +7,10 @@ sig
 
    (*[ val ofProp: Pos.t * Atom.prop_t -> Pos.t * Atom.world_t ]*)
    val ofProp: Pos.t * Atom.t -> Pos.t * Atom.t
-  
+   
+   (*[ val ofPat: Pos.t -> Pat.pat_t -> Atom.world_t * SetX.set ]*)
+   val ofPat: Pos.t -> Pat.t -> Atom.t * SetX.set
+
    (*[ val ofRule: Rule.rule_t -> Decl.depend_t ]*)
    val ofRule: Rule.t -> ((Pos.t * Atom.t) * (Pos.t * Prem.t) list)
 end = 
@@ -36,6 +39,32 @@ in case apply (Tab.lookup Tab.rels a) DictX.empty terms of
     | (w, SOME terms) => (pos, (w, terms))
 end
   
+
+(*[ val ofPat: Pos.t -> Pat.pat_t -> Atom.world_t * SetX.set ]*)
+fun ofPat pos pat = 
+   case pat of 
+      Pat.Atom prop => 
+      let val (pos, world) = ofProp (pos, prop) 
+      in (world, Atom.fv world)
+      end
+    | Pat.Exists (x, SOME _, pat) => 
+      let val (world, fv) = ofPat pos pat 
+      in
+         if not (SetX.member fv x) then (world, fv)
+         else raise WorldsError (pos, ("Locally-quantified variable `"
+                                       ^Symbol.toValue x^"` used in a \
+                                       \world-sensitive position"))
+      end
+      
+(*[ val ofPrem: Pos.t * Prem.prem_t -> (Pos.t * Prem.wprem_t) option ]*)
+fun ofPrem (pos, prem) = 
+   case prem of 
+      Prem.Normal pat => 
+         SOME (pos, Prem.Normal (Pat.Atom (#1 (ofPat pos pat))))
+    | Prem.Negated pat => 
+         SOME (pos, Prem.Negated (Pat.Atom (#1 (ofPat pos pat))))
+    | Prem.Binrel _ => NONE
+
 (*[ val ofRule: Rule.rule_t -> Decl.depend_t ]*)
 fun ofRule ((prems, conc :: concs): Rule.t) =
 let 
@@ -45,40 +74,17 @@ let
    fun checkconc conc' = 
    let val world' = ofProp conc' 
    in if Atom.eq (#2 world, #2 world') then ()
-      else raise WorldsError (#1 world', ( "World associated with conclusion `" 
-                                         ^ Atom.toString (#2 conc')
-                                         ^ "` is `"
-                                         ^ Atom.toString (#2 world')
-                                         ^ "`, which differs from\
-                                         \ earlier conclusion `"
-                                         ^ Atom.toString (#2 conc)
-                                         ^ "` with associated world `"
-                                         ^ Atom.toString (#2 world)
-                                         ^ "`"))
+      else raise WorldsError (#1 world', "World associated with conclusion `" 
+                                         ^Atom.toString (#2 conc')
+                                         ^"` is `"
+                                         ^Atom.toString (#2 world')
+                                         ^"`, which differs from \
+                                         \earlier conclusion `"
+                                         ^Atom.toString (#2 conc)
+                                         ^"` with associated world `"
+                                         ^Atom.toString (#2 world)
+                                         ^"`")
    end
-
-   (*[ val ofPat: Pos.t -> Pat.pat_t -> Pat.wpat_t * SetX.set ]*)
-   fun ofPat pos pat = 
-      case pat of 
-         Pat.Atom prop => 
-         let val (pos, world) = ofProp (pos, prop) 
-         in (Pat.Atom world, Atom.fv world)
-         end
-       | Pat.Exists (x, SOME _, pat) => 
-         let val (world, fv) = ofPat pos pat 
-         in
-            if not (SetX.member fv x) then (world, fv)
-            else raise WorldsError (pos, ( "Local variable `"
-                                         ^ Symbol.toValue x ^ "` used in a\
-                                         \ world-sensitive position"))
-         end
-      
-   (*[ val ofPrem: Pos.t * Prem.prem_t -> (Pos.t * Prem.wprem_t) option ]*)
-   fun ofPrem (pos, prem) = 
-      case prem of 
-         Prem.Normal pat => SOME (pos, Prem.Normal (#1 (ofPat pos pat)))
-       | Prem.Negated pat => SOME (pos, Prem.Negated (#1 (ofPat pos pat)))
-       | Prem.Binrel _ => NONE
 in
  ( app checkconc concs
  ; (world, List.mapPartial ofPrem prems))

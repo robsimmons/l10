@@ -127,9 +127,13 @@ let
       process_args (NONE, NONE, NONE, NONE) args
    val () = Read.file input
    val out = TextIO.openOut output
-   val all_rules = List.concat (Tab.range Tab.rules)
-   val rules = map (fn (i, r) => (i, Compile.compile r)) all_rules
-   val tables = Indices.canonicalize (Compile.indices (map #2 rules))
+   val compiled_rules = 
+      foldr (fn ((w, rule), dict) =>
+                DictX.insert dict w (map Compile.compile rule))
+         (Tab.fold (fn (w, _, dict) => DictX.insert dict w []) 
+             DictX.empty Tab.worlds)
+         (Tab.list Tab.rules)
+   val tables = Indices.canonicalize (Compile.indices compiled_rules)
 in
  ( outstream := out
  ; Util.write out
@@ -139,8 +143,8 @@ in
         ; Interface.emitStructHead MName M_NAME
         ; Util.incr ()
         ; Indices.emit tables
-        ; Rules.emit tables rules
-        ; Search.emit ()
+        ; Rules.emit tables compiled_rules
+        ; Search.emit compiled_rules
         ; Util.decr ()
         ; Interface.emitStruct tables))
  ; TextIO.closeOut out)

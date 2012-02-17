@@ -1,7 +1,7 @@
 
 structure Search:> sig
 
-   val emit: unit -> unit 
+   val emit: Compile.compiled_rule list DictX.dict -> unit 
 
 end = 
 struct
@@ -106,17 +106,17 @@ fun emitStartingPoints w terms =
 
 (* Emit the saturation fuction for a given world *)
 
+(*
 fun filterDependency shapes (pos, ((_, (w', args)), prems), SOME _) =
    case Term.gens (shapes, args) of
       NONE => NONE
     | SOME subst => SOME (pos, (w', args), subst, prems)
+*)
 
-fun filterRule shapes (i, (pos, (prems, concs), _)) =
-let val (_, (w, args)) = Worlds.ofProp (hd concs)
-in case Term.gens (shapes, args) of
+fun filterRule shapes (i, pos, ((w, args), deps), rule) =
+  case Term.gens (shapes, args) of
       NONE => NONE
-    | SOME subst => SOME (i, pos, (w, args), subst, prems, concs)
-end
+    | SOME subst => SOME (i, pos, ((w, args), deps), rule, subst)
 
 fun substEqualities subst = 
 let
@@ -151,6 +151,7 @@ in
  ; List.foldr process_subst ([], DictX.empty) subst_list)
 end
 
+(*
 fun emitDependencyVisitor shapes (fst, (pos, conc, subst, prems)) = 
 let
    val () = emit fst
@@ -187,8 +188,15 @@ in
  ; if null equalities then () else (decr (); emit ["else db"])
  ; decr ())
 end
+*)
 
-fun emitStartingPoints shapes (i, pos, world, subst, prems, concs) =
+fun staticDepStr subst (w, args) = 
+   "saturate_"^Symbol.toValue w
+   ^Strings.optTuple
+       (map (fn term => Strings.build (valOf (Term.subst (subst, term)))) args)
+   ^" db"
+
+fun emitRule shapes (i, pos, (world, deps), rule, subst) =
 let
    val (opar, cpar) = if null (#2 world) then ("", "") else ("(", ")") 
    val () = emit ["","(* Rule #"^Int.toString i^", world "^opar
@@ -200,24 +208,29 @@ let
       ^Strings.tuple (map (Strings.build o #2) (DictX.toList subst))
 in
  if easy_case 
- then emit ["val exec = "^starting_point^" o exec"]
+ then
+   ( app (fn world => emit ["val db = "^staticDepStr subst world]) deps
+   ; emit ["val exec = "^starting_point^" o exec"])
  else
    ( appFirst (fn () => raise Fail "Invariant: impossible except in easy case")
         (fn (pre,cnstr) => emit [pre^Strings.eqpath cnstr])
         ("val b = ", "        andalso")
         equalities
+   ; app (fn world => 
+            emit ["val db = if b then "^staticDepStr subst world^" else db"])
+        deps
    ; emit ["val exec = if b then "^starting_point^" o exec else exec"])
 end
 
-fun emitWorld (w, depends) =
+fun emitWorld (w, rules: Compile.compiled_rule list) =
 let 
    val splits = 
       List.foldl
-         (fn ((_, ((_, (w', args)), _), SOME _), splits) => 
+         (fn ((w', args), splits) => 
            ( if Symbol.eq (w, w') then () else raise Fail "Search.emit"
            ; Splitting.insertList splits args))
          (Splitting.unsplit (Tab.lookup Tab.worlds w))
-         depends
+         (map (#1 o #3) rules)
 
    val tuple = Strings.optTuple (map (fn (i, _) => Path.toVar [ i ]) splits)
    val prefix = 
@@ -240,12 +253,13 @@ in
         ( emit ["(* " ^ Atom.toString (w, shapes) ^ " *)"]
         ; emit ["let"]
         ; incr ()
+(*
         ; appFirst (fn () => ()) (emitDependencyVisitor shapes) ([],[""])
              (rev (List.mapPartial (filterDependency shapes) depends))
         ; flush ()
-        ; app (emitStartingPoints shapes)
-             (rev (List.mapPartial (filterRule shapes) 
-                      (Tab.lookup_list Tab.rules w)))
+*)
+        ; app (emitRule shapes)
+             (rev (List.mapPartial (filterRule shapes) rules))
         ; decr ()
         ; emit ["in"]
         ; incr ()
@@ -258,7 +272,7 @@ in
  ; emit ["end"])
 end   
 
-fun emit' () = 
+fun emit' compiled_rules = 
 let
 in
  ( emit ["", "", "(* L10 Generated Tabled Search (search.sml) *)", ""]
@@ -299,7 +313,7 @@ in
                (Splitting.Unsplit Type.world) 
                Tab.worlds)])
 
- ; app emitWorld (rev (Tab.list Tab.depends))
+ ; DictX.app emitWorld compiled_rules
  ; decr ()
  ; emit ["end"])
 end

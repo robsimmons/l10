@@ -76,13 +76,11 @@ struct
          (*[ <: int -> depend list tab ]*))
          1 
 
-   (*[ sortdef rule = (Pos.t * Rule.rule_t * Type.env some) ]*)
+   (*[ sortdef rule = int * Pos.t * Atom.world_t * Rule.rule_checked ]*)
    (*[ val rules: rule list tab ]*)
    val ruleid: int ref = ref 1
-   val rules: (int * (Pos.t * Rule.t * Type.env option)) list tab =
-      (SymbolHashTable.table
-         (*[ <: int -> (Pos.t * Rule.rule_t * Type.env some) list tab ]*))
-         1
+   val rules: (int * Pos.t * Atom.t * Rule.t) list tab =
+      SymbolHashTable.table 1
 
    (*[ val queries: (Pos.t * Atom.moded_t) tab ]*)
    val queries: (Pos.t * Atom.t) tab = SymbolHashTable.table 1
@@ -144,21 +142,17 @@ struct
          (merge (*[ <: depend list tab -> Symbol.symbol -> depend -> unit ]*)) 
              depends w depend
      | bind (Decl.Rule (rule as (_, (_, concs), _))) = 
-       let
-          val (_, (r, _)) = hd concs
-          val class = SymbolHashTable.lookup rels r
-          val (w, _) = Class.rel class
-       in 
-         (merge
-            (*[ <: (int * rule) list tab -> Symbol.symbol -> rule -> unit ]*))
-            rules w (!ruleid, rule) 
-         before ruleid := !ruleid + 1
-       end
+          raise Fail "Rules should only be added with Tab.bindDecl"
      | bind (Decl.Query (pos, m, mode)) = 
           SymbolHashTable.insert queries m (pos, mode)
      | bind (Decl.Representation (pos, t, rep)) =
           SymbolHashTable.insert representations t rep
    end
+
+   (*[ val bindDecl: Pos.t * Atom.world_t * Rule.rule_checked -> unit ]*)
+   fun bindDecl (pos, world as (w, _), rule) = 
+      merge rules w (!ruleid, pos, world, rule)
+      before ruleid := !ruleid + 1
 
    local 
       val coord = Coord.init "?"

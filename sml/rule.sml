@@ -5,6 +5,8 @@ structure Rule = struct
           (Pos.t * Prem.prem) list * (Pos.t * Atom.prop) conslist ]*)
    (*[ sortdef rule_t = 
           (Pos.t * Prem.prem_t) list * (Pos.t * Atom.prop_t) conslist ]*)
+   (*[ sortdef rule_checked = 
+          (Pos.t * Prem.prem_t) list * (Pos.t * Atom.prop_t) conslist ]*)
 
    (*[ val fv: rule_t -> SetX.set ]*)
    fun fv ((prems, concs): t) =

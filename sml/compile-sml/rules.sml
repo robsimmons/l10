@@ -1,12 +1,7 @@
 structure Rules:>
 sig
 
-   (*[ val emit: Indices.tables 
-                    -> (int * (Pos.t * Atom.world_t * rule)) list
-                    -> unit ]*)
-   val emit: Indices.tables 
-                -> (int * (Pos.t * Atom.t * Compile.rule)) list 
-                -> unit
+   val emit: Indices.tables -> Compile.compiled_rule list DictX.dict -> unit
 
 end = 
 struct
@@ -27,8 +22,8 @@ let
       Strings.tuple (map fake_functions outgoing)
    fun optemit [] = ()
      | optemit ts = emit [Strings.tuple ts]
-   fun next_call (common: Compile.common) =
-      next^" "^tuple_outgoing (#outgoing common)^" db"
+   fun next_call (common: Compile.rule Compile.common) =
+      next^" "^tuple_outgoing (#outgoing common)^" srch db"
 in
    case rule of 
       Compile.Normal {common, index, input, output, eqs} =>
@@ -43,7 +38,7 @@ in
       in
        ( emitrule' tables n (i+1) (#cont common)
        ; emit ["(* "^(#label common)^" *)"]
-       ; emit ["fun "^this^" "^tuple_incoming (#incoming common)^" db ="]
+       ; emit ["fun "^this^" "^tuple_incoming (#incoming common)^" srch db ="]
        ; incr ()
        ; emit ["L10_Tables.fold_"^Int.toString label]
        ; incr ()
@@ -75,7 +70,7 @@ in
       in
        ( emitrule' tables n (i+1) (#cont common)
        ; emit ["(* "^(#label common)^" *)"]
-       ; emit ["fun "^this^" "^tuple_incoming (#incoming common)^" db ="]
+       ; emit ["fun "^this^" "^tuple_incoming (#incoming common)^" srch db ="]
        ; incr ()
        ; emit ["if L10_Tables.fold_"^Int.toString label]
        ; incr (); incr ()
@@ -97,7 +92,7 @@ in
     | Compile.Binrel {common, binrel, term1, term2, t} =>
        ( emitrule' tables n (i+1) (#cont common)
        ; emit ["(* "^(#label common)^" *)"]
-       ; emit ["fun "^this^" "^tuple_incoming (#incoming common)^" db ="]
+       ; emit ["fun "^this^" "^tuple_incoming (#incoming common)^" srch db ="]
        ; incr ()
        ; emit ["if "^Strings.binrel t binrel 
                         (Strings.build term1) (Strings.build term2)]
@@ -118,12 +113,18 @@ in
               ; loop (prefix^" ") (postfix^")") facts)
       in
        ( emit ["(* assert -- "^str^" *)"]
-       ; emit ["fun "^this^" "^tuple_incoming incoming^" db ="]
+       ; emit ["fun "^this^" "^tuple_incoming incoming^" srch db ="]
        ; loop "   " "" (rev facts))
       end
+    | Compile.World {common, world} =>
+       ( emitrule' tables n (i+1) (#cont common)
+       ; emit ["(* Dynamic world search: "^Atom.toString world^" *)"]
+       ; emit ["fun "^this^" "^tuple_incoming (#incoming common)^" srch db ="]
+       ; emit ["   "^next_call common^" srch (srch "
+               ^Strings.build (Term.Root world)^")"])
 end
 
-fun emitrule tables (n, (pos, world, rule)) =
+fun emitrule tables (n, pos, (world, deps), rule) =
  ( emit ["(* Rule at " ^ Pos.toString pos ^ " *)",""]
  ; emitrule' tables (Int.toString n) 0 rule
  ; emit [""])
@@ -132,7 +133,7 @@ fun emit' tables rules =
  ( emit ["","","(* L10 immediate consequences (rules.sml) *)"]
  ; emit ["","structure L10_Consequence =","struct",""]
  ; incr ()
- ; List.app (emitrule tables) rules
+ ; DictX.app (List.app (emitrule tables) o #2) rules
  ; decr ()
  ; emit ["end"])
 

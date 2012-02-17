@@ -3,12 +3,14 @@
 
 structure Read:> sig
    (* Reads and checks a file or a list of files loads them into memory *)
+   val isDyn: bool ref
    val file: string -> unit
    val files: string list -> unit
 end = 
 struct
 
 open Util
+val isDyn = ref true
 
 (*[ val stream_front: 
        Decl.decl_t Stream.stream 
@@ -33,13 +35,9 @@ fun load stream =
       Stream.Nil => ()
     | Stream.Cons (decl as (Decl.Rule (pos, rule, fv)), stream) => 
       let 
-         val depend = Worlds.ofRule rule 
-         val fvWorld = Atom.fv (#2 (#1 depend))
-         val _ = Modes.checkDepend depend
-         val _ = Modes.checkRule rule fvWorld 
+         val (world, rule) = Modes.check (!isDyn) rule
       in 
-         ( Tab.bind (Decl.Depend (pos, depend, fv))
-         ; Tab.bind decl
+         ( Tab.bindDecl (pos, world, rule)
          ; Decl.print decl 
          ; load stream)
       end

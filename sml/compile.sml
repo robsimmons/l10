@@ -5,78 +5,78 @@ structure Compile:> sig
 
    type eqconstraint = Type.t * Path.t * Path.t
 
-   (* XXX there is some why in standard ml to get this to work... *)
-   datatype rule =  
-      Normal of 
-         {common: {label: string, (* Debugging information only *)
+   type 'a common = 
+      {label: string, (* Debugging information only *)
        incoming: SetX.set, (* This call's args! *)
        outgoing: (Symbol.symbol * Path.t option) list, (* Next call's args! *)
-       cont: rule},
+       cont: 'a}
+
+   datatype rule =  
+      Normal of 
+         {common: rule common,
           index: Atom.t, (* Atom.moded_t - which index do we need to call? *) 
           input: Symbol.symbol Path.Dict.dict, (* Index takes symbols... *)
           output: Symbol.symbol Path.Dict.dict, (* ...returns others... *)
           eqs: eqconstraint list} (* ...that must pass cstrs. *)
     | Negated of 
-         {common: {label: string, (* Debugging information only *)
-       incoming: SetX.set, (* This call's args! *)
-       outgoing: (Symbol.symbol * Path.t option) list, (* Next call's args! *)
-       cont: rule},
+         {common: rule common,
           index: Atom.t, (* Atom.moded_t - which index do we need to call? *) 
           input: Symbol.symbol Path.Dict.dict, (* Index takes symbols... *)
           eqs: eqconstraint list} (* ...and must fail cstrs. *)
     | Binrel of 
-         {common: {label: string, (* Debugging information only *)
-       incoming: SetX.set, (* This call's args! *)
-       outgoing: (Symbol.symbol * Path.t option) list, (* Next call's args! *)
-       cont: rule},
+         {common: rule common,
           binrel: Binrel.t, 
           term1: Term.t,
           term2: Term.t,
           t: Type.t}
+    | World of 
+         {common: rule common,
+          world: Atom.t}
     | Conclusion of {incoming: SetX.set, facts: (Pos.t * Atom.t) list}
 
-   type common = 
-      {label: string, (* Debugging information only *)
-       incoming: SetX.set, (* This call's args! *)
-       outgoing: (Symbol.symbol * Path.t option) list, (* Next call's args! *)
-       cont: rule}
+   type compiled_rule = int * Pos.t * (Atom.t * Atom.t list) * rule
 
-   (*[ val compile: Tab.rule -> Pos.t * Atom.world_t * rule ]*)
-   val compile: Pos.t * Rule.t * Type.env option -> Pos.t * Atom.t * rule
+   (*[ val compile: Tab.rule -> compiled_rule ]*)
+   val compile: int * Pos.t * Atom.t * Rule.t -> compiled_rule
 
-   (*[ val indices: (Pos.t * Atom.world_t * rule) list -> Atom.moded_t list ]*)
-   val indices: (Pos.t * Atom.t * rule) list -> Atom.t list
+   (*[ val indices: compiled_rule list DictX.dict -> Atom.moded_t list ]*)
+   val indices: compiled_rule list DictX.dict -> Atom.t list
 
 end = 
 struct
 
 type eqconstraint = Type.t * Path.t * Path.t
 
+type 'a common = 
+   {label: string, (* Debugging information only *)
+    incoming: SetX.set, (* This call's args! *)
+    outgoing: (Symbol.symbol * Path.t option) list, (* Next call's args! *)
+    cont: 'a}
+
 datatype rule =  
    Normal of 
-      {common: common,
+      {common: rule common,
        index: Atom.t, (* Atom.moded_t - which index do we need to call? *) 
        input: Symbol.symbol Path.Dict.dict, (* Index takes symbols... *)
        output: Symbol.symbol Path.Dict.dict, (* ...Returns others... *)
        eqs: eqconstraint list} (* ...that must pass cstrs. *)
  | Negated of 
-      {common: common,
+      {common: rule common,
        index: Atom.t, (* Atom.moded_t - which index do we need to call? *) 
        input: Symbol.symbol Path.Dict.dict, (* Index takes symbols... *)
        eqs: eqconstraint list} (* ...and must fail cstrs. *)
  | Binrel of 
-      {common: common,
+      {common: rule common,
        binrel: Binrel.t, 
        term1: Term.t,
        term2: Term.t,
        t: Type.t}
+ | World of 
+      {common: rule common,
+       world: Atom.t}
  | Conclusion of {incoming: SetX.set, facts: (Pos.t * Atom.t) list}
 
-withtype common = 
-   {label: string, (* Debugging information only *)
-    incoming: SetX.set, (* This call's args! *)
-    outgoing: (Symbol.symbol * Path.t option) list, (* Next call's args! *)
-    cont: rule}
+type compiled_rule = int * Pos.t * (Atom.t * Atom.t list) * rule
 
 (*[ type stuff =
        (eqconstraint list 
@@ -201,14 +201,14 @@ fun compile' (known, prems, concs) =
                      outgoing
             in
                Normal 
-                  { common = { label = label
-                             , incoming = incoming
-                             , outgoing = outgoing'
-                             , cont = cont}
-                  , index = index 
-                  , input = input
-                  , output = output
-                  , eqs = eqs}
+                  {common = {label = label,
+                             incoming = incoming,
+                             outgoing = outgoing',
+                             cont = cont},
+                   index = index,
+                   input = input,
+                   output = output,
+                   eqs = eqs}
             end
           | Prem.Negated pat => 
             let 
@@ -217,34 +217,47 @@ fun compile' (known, prems, concs) =
              ( if Path.Dict.isEmpty output then ()
                else raise Fail "Non-empty outputs for negated premise?!"
              ; Negated 
-                  { common = { label = label
-                             , incoming = incoming
-                             , outgoing = outgoing
-                             , cont = cont}
-                  , index = index 
-                  , input = input
-                  , eqs = eqs})
+                  {common = {label = label,
+                             incoming = incoming,
+                             outgoing = outgoing,
+                             cont = cont},
+                   index = index,
+                   input = input,
+                   eqs = eqs})
             end
           | Prem.Binrel (binrel, t1, t2, SOME typ) => 
                Binrel 
-                  { common = { label = label
-                             , incoming = incoming
-                             , outgoing = outgoing
-                             , cont = cont}
-                  , binrel = binrel
-                  , term1 = t1
-                  , term2 = t2
-                  , t = typ} 
+                  {common = {label = label,
+                             incoming = incoming,
+                             outgoing = outgoing,
+                             cont = cont},
+                   binrel = binrel,
+                   term1 = t1,
+                   term2 = t2,
+                   t = typ} 
+          | Prem.WorldStatic _ => cont
+          | Prem.WorldDynamic world => 
+               World
+                 {common = {label = label, 
+                            incoming = incoming,
+                            outgoing = outgoing, 
+                            cont = cont},
+                  world = world}
+                
       end
  
-fun compile (pos, rule as (prems, concs), SOME env) =
+fun compile (id, pos, world, rule as (prems, concs)) =
    let
-      val (_, world) = Worlds.ofProp (hd concs)
+      val staticWorldDeps = 
+         List.mapPartial 
+             (fn (_, Prem.WorldStatic world) => SOME world | _ => NONE)
+             prems
    in
-      (pos, world, compile' (Atom.fv world, prems, concs))
+      (id, pos, (world, staticWorldDeps), 
+       compile' (Atom.fv world, prems, concs))
    end
 
-fun indices x =
+fun indices dict =
 let
    (* PERF: O(n^2) in the total number of indices *)
    fun add indices index = 
@@ -260,14 +273,20 @@ let
          Normal {index, common, ...} => loop (#cont common, add indices index)
        | Negated {index, common, ...} => loop (#cont common, add indices index)
        | Binrel {common, ...} => loop (#cont common, indices)
-       | Conclusion {...} => indices
- 
-   (* Make sure that all the user-specified indices are present. *)
-   val initial = 
-      Tab.fold (fn (_, (_, index), indices) => add indices index) 
-         [] Tab.queries
+       | Conclusion {...} => indices      
 in
-   List.foldr (fn ((_, _, rule), indices) => loop (rule, indices)) initial x
+   DictX.foldr 
+      (* Nested folds! Awesome. (Just analyze every compiled rule) *)
+      (fn (_, rules, indices) => 
+         List.foldr 
+            (fn ((_, _, _, rule), indices) => loop (rule, indices)) 
+            indices 
+            rules)
+
+      (* Make sure that all the user-specified indices are present. *)
+      (Tab.fold (fn (_, (_, index), indices) => add indices index) 
+          [] Tab.queries)
+      dict
 end
 
 end
