@@ -38,8 +38,9 @@ structure Pat = struct
        | Exists (x, NONE, pat0) => 
             "(Ex " ^ Symbol.toValue x ^ ". " ^ toString pat0 ^ ")"
        | Exists (x, SOME t, pat0) => 
-         "(Ex " ^ Symbol.toValue x ^ ":" ^ Symbol.toValue t ^ ". "
-         ^ toString pat0 ^ ")"
+            if String.isPrefix "USCORE_" (Symbol.toValue x) then toString pat0
+            else "(Ex " ^ Symbol.toValue x ^ ":" ^ Symbol.toValue t ^ ". "
+                 ^ toString pat0 ^ ")"
        | Conj (pat1, pat2) => toString pat1 ^ ", " ^ toString pat2
        | One => "1"
 end

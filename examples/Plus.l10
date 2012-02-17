@@ -1,7 +1,7 @@
 // Backward-chaining in L10. It may be a bad idea, but it's possible!
 // Robert J. Simmons
 
-n: type.
+n: type. {-# TYPE n transparent #-}
 z: n.
 s: n -> n.
 

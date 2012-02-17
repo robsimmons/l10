@@ -26,7 +26,7 @@ struct
       SymConst of Symbol.symbol 
     | NatConst of IntInf.int
     | StrConst of string
-    | Var of Symbol.symbol option * Type.t some
+    | Var of Symbol.symbol some * Type.t some
     | Root of Symbol.symbol * term_t conslist
 
    datasort ground = 
@@ -95,7 +95,9 @@ struct
        | NatConst i => IntInf.toString i
        | StrConst s => "\"" ^ s ^ "\""
        | Var (NONE, _) => "_"
-       | Var (SOME x, _) => Symbol.toValue x
+       | Var (SOME x, _) => 
+         let val s = Symbol.toValue x
+         in if String.isPrefix "USCORE_" s then "_" else s end 
        | Mode (m, _) => Mode.toString m
        | Root (f, terms) => 
          if Symbol.eq (f, Symbol.fromValue "_plus") andalso length terms = 2
