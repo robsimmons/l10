@@ -25,13 +25,16 @@ structure Prem = struct
     | WorldDynamic of Atom.world_t
 ]*)
 
-   (*[ val fv: prem_t -> SetX.set ]*)
+   (*[ val fv: prem_t -> SetX.set
+             & prem_checked -> SetX.set ]*)
    fun fv prem = 
       case prem of 
          Normal pat => Pat.fv pat
        | Negated pat => Pat.fv pat
        | Binrel (_, term1, term2, _) => 
            SetX.union (Term.fv term1) (Term.fv term2)
+       | WorldStatic world => Atom.fv world
+       | WorldDynamic world => Atom.fv world
 
    fun toString prem =  
       case prem of 

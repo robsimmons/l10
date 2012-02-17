@@ -199,13 +199,19 @@ fun staticDepStr subst (w, args) =
 fun emitRule shapes (i, pos, (world, deps), rule, subst) =
 let
    val (opar, cpar) = if null (#2 world) then ("", "") else ("(", ")") 
-   val () = emit ["","(* Rule #"^Int.toString i^", world "^opar
-                  ^Atom.toString world^cpar^" *)","(* "^Pos.toString pos^" *)"]
+   val worldstr = if Symbol.eq (#1 world, Symbol.fromValue "world")
+                  then "default world" 
+                  else if null (#2 world)
+                  then "world "^Symbol.toValue (#1 world)
+                  else "world ("^Atom.toString world^")"
+   val () = emit ["","(* Rule #"^Int.toString i^", "^worldstr^" *)",
+                  "(* "^Pos.toString pos^" *)"]
    val (equalities, subst) = substEqualities subst
    val easy_case = null equalities
    val starting_point = 
       "L10_Consequence.exec_"^Int.toString i^" "
       ^Strings.tuple (map (Strings.build o #2) (DictX.toList subst))
+      ^" saturate"
 in
  if easy_case 
  then

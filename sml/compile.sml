@@ -273,6 +273,7 @@ let
          Normal {index, common, ...} => loop (#cont common, add indices index)
        | Negated {index, common, ...} => loop (#cont common, add indices index)
        | Binrel {common, ...} => loop (#cont common, indices)
+       | World {common, ...} => loop (#cont common, indices)
        | Conclusion {...} => indices      
 in
    DictX.foldr 

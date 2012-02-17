@@ -9,6 +9,23 @@ Tab.reset ();
 Elton.go ("elton", [ "examples/TreePath.l10" ]);
 use "examples/TreePath.l10.sml";
 
+Tab.reset ();
+Elton.go ("elton", [ "examples/Regexp.l10" ]);
+use "examples/Regexp.l10.sml";
+
+structure Whee = struct
+datatype t = Whoo of IntInf.int | Wha of t * t
+end;
+
+Tab.reset ();
+Elton.go ("elton", [ "regression/regexp.l10" ]);
+use "regression/regexp.l10.sml";
+
+Tab.reset ();
+Elton.go ("elton", [ "examples/Evens.l10" ]);
+use "examples/Evens.l10.sml";
+
+
 (*
 Tab.reset ();
 Read.file "examples/bulp/transitive2.l10";
