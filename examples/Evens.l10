@@ -19,10 +19,17 @@ fact: n -> rel @ wfact.
 wn: n -> world.
 class: {N: n} eo -> rel @ wn N.
 
+class z e.
+class N e -> class (s N) o.
+class N o -> class (s N) e.
+
 // Even-odd database
 wdb: world.
 even: n -> rel @ wdb.
 odd: n -> rel @ wdb.
+
+fact N, class N e -> even N.
+fact N, class N o -> odd N.
 
 // Conclusions
 wconc: world.
@@ -31,8 +38,6 @@ both: rel @ wconc.
 justodd: rel @ wconc.
 justeven: rel @ wconc.
 
-fact N, class N e -> even N.
-fact N, class N o -> odd N.
 not (odd _), not (even _) -> empty.
 odd _, not (even _) -> justodd.
 not (odd _), even _ -> justeven.
@@ -42,3 +47,6 @@ someevens = (fact z, fact (s (s (s (s z)))), fact (s (s (s (s (s (s z))))))).
 someodds = (fact (s (s (s z))), fact (s (s (s (s (s (s (s z)))))))).
 someofboth = (fact (s (s (s (s z)))), fact (s (s (s (s (s (s (s z)))))))).
 
+{-# QUERY facts fact - #-}
+{-# QUERY evens even - #-}
+{-# QUERY odds odd - #-}

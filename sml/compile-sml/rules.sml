@@ -120,8 +120,8 @@ in
        ( emitrule' tables n (i+1) (#cont common)
        ; emit ["(* Dynamic world search: "^Atom.toString world^" *)"]
        ; emit ["fun "^this^" "^tuple_incoming (#incoming common)^" srch db ="]
-       ; emit ["   "^next_call common^" srch (srch "
-               ^Strings.build (Term.Root world)^")"])
+       ; emit ["   "^next^" "^tuple_outgoing (#outgoing common)^" srch (srch "
+               ^Strings.build (Term.Root world)^" db)"])
 end
 
 fun emitrule tables (n, pos, (world, deps), rule) =

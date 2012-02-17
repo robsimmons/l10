@@ -159,10 +159,10 @@ let
     ; incr ()
     ; appSuper
          (fn () => emit ["   \"" ^ c ^ "\"" ^ post])
-         (fn x => emit ["   \"(" ^ c ^ " \" ^ " ^ getstr x ^ " ^ \")\"" ^ post])
-         ((fn x => (incr (); emit ["\"(" ^ c ^ " \" ^ " ^ getstr x]))
-          , (fn x => emit ["^ " ^ getstr x])
-          , (fn x => (emit ["^ " ^ getstr x ^ " ^ \")\"" ^ post]; decr ())))
+         (fn x => emit ["   \"(" ^ c ^ " \"^" ^ getstr x ^ " ^ \")\"" ^ post])
+         ((fn x => (incr (); emit ["\"(" ^ c ^ " \"^" ^ getstr x]))
+          , (fn x => emit ["^\" \"^" ^ getstr x])
+          , (fn x => (emit ["^\" \"^" ^ getstr x ^ "^\")\"" ^ post]; decr ())))
          xs
     ; decr ())
    end

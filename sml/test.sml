@@ -1,6 +1,9 @@
 CM.make "$SMACKAGE/cmlib/v1/cmlib.cm";
 CM.make "sml/sources.cm";
 
+fun assert b = if b then () else raise Match;
+
+(*
 Tab.reset ();
 Elton.go ("elton", [ "examples/EdgePath1.l10" ]);
 use "examples/EdgePath1.l10.sml";
@@ -20,11 +23,36 @@ end;
 Tab.reset ();
 Elton.go ("elton", [ "regression/regexp.l10" ]);
 use "regression/regexp.l10.sml";
+*)
 
 Tab.reset ();
 Elton.go ("elton", [ "examples/Evens.l10" ]);
 use "examples/Evens.l10.sml";
+open Evens;
+fun f db = (Query.justeven db, Query.justodd db, Query.empty db, Query.both db);
+assert ((true, false, false, false) = f someevens);
+assert ((false, true, false, false) = f someodds);
+assert ((false, false, true, false) = f empty);
+assert ((false, false, false, true) = f someofboth);
 
+Tab.reset ();
+Elton.go ("elton", [ "examples/Plus.l10" ]);
+use "examples/Plus.l10.sml";
+open Plus;
+
+fun toN n = 
+   if n < 0 then raise Domain
+   else if n = 0 then N.Z' 
+   else N.S' (toN (n-1));
+fun fromN n = 
+   case N.prj n of 
+      N.Z => 0
+    | N.S n => 1 + fromN n;
+fun runN query x = 
+   case query (op ::) [] empty x of 
+      [ n ] => fromN n
+    | _ => raise Match;
+assert (runN Query.fibonacci (toN 11) = 144);
 
 (*
 Tab.reset ();

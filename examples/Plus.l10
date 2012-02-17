@@ -1,10 +1,9 @@
-// Backward-chaining in L10
+// Backward-chaining in L10. It may be a bad idea, but it's possible!
 // Robert J. Simmons
 
 n: type.
 z: n.
 s: n -> n.
-w: n -> n -> world.
 
 even: type.
 odd: type.
@@ -12,33 +11,74 @@ ez: even.
 eos: even -> odd.
 oes: odd -> even.
 
-// We can define certain "backward chaining" functions just fine in l10 under
-// the static scheduling regime; all we have to do is make the inputs
-// indices of the world. Keep in mind that this is a terrible idea, because
-// we use discrimination trees to avoid re-visiting worlds, which makes
-// our first example, bog-standard plus, quadratic (!!!)
+{-
+  We can define certain "backward chaining" functions just fine in l10 under
+  the static scheduling regime; all we have to do is make the inputs
+  indices of the world. Keep in mind that this is a terrible idea, at least 
+  until hash-consing is implemented, because we use discrimination trees to 
+  avoid re-visiting worlds, which makes our first example, bog-standard 
+  addition, quadratic (!!!)
+-}
 
-plus: {N: n} {M: n} {P: n} rel @ w N M.
+wplus: n -> n -> world.
+plus: {N: n} {M: n} {P: n} rel @ wplus N M.
 plus z N N.
-plus (s N) M (s P) <- plus N M P.
+plus (s N) M (s P) <- 
+   plus N M P.
 
+{-# QUERY sum plus + + - #-}
 
-// The second argument of LT must be used to index the world; otherwise
-// the first rule won't be range-restricted. The first argument of LT needs
-// to be indexed only for what we might call "efficiency reasons" - it means
-// that static scheduling (and execution) uses only a number of stages
-// proportional to the smallest of the two numbers.
+{-
+  The second argument of LT must be used to index the world; otherwise
+  the first rule won't be range-restricted. 
+  
+  L10 does not require that the first argument of lt does not need to be 
+  world-indexed, but it probably should be, as this formulation of lt will 
+  learn a quadratic number of facts but the version with two world-indexed 
+  arguments will only learn a linear number of facts.
+-}
 
-lt: {N: n} {M: n} rel @ w N M.
+wlt: n -> world.
+lt: {N: n} {M: n} rel @ wlt M.
 lt z (s N).
-lt (s N) (s M) <- lt N M.
+lt (s N) (s M) <-
+   lt N M.
 
+{- 
+  Multiplication only works if we use dynamic scheduling. Static scheduling
+  assumes that, when saturating at world "wtimes N M", it's possible to 
+  compute all the other worlds that will be needed for saturation before
+  doing anything else. 
 
-// Times does not work, as an output of the first argument (plus)
-// determines an input of the second argument (times)
+  In the second rule for "times", we learn that forward chaining at a world 
+  "wtimes N M" resuls in us learning a fact "times N M P" that, in turn, 
+  leads to saturating at world "wplus P M". It's not possible to know this "P"
+  until we've done forward chaining!
+-}
 
-// times: {N: n} {M: n} {P: n} rel @ w N M.
-// times z N z.
-// times (s N) M Q <-
-//    plus N M P,
-//    times P M Q.
+wtimes: n -> n -> world.
+times: {N: n} {M: n} {P: n} rel @ wtimes N M.
+times z M z.
+times (s N) M Q <- 
+   times N M P,
+   plus P M Q.
+
+{-# QUERY prod times + + - #-}
+
+{-
+  L10's natural execution strategy for fibonacci will do the more efficient
+  memoized search, though of course it may be terribly inefficient for other
+  reasons. That's nice.
+-}
+
+wfib: n -> world.
+fib: {N: n} {M: n} rel @ wfib N.
+
+fib z (s z).
+fib (s z) (s z).
+fib (s (s N)) Q <-
+   fib N M,
+   fib (s N) P,
+   plus M P Q.
+
+{-# QUERY fibonacci fib + - #-}

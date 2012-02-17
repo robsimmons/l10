@@ -230,6 +230,7 @@ end
 
 fun emitWorld (w, rules: Compile.compiled_rule list) =
 let 
+   val (lcom,rcom) = ("(* "," *)")
    val splits = 
       List.foldl
          (fn ((w', args), splits) => 
@@ -247,12 +248,17 @@ in
  ; incr ()
  ; emit ["val w = " ^ Strings.builder w ^ tuple]
  ; emit ["val worldset = L10_Tables.get_worlds db"]
- ; emit ["(* val () = print \"Entering "^Symbol.toValue w^"\\n\" *)"]
+ ; emit [lcom^"val () = print (\"Entering \"^World.toString w^\"...\")"^rcom]
  ; emit ["val exec = fn x => x"]
  ; decr ()
- ; emit ["in if World.Dict.member worldset w then db else"]
+ ; emit ["in if World.Dict.member worldset w"]
+ ; emit ["then ("^lcom^"print \"already visited.\\n\";"^rcom^" db) else"]
  ; incr ()
- ; emit ["let val db=L10_Tables.set_worlds db (World.Dict.insert worldset w ())"]
+ ; emit ["let"]
+ ; incr ()
+ ; emit [lcom^"val () = print \"entering.\\n\""^rcom]
+ ; emit ["val db = L10_Tables.set_worlds db (World.Dict.insert worldset w ())"]
+ ; decr ()
  ; emit ["in"]
  ; CaseAnalysis.emit ""
       (fn (postfix, shapes) =>
