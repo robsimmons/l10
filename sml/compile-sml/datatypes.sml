@@ -10,6 +10,7 @@ sig
        , arms: (Symbol.symbol * string * int * subterm list) list
        , rep: Type.representation}
    val dtype: Type.t -> t
+   val emitSpec: unit -> unit
    val emit: unit -> unit
 end =
 struct
@@ -276,6 +277,35 @@ in
  ; emit ["end", ""])
 end 
 
+fun emitDataspec t = 
+let
+   val DT {ts, tS, arms, rep} = dtype t
+   val transparent = rep = Type.Transparent
+   fun subtermsStr (subterms: subterm list) =
+      String.concatWith " * "
+         (map (fn t' => if Symbol.eq (t, t') then "t" else Strings.typ t')
+             (map #t subterms))
+   fun emitPrj (_, x, _, subterms) =
+      if null subterms then emit ["val "^x^"': t"]
+      else emit ["val "^x^"': "^subtermsStr subterms^" -> t"]
+in
+ ( emit ["structure "^tS^":>", "sig"]
+ ; incr ()
+ ; if transparent then emit ["datatype t"]
+   else emit ["type t","datatype view"]
+ ; appFirst (fn () => ())
+      (fn (fst, (_, x, _, subterms)) => 
+         emit [fst^x^(if null subterms then "" 
+                      else (" of "^subtermsStr subterms))])
+      (" = ", " | ") arms
+ ; if transparent then ()
+   else ( emit ["","val prj: t -> view","val inj: view -> t"]
+        ; app emitPrj arms)
+ ; emit ["","structure Dict:> DICT where type key = t",
+         "val eq: t * t -> bool", "val toString: t -> string"]
+ ; decr ()
+ ; emit ["end",""])
+end
 
 (* This function splits the datatypes into sections that aren't mutually
  * recursive. The only necessary property of this function, and indeed the
@@ -321,6 +351,23 @@ in
    map (dependency o mapper) [dict1, dict2]
 end
 
+fun emitSpec () = 
+let 
+   val types = 
+      List.mapPartial 
+         (fn (t, Class.Type) => 
+                if Symbol.eq (t, Type.world) orelse Symbol.eq (t, Type.rel)
+                then NONE else SOME t
+           | _ => NONE) 
+         (Tab.list Tab.types)
+in
+ if null types then emit ["","","(* L10 Types (datatypes.sml) *)",""]
+ else ( emit ["","","(* L10 Datatypes (datatypes.sml) *)",
+              "(* Datatypes meet the following specification: *)","(*"] 
+      ; app emitDataspec types
+      ; emit ["*)"]) 
+end
+ 
 fun terms () = 
 let
    val datatypes = partition_types ()
@@ -353,8 +400,7 @@ let
     ; app emitDatastructure dtypes)
    end handle Skip => ()
 in
- ( emit ["","(* L10 Generated Terms (datatypes.sml) *)", ""]
- ; app body datatypes
+ ( app body datatypes
  ; emit ["structure L10_Terms = struct end (* Protect *)"]
  ; emit ["structure DiscDict = struct end (* Protect *)"]
  ; emit ["structure DiscDictFun = struct end (* Protect *)"]

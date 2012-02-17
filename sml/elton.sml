@@ -140,6 +140,7 @@ in
  ; Util.write out
       (fn () =>
         ( Interface.emitSig M_NAME
+        ; Datatypes.emitSpec ()
         ; Datatypes.emit ()
         ; Interface.emitStructHead MName M_NAME
         ; Util.incr ()

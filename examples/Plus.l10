@@ -5,11 +5,11 @@ n: type.
 z: n.
 s: n -> n.
 
-even: type.
+even: type. {-# TYPE even transparent #-}
 odd: type.
-ez: even.
-eos: even -> odd.
-oes: odd -> even.
+ze: even.
+seo: even -> odd.
+soe: odd -> even.
 
 {-
   We can define certain "backward chaining" functions just fine in l10 under
