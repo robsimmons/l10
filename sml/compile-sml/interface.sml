@@ -108,7 +108,7 @@ in
  ; if Tab.member Tab.dbs (Symbol.fromValue "empty") then ()
    else emit ["val empty: db"]
  ; app (fn (s, _) => emit ["val "^Symbol.toValue s^": db"]) 
-      (Tab.list Tab.dbs)
+      (rev (Tab.list Tab.dbs))
  ; emit [""] 
  ; app typedecl (Tab.list Tab.types)
  ; emit ["","structure Assert:","sig"]

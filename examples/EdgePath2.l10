@@ -8,4 +8,4 @@ edge X Y -> edge Y X.
 edge X Y -> path X Y.
 path X Y, path Y Z -> path X Z.
 
-db1 = (edge a b, edge b c, edge c d, edge e f) @ w1.
+db1 = (edge a b, edge b c, edge c d, edge e f).

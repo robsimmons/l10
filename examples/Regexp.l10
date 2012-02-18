@@ -4,9 +4,12 @@ t: extensible.
 regexp: type. {-# TYPE regexp transparent #-}
 tok:  string -> regexp.                
 emp:  regexp.                     
+wild: regexp.
 some: regexp -> regexp.           
 seq:  regexp -> regexp -> regexp. 
 alt:  regexp -> regexp -> regexp. 
+and:  regexp -> regexp -> regexp.
+neg:  regexp -> regexp.
 
 // Parsing regular expressions
 
@@ -19,9 +22,11 @@ token T I -> match (tok T) I (I+1).
 
 token _ I -> match emp I I.
 
+token _ I -> match wild I (I+1).
+
 match RE I J -> match (some RE) I J.
 
-match RE I J, 
+match (some RE) I J, 
 match (some RE) J K -> 
    match (some RE) I K.
 
@@ -32,3 +37,21 @@ match RE2 J K ->
 match RE1 I J -> match (alt RE1 RE2) I J.
 
 match RE2 I J -> match (alt RE1 RE2) I J.
+
+match RE1 I J,
+match RE2 I J ->
+   match (and RE1 RE2) I J.
+
+token _ I, 
+token _ J, 
+I <= J, 
+not (match RE I J) -> 
+   match (neg RE) I J.
+
+db1 = (token "f" 0, token "o" 1, token "o" 2, token "EOF" 3).
+db2 = (token "b" 0, token "o" 1, token "o" 2, token "EOF" 3).
+db3 = (token "d" 0, token "a" 1, token "a" 2, token "EOF" 3).
+db4 = (token "b" 0, token "a" 1, token "a" 2, token "EOF" 3).
+db5 = (token "t" 0, token "a" 1, token "l" 2, token "k" 3, token "EOF" 4).
+db6 = (token "w" 0, token "a" 1, token "l" 2, token "k" 3, token "EOF" 4).
+db7 = (token "b" 0, token "a" 1, token "l" 2, token "k" 3, token "EOF" 4).

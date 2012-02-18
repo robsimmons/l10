@@ -1,0 +1,112 @@
+// Commands
+
+t: extensible.
+inst: type. {- # TYPE inst transparent #-}
+binop:  t -> t -> t -> t -> inst.
+move:   t -> t -> inst.
+loadc:  t -> t -> inst.
+goto:   nat -> inst.
+if:     t -> t -> t -> nat -> inst.
+return: t -> inst.
+
+wCode: world.
+line: nat -> inst -> rel @ wCode.
+
+
+
+// Extracting relevant information 
+
+succ: nat -> nat -> rel @ wCode.
+def:  nat -> t -> rel @ wCode.
+use:  nat -> t -> rel @ wCode.
+
+line L (binop X Y Op Z) -> 
+   succ L (L+1),
+   def L X,
+   use L Y, use L Z.
+
+line L (move X Y) -> 
+   succ L (L+1),
+   def L X,
+   use L Y.
+
+line L (loadc X C) ->
+   succ L (L+1),
+   def L X.
+
+line L (goto L') ->
+   succ L L'.
+
+line L (if X Cmp C1 L') ->
+   succ L L', succ L (L+1),
+   use L X.
+
+line L (return X) ->
+   use L X.
+
+
+
+// Liveness
+
+wLive: world.
+live: nat -> t -> rel @ wLive.
+
+use L X -> live L X.
+
+live L' X, 
+succ L L', 
+not (def L X) -> live L X.
+
+
+
+// Interference
+
+wInter: world.
+interferes: t -> t -> rel @ wInter.
+
+def L X, 
+not (line L (move X _)), 
+succ L L', 
+live L' Z, 
+X != Z -> 
+   interferes X Z.
+
+line L (move X Y), 
+succ L L', 
+live L' Z, 
+X != Z, 
+Y != Z -> 
+   interferes X Z.
+
+
+
+// Neededness analysis
+
+nec: nat -> t -> rel @ wCode.
+line L (if X Comp C L1) -> nec L X.
+line L (return X) -> nec L X.
+
+wNeed: world.
+needed: nat -> t -> rel @ wNeed.
+
+nec L X -> needed L X.
+
+needed L' X, 
+succ L L', 
+not (def L X) ->
+   needed L X.
+
+use L Y, 
+def L X, 
+succ L L', 
+needed L' X ->
+   needed L Y.
+
+
+
+// Dead code analysis
+
+wDead: world.
+dead: nat -> rel @ wDead.
+
+def L X, succ L L', not (needed L' X) -> dead L.

@@ -1,8 +1,0 @@
-wLive: world.
-live: nat -> t -> rel @ wLive.
-
-use L X -> live L X.
-
-live L' X, 
-succ L L', 
-not (def L X) -> live L X.
