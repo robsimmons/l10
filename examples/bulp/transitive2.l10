@@ -1,15 +1,10 @@
+{- Canonical 'path-path' transitivity program -}
+
 w: world.
-wa: world.
-wb: world.
+wp: world.
 
 edge: nat -> nat -> rel @ w.
-patha: nat -> nat -> rel @ wa.
-pathb: nat -> nat -> rel @ wb. 
+path: nat -> nat -> rel @ wp.
 
-edge X Y -> patha X Y.
-edge X Y -> pathb X Y.
-patha X Y, patha Y Z -> patha X Z.
-pathb X Y, pathb Y Z -> pathb X Z.
-
-{-# QUERY forwards patha + - #-}
-{-# QUERY backwards patha - + #-}
+edge X Y -> path X Y.
+path X Y, path Y Z -> path X Z.

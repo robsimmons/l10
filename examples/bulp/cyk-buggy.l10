@@ -1,23 +1,18 @@
-// Adapted directly from Jakob's CKY Bulp example
-// https://bitbucket.org/robsimmons/bulp/src/tip/examples/cyk.sml
+{- 
+  Adapted directly from Jakob's CKY Bulp example,
+  https://bitbucket.org/robsimmons/bulp/src/tip/examples/cyk.sml
 
-w: world.
+  For this program to work, L10 will, at minimum, 
+  have to be slightly smarter about understanding the "input" versus "output" 
+  behavior of addition: I already know what "J" is, so calculating "J+1" 
+  shouldn't be an issue, but it is (and that breaks the Splitting code).
+-}
 
-term: string -> t -> rel @ w.       // T
-nonterm: t -> t -> t -> rel @ w.    // NT
-parse: t -> nat -> nat -> rel @ w.  // PROD
-tok: nat -> string -> rel @ w.      // IN
-
-// Generic rules of parsing
+t: extensible.
+term: string -> t -> rel.
+nonterm: t -> t -> t -> rel.
+parse: t -> nat -> nat -> rel.
+tok: nat -> string -> rel.
 
 term S T, tok I S -> parse T I I.
 nonterm X Y Z, parse Y I J, parse Z (J+1) K -> parse X I K.
-
-// Rules of parens grammar parsing
-
-// term "(" lParen.          // lParen → "("
-// term ")" rParen.          // rParen → ")"
-// nonterm s lParen rParen.  // s → lParen rParen
-// nonterm s lParen sPrime.  // s → lParen s'
-// nonterm s s s.            // s → s s
-// nonterm sPrime s rParen.  // s' → s rParen

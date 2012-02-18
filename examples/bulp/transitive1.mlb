@@ -1,0 +1,6 @@
+$(SML_LIB)/basis/basis.mlb
+$(SML_LIB)/basis/mlton.mlb
+$(SMACKAGE)/cmlib/v1/cmlib.mlb
+
+transitive1.l10.sml
+transitive1.sml

@@ -1,23 +1,33 @@
-// Adapted directly from Jakob's CKY Bulp example
-// https://bitbucket.org/robsimmons/bulp/src/tip/examples/cyk.sml
+{- 
+  Near-translation of Jakob's CYK algorithm implementation,
+  https://bitbucket.org/robsimmons/bulp/src/tip/examples/cyk.sml
+  
+  The direct translation, cyk-buggy.l10, currently tweaks at some unimplemented
+  L10 features. I prefer this formulation, however.
+-}
 
-w: world.
-
-term: string -> t -> rel @ w.       // T
-nonterm: t -> t -> t -> rel @ w.    // NT
-parse: t -> nat -> nat -> rel @ w.  // PROD
-tok: nat -> string -> rel @ w.      // IN
+t: extensible.
+term: string -> t -> rel.       // T
+nonterm: t -> t -> t -> rel.    // NT
+parse: t -> nat -> nat -> rel.  // PROD
+tok: nat -> string -> rel.      // IN
 
 // Generic rules of parsing
-
 term S T, tok I S -> parse T I (I+1).
 nonterm X Y Z, parse Y I J, parse Z J K -> parse X I K.
 
 // Rules of parens grammar parsing
+parensParsing = 
+   term "(" lParen,          // lParen -> "("
+   term ")" rParen,          // rParen -> ")"
+   nonterm s lParen rParen,  // s -> lParen rParen
+   nonterm s lParen sPrime,  // s -> lParen s'
+   nonterm s s s,            // s -> s s 
+   nonterm sPrime s rParen.  // s' -> s rParen
 
-// term "(" lParen.          // lParen → "("
-// term ")" rParen.          // rParen → ")"
-// nonterm s lParen rParen.  // s → lParen rParen
-// nonterm s lParen sPrime.  // s → lParen s'
-// nonterm s s s.            // s → s s
-// nonterm sPrime s rParen.  // s' → s rParen
+// Querying
+wRes: world.
+expected: nat -> t -> rel @ wRes.
+success: rel @ wRes.
+expected J X, parse X 0 J -> success.
+{-# QUERY valid parse + - - #-}

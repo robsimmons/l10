@@ -1,0 +1,175 @@
+Measurements taken February 18, 2012 on my MacBook. Take with appropriate 
+grains of salt.
+
+== Transitive Edge/Path test with MLton (building) ============
+
+real	0m8.870s
+user	0m6.295s
+sys	0m2.532s
+
+== 128 ============
+Success
+
+real	0m0.029s
+user	0m0.012s
+sys	0m0.012s
+
+== 256 ============
+Success
+
+real	0m0.114s
+user	0m0.059s
+sys	0m0.049s
+
+== 512 ============
+Success
+
+real	0m0.411s
+user	0m0.224s
+sys	0m0.178s
+
+== 1024 ============
+Success
+
+real	0m1.580s
+user	0m0.882s
+sys	0m0.686s
+
+== 2048 ============
+Success
+
+real	0m7.030s
+user	0m4.089s
+sys	0m2.808s
+
+== 4096 ============
+Success
+
+real	0m38.470s
+user	0m33.415s
+sys	0m4.986s
+
+
+
+
+
+== Transitive Path/Path test with MLton (building) ============
+
+real	0m9.266s
+user	0m6.474s
+sys	0m2.568s
+
+== 64 ============
+Success
+
+real	0m0.034s
+user	0m0.020s
+sys	0m0.009s
+
+== 128 ============
+Success
+
+real	0m0.200s
+user	0m0.166s
+sys	0m0.030s
+
+== 256 ============
+Success
+
+real	0m1.538s
+user	0m1.361s
+sys	0m0.153s
+
+== 512 ============
+Success
+
+real	0m11.519s
+user	0m10.821s
+sys	0m0.566s
+
+== 1024 ============
+Success
+
+real	1m38.744s
+user	1m27.968s
+sys	0m2.437s
+
+
+
+
+
+== CYK test with MLton (building) ============
+
+real	0m10.594s
+user	0m7.593s
+sys	0m2.931s
+
+== 2000 ============
+Legal string
+
+real	0m0.316s
+user	0m0.220s
+sys	0m0.089s
+
+== 4000 ============
+Legal string
+
+real	0m0.740s
+user	0m0.536s
+sys	0m0.198s
+
+== 6000 ============
+Legal string
+
+real	0m1.358s
+user	0m0.988s
+sys	0m0.358s
+
+== 8000 ============
+Legal string
+
+real	0m1.989s
+user	0m1.564s
+sys	0m0.414s
+
+== 10000 ============
+Legal string
+
+real	0m2.914s
+user	0m2.360s
+sys	0m0.520s
+
+== 12000 ============
+Legal string
+
+real	0m4.109s
+user	0m3.389s
+sys	0m0.700s
+
+== 14000 ============
+Legal string
+
+real	0m5.602s
+user	0m4.779s
+sys	0m0.805s
+
+== 16000 ============
+Legal string
+
+real	0m7.387s
+user	0m6.405s
+sys	0m0.913s
+
+== 18000 ============
+Legal string
+
+real	0m9.429s
+user	0m8.324s
+sys	0m1.042s
+
+== 20000 ============
+Legal string
+
+real	0m12.037s
+user	0m10.747s
+sys	0m1.207s
