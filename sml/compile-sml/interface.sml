@@ -133,13 +133,14 @@ fun emitStruct tables =
 let
    fun dbs (db, facts) = 
    let
-      fun loop prefix postfix [] = emit [prefix^"(L10_Tables.empty ())"^postfix]
+      fun loop prefix postfix [] = 
+             emit [prefix^"(false, L10_Tables.empty ())"^postfix]
         | loop prefix postfix ((_, (a, terms)) :: facts) =
            ( emit [prefix^"(L10_Tables.assert_"^Symbol.toValue a^" "
                    ^Strings.tuple (map Strings.build terms)]
            ; loop (prefix^" ") (postfix^")") facts)
    in
-    ( emit ["","val "^Symbol.toValue db^" = ", "   let val table ="]
+    ( emit ["","val "^Symbol.toValue db^" = ", "   let val (_, table) ="]
     ; loop "   " "" facts
     ; emit ["in {pristine=table, public=ref table} end"])
    end
@@ -157,12 +158,10 @@ let
      ; case map (fn (x,_) => "x_"^Int.toString x) ts of 
           [] => emit ["fun "^name^" (db: db) ="]
         | args => emit ["fun "^name^" (args, db: db) ="]
-     ; emit ["let"]
-     ; emit ["   val pristine = L10_Tables.assert_"^name^" "^args]
-     ; emit ["                     (L10_Tables.set_flag (#pristine db) false)"]
-     ; emit ["in","   if L10_Tables.get_flag pristine"]
-     ; emit ["   then {pristine=pristine, public=ref pristine}"]
-     ; emit ["   else db","end"])
+     ; emit ["   case L10_Tables.assert_"^name^" "^args
+             ^" (false, #pristine db) of"]
+     ; emit ["      (false, _) => db"]
+     ; emit ["    | (true, new_db) => {pristine=new_db, public=ref new_db}"])
    end
 
    (*[ val queries: Symbol.symbol * (Pos.t * Atom.moded_t) -> unit ]*)

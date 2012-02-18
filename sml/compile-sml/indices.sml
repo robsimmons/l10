@@ -128,7 +128,7 @@ let
        | (_, x) :: _ => emit [Int.toString i^"="^Strings.dict x^".empty,"]
 
    val tablelabel = 
-      map (Int.toString o #1) numbered_indices @ ["worlds", "flag"]
+      map (Int.toString o #1) numbered_indices @ ["worlds"]
 
    fun tablederef s = emit ["fun get_"^s^" (db: tables) = #"^s^" db"]
    fun tableupdate s = 
@@ -136,8 +136,10 @@ let
     ; incr ()
     ; app (fn x => 
              if x = s 
-             then emit ["   "^x^" = x"^(if x="flag" then "}" else ",")]
-             else emit ["   "^x^" = #"^x^" db"^(if x="flag" then "}" else ",")])
+             then emit ["   "^x^" = x"
+                        ^(if x="worlds" then "}" else ",")]
+             else emit ["   "^x^" = #"^x^" db"
+                        ^(if x="worlds" then "}" else ",")])
          tablelabel
     ; decr ()
     ; emit [""])
@@ -146,12 +148,12 @@ in
  ( emit ["type tables = {"]
  ; incr ()
  ; app tabletyp numbered_indices
- ; emit ["worlds: unit World.Dict.dict,","flag: bool}"]
+ ; emit ["worlds: unit World.Dict.dict}"]
  ; decr ()
  ; emit ["","fun empty (): tables = {"]
  ; incr ()
  ; app tableemp numbered_indices
- ; emit ["worlds=World.Dict.empty,","flag=false}",""]
+ ; emit ["worlds=World.Dict.empty}",""]
  ; decr ()
  ; app tablederef tablelabel
  ; emit [""]
@@ -255,7 +257,7 @@ let
          a_indices
 in
  (* insert_rel *)
- ( emit ["fun insert_"^Symbol.toValue a^" "^args^" (db: tables) ="]
+ ( emit ["fun insert_"^Symbol.toValue a^" "^args^" db ="]
  ; CaseAnalysis.emit "" 
       (fn (postfix, shapes) => 
        let 
@@ -281,10 +283,9 @@ in
           end
 
           fun insert prefix postfix' [] = (* Impossible? *)
-                 emit [prefix^"set_flag db true"^postfix'^postfix] 
+                 emit [prefix^"db"^postfix'^postfix] 
             | insert prefix postfix' [ match ] = 
-               ( emit [prefix^"("^get_insert match]
-               ; emit [prefix^" (set_flag db true))"^postfix'^postfix])
+               ( emit [prefix^"("^get_insert match^" db)"^postfix'^postfix])
             | insert prefix postfix' (match :: matches) =
                ( emit [prefix^"("^get_insert match]
                ; insert (prefix^" ") (postfix'^")") matches)
@@ -302,10 +303,11 @@ in
       (CaseAnalysis.cases splits)
 
  (* assert_rel *)
- ; emit ["fun assert_"^Symbol.toValue a^" "^args^" db ="]
+ ; emit ["fun assert_"^Symbol.toValue a^" "^args^" (flag, db) ="]
  ; incr ()
- ; emit ["if fold_"^Int.toString i^" (fn _ => true) false db "^args^" then db"]
- ; emit ["else insert_"^Symbol.toValue a^" "^args^" db"]
+ ; emit ["if fold_"^Int.toString i^" (fn _ => true) false db "^args]
+ ; emit ["then (flag, db)"]
+ ; emit ["else (true, insert_"^Symbol.toValue a^" "^args^" db)"]
  ; decr ()
  ; emit [""])
 end

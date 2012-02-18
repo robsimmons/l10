@@ -143,12 +143,9 @@ in
  ; emit ["structure L10_Search = ", "struct"]
  ; incr ()
  ; emit ["fun loop fs (db: L10_Tables.tables) = "]
- ; emit ["let"]
- ; emit ["   (* val () = print \"Beginning saturation loop...\" *)"]
- ; emit ["   val db = fs (L10_Tables.set_flag db false)"] 
- ; emit ["in","   if L10_Tables.get_flag db"]
- ; emit ["   then ((* print \"continue!\\n\"; *) loop fs db)"]
- ; emit ["   else ((* print \"done.\\n\"; *) db)","end",""]
+ ; emit ["   case fs (false, db) of"]
+ ; emit ["      (false, db) => db"]
+ ; emit ["    | (true, db) => loop fs db",""]
 
  (* Callback saturation function *)
  ; emit ["fun saturate x_0 db ="]

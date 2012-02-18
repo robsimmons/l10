@@ -23,7 +23,7 @@ let
    fun optemit [] = ()
      | optemit ts = emit [Strings.tuple ts]
    fun next_call (common: Compile.rule Compile.common) =
-      next^" "^tuple_outgoing (#outgoing common)^" srch db"
+      next^" "^tuple_outgoing (#outgoing common)^" satu db"
 in
    case rule of 
       Compile.Normal {common, index, input, output, eqs} =>
@@ -38,7 +38,7 @@ in
       in
        ( emitrule' tables n (i+1) (#cont common)
        ; emit ["(* "^(#label common)^" *)"]
-       ; emit ["fun "^this^" "^tuple_incoming (#incoming common)^" srch db ="]
+       ; emit ["fun "^this^" "^tuple_incoming (#incoming common)^" satu db ="]
        ; incr ()
        ; emit ["L10_Tables.fold_"^Int.toString label]
        ; incr ()
@@ -54,7 +54,7 @@ in
                                "then "^next_call common,"else db)"]))
             eqs
        ; decr ()
-       ; emit ["db db "^inputs_to_fold]
+       ; emit ["db (#2 db) "^inputs_to_fold]
        ; decr ()
        ; decr ())
       end
@@ -70,20 +70,20 @@ in
       in
        ( emitrule' tables n (i+1) (#cont common)
        ; emit ["(* "^(#label common)^" *)"]
-       ; emit ["fun "^this^" "^tuple_incoming (#incoming common)^" srch db ="]
+       ; emit ["fun "^this^" "^tuple_incoming (#incoming common)^" satu db ="]
        ; incr ()
        ; emit ["if L10_Tables.fold_"^Int.toString label]
        ; incr (); incr ()
        ; appSuper
-            (fn () => emit ["(fn _ => true) false db "^inputs_to_fold])
+            (fn () => emit ["(fn _ => true) false (#2 db) "^inputs_to_fold])
             (fn cstr => emit ["(fn ("^outputs_from_fold^", b) =>",
                               "    b orelse "^Strings.eqpath cstr^")",
-                              "false db "^inputs_to_fold])
+                              "false (#2 db) "^inputs_to_fold])
             ((fn cstr => emit ["(fn ("^outputs_from_fold^", b) => b orelse",
                                 "    ("^Strings.eqpath cstr]),
              (fn cstr => emit ["     andalso "^Strings.eqpath cstr]),
              (fn cstr => emit ["     andalso "^Strings.eqpath cstr^"))",
-                               "false db "^inputs_to_fold]))
+                               "false (#2 db) "^inputs_to_fold]))
             eqs
        ; decr (); decr ()
        ; emit ["then db else "^next_call common]
@@ -92,7 +92,7 @@ in
     | Compile.Binrel {common, binrel, term1, term2, t} =>
        ( emitrule' tables n (i+1) (#cont common)
        ; emit ["(* "^(#label common)^" *)"]
-       ; emit ["fun "^this^" "^tuple_incoming (#incoming common)^" srch db ="]
+       ; emit ["fun "^this^" "^tuple_incoming (#incoming common)^" satu db ="]
        ; incr ()
        ; emit ["if "^Strings.binrel t binrel 
                         (Strings.build term1) (Strings.build term2)]
@@ -113,15 +113,16 @@ in
               ; loop (prefix^" ") (postfix^")") facts)
       in
        ( emit ["(* assert -- "^str^" *)"]
-       ; emit ["fun "^this^" "^tuple_incoming incoming^" srch db ="]
+       ; emit ["fun "^this^" "^tuple_incoming incoming^" satu db ="]
        ; loop "   " "" (rev facts))
       end
     | Compile.World {common, world} =>
        ( emitrule' tables n (i+1) (#cont common)
        ; emit ["(* Dynamic world search: "^Atom.toString world^" *)"]
-       ; emit ["fun "^this^" "^tuple_incoming (#incoming common)^" srch db ="]
-       ; emit ["   "^next^" "^tuple_outgoing (#outgoing common)^" srch (srch "
-               ^Strings.build (Term.Root world)^" db)"])
+       ; emit ["fun "^this^" "^tuple_incoming (#incoming common)
+               ^" satu (flag, db) ="]
+       ; emit ["   "^next^" "^tuple_outgoing (#outgoing common)^" satu "
+               ^"(flag, satu "^Strings.build (Term.Root world)^" db)"])
 end
 
 fun emitrule tables (n, pos, (world, deps), rule) =
