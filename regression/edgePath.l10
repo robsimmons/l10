@@ -1,0 +1,14 @@
+//test
+
+edge: string -> string -> rel.
+path: string -> string -> rel.
+
+edge X Y -> path X Y.
+edge X Y, path Y Z -> path X Z.
+
+example1 = edge "a" "b", edge "b" "c", edge "b" "d", edge "a" "e", edge "d" "f".
+example2 = edge "first" "second", edge "second" "third", edge "third" "first".
+
+{-# QUERY paths path - - #-}
+{-# QUERY forward path + - #-}
+{-# QUERY backward path - + #-}

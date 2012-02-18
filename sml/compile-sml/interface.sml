@@ -28,6 +28,10 @@ in
    end
 end
 
+fun listWillShadow qry = 
+   Tab.member Tab.queries (Symbol.fromValue (Symbol.toValue qry^"List"))
+
+
 fun emitSig MODULE_NAME = 
 let 
    val typeBuf = buffer Tab.types
@@ -57,16 +61,18 @@ let
    (*[ val assert: Type.t * Class.rel -> unit ]*)
    fun assert (t, knd) = 
       case map Symbol.toValue (Class.argtyps knd) of 
-         [] => emit ["val "^Symbol.toValue t^relBuf t^": db -> db"]
+         [] => emit ["val "^Symbol.toValue t^":"^relBuf t^" db -> db"]
        | [ arg ] => 
-            emit ["val "^Symbol.toValue t^relBuf t
-                  ^": "^arg^" * db -> db"]
+            emit ["val "^Symbol.toValue t^":"^relBuf t
+                  ^" "^arg^" * db -> db"]
        | args =>
             emit ["val "^Symbol.toValue t^":"^relBuf t
                   ^" ("^String.concatWith " * " args^") * db -> db"]
 
+   val flag = ref false
+
    (*[ val queries: Symbol.symbol * (Pos.t * Atom.moded_t) -> unit ]*)
-   fun queries (qry, (_, index)) =
+   fun queries phase (qry, (_, index)) =
    let
       val (ins, outs) = Indices.query_paths index
       val instr = 
@@ -74,15 +80,26 @@ let
             [] => ""
           | [ t ] => "-> "^t^" "
           | ts => "-> ("^String.concatWith " * " ts^") "
+      fun emit1 ss = if phase = 1 then emit ss else ()
+      fun emit2 ss = if phase = 2 then emit ss else flag := true
+      fun emit3 ss = if phase = 3 then emit ss else ()
    in
       case map (Symbol.toValue o #2) (Path.Dict.toList outs) of 
-         [] => emit ["val "^Symbol.toValue qry^":"^queryBuf qry
-                     ^" db "^instr^"-> bool"]
-       | [ t ] => emit ["val "^Symbol.toValue qry^":"^queryBuf qry
-                        ^" ("^t^" * 'a -> 'a) -> 'a -> db "^instr^"-> 'a"]
-       | ts => emit ["val "^Symbol.toValue qry^":"^queryBuf qry
-                     ^" (("^String.concatWith " * " ts ^")"
-                     ^" * 'a -> 'a) -> 'a -> db "^instr^"-> 'a"]
+         [] => emit1 ["val "^Symbol.toValue qry^":"^queryBuf qry
+                      ^" db "^instr^"-> bool"]
+       | ts => 
+         let
+            val tstyp = case ts of 
+                           [ t ] => t 
+                         | _ => "("^String.concatWith " * " ts^")"
+         in
+           ( emit2 ["val "^Symbol.toValue qry^":"^queryBuf qry
+                    ^" ("^tstyp^" * 'a -> 'a) -> 'a -> db "^instr^"-> 'a"]
+           ; if listWillShadow qry then ()
+             else emit3 ["val "^Symbol.toValue qry^"List: \
+                         \db "^instr^"-> "^tstyp^" list \
+                         \(* = "^Symbol.toValue qry^" (op ::) [] *)"])
+         end
    end
 in
  ( emit ["signature "^MODULE_NAME^" =","sig"]
@@ -100,7 +117,11 @@ in
  ; decr ()
  ; emit ["end","","structure Query:","sig"]
  ; incr ()
- ; app queries (Tab.list Tab.queries)
+ ; app (queries 1) (Tab.list Tab.queries)
+ ; if !flag then emit [""] else ()
+ ; app (queries 2) (Tab.list Tab.queries)
+ ; if !flag then emit [""] else ()
+ ; app (queries 3) (Tab.list Tab.queries)
  ; decr ()
  ; emit ["end"]
  ; decr ()
@@ -201,7 +222,8 @@ let
     ; emit ["end"]
     ; if null outputs
       then emit ["val "^qrys^" = fn x => "^qrys^" (fn _ => true) false x"] 
-      else ())
+      else if listWillShadow qry then ()
+      else emit ["val "^qrys^"List = "^qrys^" (op ::) []"])
    end
 in
  ( incr ()
