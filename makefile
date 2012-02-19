@@ -1,4 +1,4 @@
-MLTON = mlton -verbose 1 -const "Exn.keepHistory true" -default-ann "redundantMatch error" -default-ann "sequenceNonUnit error" -output 
+MLTON = mlton -verbose 1 -default-ann "redundantMatch error" -default-ann "sequenceNonUnit error" -output 
 SML = sml
 
 all:
@@ -14,10 +14,10 @@ sml/l10.cmlex.sml:
 sml/l10.cmyacc.sml:
 	cmyacc sml/l10.cmyacc
 
-mlton: sml/*.sml sml/compile-sml/*.sml
+mlton: sml/*.sml sml/compile-sml/*.sml bin
 	$(MLTON) bin/elton sml/elton.mlb
 
-smlnj: sml/*.sml sml/compile-sml/*.sml
+smlnj: sml/*.sml sml/compile-sml/*.sml bin
 	$(SML) < sml/go-smlnj.sml
 	bin/.mkexec `which sml` `pwd`/bin elton 
 
