@@ -2,8 +2,14 @@ MLTON = mlton -verbose 1 -default-ann "redundantMatch error" -default-ann "seque
 SML = sml
 
 all:
-	@echo "Elton - a compiler from L10 to Standard ML"
-	@echo "Run 'make mlton' or 'make smlnj' or 'make check'"
+	@echo "== Elton (a compiler from L10 to Standard ML) =="
+	@echo "Installation instructions:"
+	@echo ""
+	@echo "From source: run 'make mlton' or 'make smlnj' or 'make check'"
+	@echo "In Smackage:"
+	@echo "   (1) Run 'smackage make elton mlton' (or '... smlnj')"
+	@echo "   (2) Run 'smackage make elton install'"
+	false
 
 bin:
 	mkdir bin
@@ -24,3 +30,9 @@ smlnj: sml/*.sml sml/compile-sml/*.sml bin
 .PSEUDO: check
 check: sml/*.sml sml/compile-sml/*.sml
 	echo "Regression.checkDirs [ \"regression\", \"examples\" ]; Regression.reportAndReset ();" | sml -m sml/sources.cm
+
+.PSEUDO: install
+install:
+	rm -f $(DESTDIR)/bin/smackage.new
+	cp bin/smackage $(DESTDIR)/bin/smackage.new
+	mv $(DESTDIR)/bin/smackage.new $(DESTDIR)/bin/smackage

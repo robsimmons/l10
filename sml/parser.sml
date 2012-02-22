@@ -117,8 +117,6 @@ end = struct
           | Stream.Cons (tok, pos) => 
             SyntaxError (SOME (Token.pos tok), "Unexpected token")
 
-      val AnnoQuery = PragmaQuery
-      val AnnoType = PragmaType
       val ascribe_ucid = Ascribe
       fun larrow (syn1, syn2) = Arrow (syn2, syn1)
       fun binrel r (syn1, syn2) = Binrel (r, syn1, syn2)

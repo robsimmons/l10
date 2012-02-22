@@ -38,15 +38,10 @@ terminal LCID of pos_str
 terminal NUM of pos_int
 terminal STRING of pos_str
 
-terminal LANNO of pos
-terminal RANNO of pos
-
 start Decl
 
 nonterminal Decl : decl = => Done
    1:Syn 2:PERIOD 3:Decl => Syn
-   1:LANNO ANNO_QUERY 2:LCID 3:LCID 4:Modes 5:RANNO 6:Decl => AnnoQuery
-   1:LANNO ANNO_TYPE 2:LCID 3:LCID 4:RANNO 5:Decl => AnnoType
    1:PRAGMA_QUERY 2:LCID COLON 3:LCID 4:Modes 5:PERIOD 6:Decl => PragmaQuery
    1:PRAGMA_TYPE 2:LCID 3:LCID 4:PERIOD 5:Decl => PragmaType
 
@@ -94,8 +89,6 @@ nonterminal Sings : sings =       => sings_end
 
 /* Extensions for the annotation language */
 
-terminal ANNO_QUERY of pos
-terminal ANNO_TYPE of pos
 terminal PRAGMA_QUERY of pos
 terminal PRAGMA_TYPE of pos
 

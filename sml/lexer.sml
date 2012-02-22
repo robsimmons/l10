@@ -40,11 +40,6 @@ struct
 
     | PRAGMA_QUERY of Pos.t
     | PRAGMA_TYPE of Pos.t
-
-    | LANNO of Pos.t
-    | RANNO of Pos.t
-    | ANNO_QUERY of Pos.t
-    | ANNO_TYPE of Pos.t
   
    fun pos tok = 
       case tok of
@@ -84,10 +79,8 @@ struct
        | NUM (pos, _) => pos
        | STRING (pos, _) => pos
 
-       | LANNO pos => pos
-       | RANNO pos => pos
-       | ANNO_QUERY pos => pos
-       | ANNO_TYPE pos => pos
+       | PRAGMA_QUERY pos => pos
+       | PRAGMA_TYPE pos => pos
 end
 
 structure Lexer:> 
@@ -111,7 +104,6 @@ struct
       type self = 
          {
          lexmain: symbol stream -> tok,
-         anno: symbol stream -> tok,
          linecomment: symbol stream -> u,
          comment: symbol stream -> u 
          }
@@ -204,7 +196,8 @@ struct
          (fn (pos, match) =>
             (case String.map Char.toLower (String.extract (match, 1, NONE)) of
                 "type" => PRAGMA_TYPE pos
-              | "query" => PRAGMA_QUERY pos))
+              | "query" => PRAGMA_QUERY pos
+              | s => raise LexError (Pos.left pos, ("Unknown pragma #"^s))))
 
       fun linecomment ({ follow, self, match, ...}: info) coord = 
          let val (coord', follow') = 
@@ -214,31 +207,7 @@ struct
          let val (coord', follow') = 
                 (#comment self) follow (#2 (extent match coord))
          in (#lexmain self) follow' coord' end
-      val anno_start = simple #anno LANNO
       fun error _ coord = raise LexError (coord, "Lex error")
-
-      val anno_space = fastforward #anno
-      val anno_query = simple #anno ANNO_QUERY
-      val anno_type = simple #anno ANNO_TYPE
-      val anno_lparen = simple #anno LPAREN
-      val anno_rparen = simple #anno RPAREN
-      val anno_plus = simple #anno PLUS
-      val anno_minus = simple #anno MINUS
-      val anno_uscore = simple #anno USCORE
-      val anno_lcid = action #anno LCID
-      val anno_colon = simple #anno COLON
-
-      val anno_end = simple #lexmain RANNO
-      fun anno_linecomment ({ follow, self, match, ...}: info) coord = 
-         let val (coord', follow') = 
-                (#linecomment self) follow (#2 (extent match coord))
-         in (#anno self) follow' coord' end
-      fun anno_comment ({ follow, self, match, ...}: info) coord = 
-         let val (coord', follow') = 
-                (#comment self) follow (#2 (extent match coord))
-         in (#anno self) follow' coord' end
-      fun anno_error _ coord = 
-         raise LexError (coord, "Lex error in annotation")
 
       fun linecomment_close ({ follow, self, match, ...}: info) coord =
          (#2 (extent match coord), follow)

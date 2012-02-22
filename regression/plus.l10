@@ -28,7 +28,7 @@ plus z N N.
 plus (s N) M (s P) <- 
    plus N M P.
 
-#QUERY sum plus + + -.
+#QUERY sum: plus + + -.
 
 {-
   The second argument of LT must be used to index the world; otherwise
@@ -65,7 +65,7 @@ times (s N) M Q <-
    times N M P,
    plus P M Q.
 
-#QUERY prod times + + -.
+#QUERY prod: times + + -.
 
 {-
   L10's natural execution strategy for fibonacci will do the more efficient

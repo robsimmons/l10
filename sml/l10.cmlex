@@ -59,30 +59,8 @@ function lexmain : tok =
    "--"      => linecomment
    "//"      => linecomment
    "{-"      => comment
-   "{-#"     => anno_start
    pragma    => pragma
    epsilon   => error
-
-function anno : tok = 
-   (+ white) => anno_space
-
-   "QUERY"   => anno_query
-   "TYPE"    => anno_type
-
-   '(        => anno_lparen
-   ')        => anno_rparen
-
-   ':        => anno_colon
-
-   '+        => anno_plus
-   '-        => anno_minus
-   '_        => anno_uscore
-   lcid      => anno_lcid
-
-   "#-}"     => anno_end
-   "--"      => anno_linecomment
-   "{-"      => anno_comment
-   epsilon   => anno_error
 
 function linecomment : u = 
    (| 10 13) => linecomment_close
