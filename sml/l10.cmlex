@@ -15,6 +15,7 @@ regexp lcid = (seq az (* id))
 regexp ucid = (seq AZ (* id))
 regexp string = (seq '" (* char) '")
 regexp decnum = (| '0 (seq pos (* digit)))
+regexp pragma = (seq '# (* id))
 
 function lexmain : tok = 
    eos       => eof
@@ -41,6 +42,7 @@ function lexmain : tok =
    ">="      => geq
    "<="      => leq
    '+        => plus
+   '-        => minus
 
    "not"     => not   
    "world"   => world
@@ -58,6 +60,7 @@ function lexmain : tok =
    "//"      => linecomment
    "{-"      => comment
    "{-#"     => anno_start
+   pragma    => pragma
    epsilon   => error
 
 function anno : tok = 

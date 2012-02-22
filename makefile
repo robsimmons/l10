@@ -8,10 +8,10 @@ all:
 bin:
 	mkdir bin
 
-sml/l10.cmlex.sml:
+sml/l10.cmlex.sml: sml/l10.cmlex
 	cmlex sml/l10.cmlex
 
-sml/l10.cmyacc.sml:
+sml/l10.cmyacc.sml: sml/l10.cmyacc
 	cmyacc sml/l10.cmyacc
 
 mlton: sml/*.sml sml/compile-sml/*.sml bin

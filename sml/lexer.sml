@@ -38,6 +38,9 @@ struct
     | NUM of Pos.t * IntInf.int
     | STRING of Pos.t * string
 
+    | PRAGMA_QUERY of Pos.t
+    | PRAGMA_TYPE of Pos.t
+
     | LANNO of Pos.t
     | RANNO of Pos.t
     | ANNO_QUERY of Pos.t
@@ -178,6 +181,7 @@ struct
       val geq = simple #lexmain GEQ
       val leq = simple #lexmain LEQ
       val plus = simple #lexmain PLUS
+      val minus = simple #lexmain MINUS
 
       val not = simple #lexmain NOT
       val world = simple #lexmain WORLD
@@ -196,6 +200,11 @@ struct
       val str = action #lexmain
          (fn (pos, match) => 
             STRING (pos, String.substring (match, 1, size match - 2)))
+      val pragma = action #lexmain
+         (fn (pos, match) =>
+            (case String.map Char.toLower (String.extract (match, 1, NONE)) of
+                "type" => PRAGMA_TYPE pos
+              | "query" => PRAGMA_QUERY pos))
 
       fun linecomment ({ follow, self, match, ...}: info) coord = 
          let val (coord', follow') = 

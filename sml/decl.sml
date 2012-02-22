@@ -10,8 +10,8 @@ structure Decl = struct
     | Type of Pos.t * Symbol.symbol * Class.t
     | DB of Pos.t * (Symbol.symbol * (Pos.t * Atom.t) list)
     | Rule of Pos.t * Rule.t * Type.env option
-    | Query of Pos.t * Symbol.symbol * Atom.t
-    | Representation of Pos.t * Symbol.symbol * Type.representation
+    | Query of Pos.t * Symbol.symbol * Atom.t 
+    | Representation of Pos.t * Symbol.symbol * Type.representation 
 (*[
    datasort decl = 
       World of Pos.t * Symbol.symbol * Class.world
@@ -58,10 +58,9 @@ val print =
      ; print (String.concatWith ", " (map (Atom.toString o #2) concs))
      ; print ".\n")
   | Query (_, qry, mode) =>
-     ( print ("{-# QUERY " ^ Symbol.toValue qry ^ " ")
-     ; print (Atom.toString mode ^ " #-}\n"))
+     ( print ("#query " ^ Symbol.toValue qry ^ ": ")
+     ; print (Atom.toString mode ^ ".\n"))
   | Representation (_, t, rep) => 
-     ( print ("{-# TYPE " ^ Symbol.toValue t ^ " " ^ Type.repToString rep)
-     ; print " #-}\n") 
+       print ("#type "^Symbol.toValue t^" "^Type.repToString rep^".\n")
 end
 

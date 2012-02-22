@@ -96,14 +96,14 @@ end = struct
       type sings = syn list      
       datatype decl = 
           Syn of syn * Pos.t * decl
-        | AnnoQuery of
+        | PragmaQuery of
              Pos.t 
              * (Pos.t * string)  
              * (Pos.t * string) 
              * Mode.t list
              * Pos.t
              * decl
-        | AnnoType of
+        | PragmaType of
              Pos.t 
              * (Pos.t * string)  
              * (Pos.t * string) 
@@ -117,6 +117,8 @@ end = struct
           | Stream.Cons (tok, pos) => 
             SyntaxError (SOME (Token.pos tok), "Unexpected token")
 
+      val AnnoQuery = PragmaQuery
+      val AnnoType = PragmaType
       val ascribe_ucid = Ascribe
       fun larrow (syn1, syn2) = Arrow (syn2, syn1)
       fun binrel r (syn1, syn2) = Binrel (r, syn1, syn2)
@@ -439,7 +441,7 @@ end = struct
       in 
          case decl of 
             Done () => Stream.Nil
-          | AnnoQuery (left, (_, name), (_, a), modes, right, decl') => 
+          | PragmaQuery (left, (_, name), (_, a), modes, right, decl') => 
             let 
                val name = Symbol.fromValue name
                val modes = (Symbol.fromValue a,
@@ -448,7 +450,7 @@ end = struct
             in 
                stream_cons (decl, stream_lazy (parse' decl' psig))
             end
-          | AnnoType (left, (_, typ), (_, directive), right, decl') =>
+          | PragmaType (left, (_, typ), (_, directive), right, decl') =>
             let
                fun msg () =  
                   ( "Types can be transparent, hashconsed, external, or\
