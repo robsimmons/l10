@@ -33,6 +33,6 @@ check: sml/*.sml sml/compile-sml/*.sml
 
 .PSEUDO: install
 install:
-	rm -f $(DESTDIR)/bin/smackage.new
-	cp bin/smackage $(DESTDIR)/bin/smackage.new
-	mv $(DESTDIR)/bin/smackage.new $(DESTDIR)/bin/smackage
+	rm -f $(DESTDIR)/bin/elton.new
+	cp bin/elton $(DESTDIR)/bin/elton.new
+	mv $(DESTDIR)/bin/elton.new $(DESTDIR)/bin/elton
