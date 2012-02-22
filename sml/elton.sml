@@ -56,7 +56,7 @@ end
 
 fun print_usage () = 
 print
-"Elton database generator v0.1.0\n\
+"Elton database generator v0.3.3\n\
 \Usage: elton filename.l10 [-o output.sml] [-s ModuleName] [-S ModuleName]\n\
 \ Options:\n\
 \  -h            --help              Show this message\n\
