@@ -3,4 +3,4 @@
 foo: type.
 w: world.
 r: foo -> foo -> rel @ w.
-{-# QUERY r3 r q #-}
+#QUERY r3: r q.

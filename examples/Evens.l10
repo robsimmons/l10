@@ -47,6 +47,6 @@ someevens = (fact z, fact (s (s (s (s z)))), fact (s (s (s (s (s (s z))))))).
 someodds = (fact (s (s (s z))), fact (s (s (s (s (s (s (s z)))))))).
 someofboth = (fact (s (s (s (s z)))), fact (s (s (s (s (s (s (s z)))))))).
 
-{-# QUERY facts fact - #-}
-{-# QUERY evens even - #-}
-{-# QUERY odds odd - #-}
+#QUERY facts: fact -.
+#QUERY evens: even -.
+#QUERY odds: odd -.

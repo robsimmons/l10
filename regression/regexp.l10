@@ -48,9 +48,9 @@ b: {RE: regexp} rel @ w3 (alt RE (tok "a")) (seq RE emp) (19 + 12).
 buzz: {RE1: regexp} {RE2: regexp} {N: nat} rel @ w3 RE1 RE2 N.
 buzz RE RE 4.
 
-{-# QUERY poschar token - + #-}
-{-# QUERY wholestring token - - #-}
-{-# QUERY ismatch match + + + #-}
+#QUERY poschar: token - +.
+#QUERY wholestring: token - -.
+#QUERY ismatch: match + + +.
 
 neg:  regexp -> regexp.          
 

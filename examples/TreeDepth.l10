@@ -13,4 +13,4 @@ trees leaf z.
 trees T N -> trees T (s N).
 trees T1 N, trees T2 N -> trees (node T1 T2) (s N).
 
-{-# QUERY alltrees trees - + #-}
+#QUERY alltrees trees - +.

@@ -6,8 +6,8 @@ one: unit.
 w: world.
 a: rel @ w.
 
-foo: type. {-# TYPE foo external #-}
-bar: type. {-# TYPE bar external #-}
+foo: type. #TYPE foo external.
+bar: type. #TYPE bar external.
 leaf: foo.
 next: bar -> foo.
 branch: foo -> foo -> bar.
@@ -16,13 +16,13 @@ typ: extensible.
 sym: extensible.
 var: extensible.
 
-mode: type. {-# TYPE mode external #-}
+mode: type. #TYPE mode external.
 input: mode.
 output: mode.
 ignore: mode.
 
-term: type. {-# TYPE term sealed #-}
-terms: type. {-# TYPE terms transparent #-}
+term: type. #TYPE term sealed.
+terms: type. #TYPE terms transparent.
 
 symConst: sym -> term.
 natConst: nat -> term.

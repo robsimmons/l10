@@ -5,7 +5,7 @@ n: type.
 z: n.
 s: n -> n.
 
-even: type. {-# TYPE even transparent #-}
+even: type. #TYPE even transparent.
 odd: type.
 ze: even.
 seo: even -> odd.
@@ -26,7 +26,7 @@ plus z N N.
 plus (s N) M (s P) <- 
    plus N M P.
 
-{-# QUERY sum plus + + - #-}
+#QUERY sum: plus + + -.
 
 {-
   The second argument of LT must be used to index the world; otherwise
@@ -63,7 +63,7 @@ times (s N) M Q <-
    times N M P,
    plus P M Q.
 
-{-# QUERY prod times + + - #-}
+#QUERY prod: times + + -.
 
 {-
   L10's natural execution strategy for fibonacci will do the more efficient
@@ -81,4 +81,4 @@ fib (s (s N)) Q <-
    fib (s N) P,
    plus M P Q.
 
-{-# QUERY fibonacci fib + - #-}
+#QUERY fibonacci: fib + -.

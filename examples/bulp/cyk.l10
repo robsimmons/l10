@@ -30,4 +30,4 @@ wRes: world.
 expected: nat -> t -> rel @ wRes.
 success: rel @ wRes.
 expected J X, parse X 0 J -> success.
-{-# QUERY valid parse + - - #-}
+#QUERY valid: parse + - -.
