@@ -14,6 +14,7 @@ datatype outcome =
  | UnexpectedError of string
  | Success
  | BadSML
+ | BadLocal
  | TestFailed
 
 fun str SyntaxError = "syntax error"
@@ -24,6 +25,7 @@ fun str SyntaxError = "syntax error"
   | str (UnexpectedError exnname) = ("unexpected error: `"^exnname^"'")
   | str Success = "success"
   | str BadSML = "generated invalid SML code"
+  | str BadLocal = "output from local dependencies.sml failed"
   | str TestFailed = "compiled test failed"
 
 val success: int ref = ref 0
@@ -50,7 +52,7 @@ fun check run filename args =
 let
    val () = Tab.reset ()
    val () = Elton.go_no_handle ("elton", filename :: args)
-   val success = 
+   val successSmackage = 
       OS.Process.isSuccess
          (OS.Process.system ("cp "^filename^".sml regression/test.l10.sml"))
       andalso
@@ -58,12 +60,18 @@ let
          (OS.Process.system
              (if run then "mlton regression/test.mlb"
               else "mlton -stop tc regression/test.mlb"))
+   val successLocal = 
+      OS.Process.isSuccess
+         (OS.Process.system
+             "mlton -stop tc regression/test-local.mlb")
 in
-   if success andalso run
+   if successSmackage andalso successLocal andalso run
    then (if OS.Process.isSuccess (OS.Process.system "regression/test")
          then Success
          else TestFailed)
-   else if success then Success else BadSML
+   else if not successSmackage then BadSML
+   else if not successLocal then BadLocal
+   else Success
 end handle Lexer.LexError _ => SyntaxError
         | Parser.SyntaxError _ => SyntaxError
         | Parser.TypeError _ => TypeError

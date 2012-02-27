@@ -75,12 +75,12 @@ fun typ t =
 fun dict t = 
    case Tab.lookup Tab.types t of
       Class.Type => embiggen t ^ ".Dict"
-    | Class.Extensible => "SymbolSplayDict"
+    | Class.Extensible => "SymbolRedBlackDict"
     | Class.Builtin =>
          if Symbol.eq (t, Type.nat)
-         then "IntInfSplayDict"
+         then "IntInfRedBlackDict"
          else if Symbol.eq (t, Type.string)
-         then "StringSplayDict"
+         then "StringRedBlackDict"
          else raise Fail ("Dunno about builtin `" ^ Symbol.toValue t ^ "`")
 
 fun prjOrInj which t s = 

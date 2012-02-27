@@ -634,6 +634,17 @@ signature HASHABLE =
 
 (***** hashable.sml (partial) *****)
 
+structure IntInfHashable
+   :> HASHABLE where type t = IntInf.int
+   =
+   struct
+      type t = IntInf.int
+
+      val eq : IntInf.int * IntInf.int -> bool = op =
+      val hash = Word.fromLargeInt
+   end
+
+
 structure StringHashable
    :> HASHABLE where type t = string
    =
@@ -1081,6 +1092,7 @@ functor SymbolHashableFun (structure Symbol : SYMBOL)
 structure StringSymbol = SymbolFun (structure Value = StringHashable)
 structure Symbol = StringSymbol
 structure SymbolOrdered = SymbolOrderedFun(structure Symbol = Symbol)
+structure SymbolHashable = SymbolHashableFun(structure Symbol = Symbol)
 
 structure IntInfRedBlackDict = RedBlackDict (structure Key = IntInfOrdered)
 structure StringRedBlackDict = RedBlackDict (structure Key = StringOrdered)

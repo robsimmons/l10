@@ -1,0 +1,5 @@
+$(SML_LIB)/basis/basis.mlb
+../dependencies.sml
+test.sml
+test.l10.sml
+test2.sml
