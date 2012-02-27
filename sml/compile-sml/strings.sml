@@ -23,6 +23,9 @@ sig
    (* Gives a toString function *)
    val str: Type.t -> string -> string
 
+   (* Gives a hash function *)
+   val hash: Type.t -> string -> string
+
    (* Names the dictionary for this type *)
    val dict: Type.t -> string 
 
@@ -162,6 +165,17 @@ fun str t thing =
          else if Symbol.eq (t, Type.string)
          then "(\"\\\"\" ^ " ^ thing ^ " ^ \"\\\"\")"
          else raise Fail ("Dunno about builtin `" ^ Symbol.toValue t ^ "`")
+
+fun hash t thing = 
+   case Tab.lookup Tab.types t of 
+      Class.Type => "("^embiggen t^".hash "^thing^")"
+    | Class.Extensible => "(SymbolHashable.hash "^thing^")"
+    | Class.Builtin =>
+         if Symbol.eq (t, Type.nat)
+         then "(IntInfHashable.hash "^thing^")"
+         else if Symbol.eq (t, Type.string)
+         then "(StringHashable.hash "^thing^")"
+         else raise Fail ("Dunno about builtin `"^Symbol.toValue t^"`")
 
 fun tuple [ x ] = x
   | tuple xs = "(" ^ String.concatWith ", " xs ^ ")"

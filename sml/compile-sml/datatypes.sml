@@ -39,7 +39,10 @@ fun makeDatatype mutually_defined (t, rep) =
 
        fun armfolder (c, (n, constrs)) =
           (n+1
-           , ((c, Strings.symbol c, n, subterms (Tab.lookup Tab.consts c) 0 []) 
+           , ((c, (* Symbol *)
+               Strings.symbol c, (* Uppercase-letter string (constructor) *)
+               n, (* The tag of this branch*)
+               subterms (Tab.lookup Tab.consts c) 0 []) (* Subterms *)
               :: constrs))
 
        val (_, arms) = SetX.foldl armfolder (0, []) (Tab.lookup Tab.typecon t)
@@ -185,6 +188,47 @@ in
       arms
 end
 
+(* HASH *)
+fun emitHash (isAnd, (t, DT {ts, tS, arms, rep})) = 
+let
+   fun emitCase pre post (_, c, index, (xs: subterm list)) =
+   let 
+      val istr = "0wx"^Word.toString (Word.fromInt (4096*length arms+index+1))
+      fun gethash {t, ts, mutual, n} = 
+         if mutual then "hash_"^ts^" x_"^Int.toString n 
+         else Strings.hash t ("x_"^Int.toString n)
+   in
+    ( emit [pre^c^Strings.optTuple (map (fn x => "x_"^Int.toString (#n x)) xs)
+            ^" => "]
+    ; incr ()
+    ; appSuper
+         (fn () => emit ["   "^istr^post])
+         (fn x => emit ["   MJHash.hashInc ("^gethash x^") "^istr^post])
+         ((fn x => (incr (); emit ["(MJHash.hashInc ("^gethash x^")"])),
+          (fn x => emit ["o MJHash.hashInc ("^gethash x^")"]),
+          (fn x => ( emit ["o MJHash.hashInc ("^gethash x^")) "^istr^post]
+                   ; decr ())))
+         xs
+    ; decr ())
+   end
+ 
+   val prefix = 
+      (if isAnd then "and" else "fun")  
+      ^ " hash_" ^ ts ^ " "
+      ^ (if isPrj rep then ("(inj_" ^ ts ^ " x) =") else "x =")
+in
+   appSuper
+      (fn () => emit [prefix ^ " raise General.Match (* Impossible *)"])
+      (fn x => (emit [prefix]; emitCase "  (case x of " ")" x))
+      ((fn x => 
+         ( emit [prefix, "  (case x of"]
+         ; incr ()
+         ; emitCase "   " "" x)),
+       (fn x => (emitCase " | " "" x)),
+       (fn x => (emitCase " | " ")" x; decr ())))
+      arms
+end
+
 (* ZIP/UNZIP *)
 fun emitZip isUn (isAnd, (t, DT {ts, tS, arms, rep})) = 
 let
@@ -265,6 +309,7 @@ in
       else ()
     ; emit ["val toString: t -> string = L10_Terms.str_" ^ ts]
     ; emit ["val eq: t * t -> bool = L10_Terms.eq_" ^ ts]
+    ; emit ["val hash: t -> Word.word = L10_Terms.hash_"^ts]
     ; if sealed
       then List.app 
               (fn (_, cstr, _, []) => 
@@ -302,7 +347,8 @@ in
    else ( emit ["","val prj: t -> view","val inj: view -> t"]
         ; app emitPrj arms)
  ; emit ["","structure Dict:> DICT where type key = t",
-         "val eq: t * t -> bool", "val toString: t -> string"]
+         "val eq: t * t -> bool", "val toString: t -> string",
+         "val hash: t * t -> decr"]
  ; decr ()
  ; emit ["end",""])
 end
@@ -390,6 +436,8 @@ let
        ; appFirst (fn () => ()) emitEq (false, true) dtypes
        ; emit [""]
        ; appFirst (fn () => ()) emitStr (false, true) dtypes
+       ; emit [""]
+       ; appFirst (fn () => ()) emitHash (false, true) dtypes
        ; emit [""]
        ; appFirst (fn () => ()) (emitZip false) (false, true) dtypes
        ; emit [""]
