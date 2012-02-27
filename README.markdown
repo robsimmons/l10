@@ -8,17 +8,36 @@ from L10 to Standard ML. There are also lots of pieces of a compiler from L10
 to the X10 distributed programming language. See the 
 [GitHub wiki](https://github.com/robsimmons/l10/wiki) for more.
 
-# Using Elton, the L10-to-Standard ML Compiler
+# Elton, the L10-to-Standard ML Compiler
+
+## Installation
+
+Elton depends on [CMlib](https://github.com/standardml/cmlib) version 1, which 
+can be installed with [Smackage](https://github.com/standardml/smackage). Once
+you already have smackage, it's easiest to install Elton through smackage:
+
+```code
+$ smackage get elton
+$ smackage make elton mlton # or "smackage make elton smlnj"
+$ smackage make elton install
+$ elton examples/EdgePath1.l10
+````
+
+You can also built Elton by downloading the source directly:
 
 ```code
 $ make 
 Elton - a compiler from L10 to Standard ML
-Run 'make mlton' or 'make smlnj' or 'make chec
+Run 'make mlton' or 'make smlnj' or 'make check'
 $ make mlton
 $ bin/elton examples/EdgePath1.l10
 ```
 
-These two commands read the file `EdgePath1.l10`...
+## Use
+
+The commands `elton examples/EdgePath1.l10` (Smackage installation) and 
+`bin/elton examples/EdgePath1.l10` (source installation) read the file 
+`EdgePath1.l10`...
 
 ```l10
 edge: string -> string -> rel.
