@@ -1,0 +1,54 @@
+// Separate names (F, G, H) and existential variables (X, Y, Z)
+name: extensible.
+var: extensible.
+
+term: type. #type term transparent.
+terms: type. #type terms transparent.
+
+f: name -> terms -> term.
+v: var -> term.
+
+nil: terms.
+cons: term -> terms -> terms.
+
+unify: term -> term -> rel.
+unifys: terms -> terms -> rel.
+occurscheck: var -> term -> rel.
+occurschecks: var -> terms -> rel.
+
+
+-- Output
+failure: string -> rel.
+#query failures: failure -.
+
+wBind: world.
+isVar: var -> rel @ wBind.
+bind: var -> term -> rel @ wBind.
+unified: var -> var -> rel @ wBind.
+unify (v X) (v Y) -> isVar X, unified X Y.
+unify (v X) (f F Ts) -> isVar X, bind X (f F Ts).
+#query vars: isVar -.
+#query equiv: unified + -.
+#query binding: bind + -.
+
+
+-- Unification
+unifys nil (cons _ _) -> failure ("Arity").
+unifys (cons _ _) nil -> failure ("Arity").
+
+unify T S -> unify S T.
+unify T S, unify S R -> unify T R.
+unify (v X) (f F Ts) -> occurschecks X Ts.
+
+unify (f F Ts) (f F Ss) -> unifys Ts Ss.
+unify (f F Ts) (f G Ss), F != G -> failure ("Function symbol clash").
+unifys (cons T Ts) (cons S Ss) -> unify T S, unifys Ts Ss.
+
+
+-- Occurs Check
+occurschecks X (cons T Ts) -> occurscheck X T, occurschecks X Ts.
+occurscheck X (v X) -> failure ("Occurs check").
+occurscheck X (f F Ts) -> occurschecks X Ts.
+occurscheck X (v Y), occurscheck Y T -> occurscheck X T.
+ // ^-- Kristina's suggestion. Is it general enough?
+

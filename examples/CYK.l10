@@ -1,0 +1,27 @@
+t: extensible.
+term: string -> t -> rel.       // T
+nonterm: t -> t -> t -> rel.    // NT
+parse: t -> {I: nat} {J: nat} rel @ w (I-J).  // PROD
+tok: nat -> string -> rel.      // IN
+
+// Generic rules of parsing
+term S T, tok I S -> parse T I (I+1).
+nonterm X Y Z, parse Y I J, parse Z J K -> parse X I K.
+
+// Rules of parens grammar parsing
+parensParsing = 
+   term "(" lParen,          // lParen -> "("
+   term ")" rParen,          // rParen -> ")"
+   nonterm s lParen rParen,  // s -> lParen rParen
+   nonterm s lParen sPrime,  // s -> lParen s'
+   nonterm s s s,            // s -> s s 
+   nonterm sPrime s rParen.  // s' -> s rParen
+
+// Querying
+wRes: world.
+expected: nat -> t -> rel @ wRes.
+success: rel @ wRes.
+failure: rel @ wRes.
+expected J X, parse X 0 J -> success.
+expected J X, not (parse X 0 J) -> failure.
+#QUERY valid: parse + - -.
