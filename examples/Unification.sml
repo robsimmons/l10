@@ -90,6 +90,7 @@ end;
 
 (* Success *)
 unify "f(g(h(X),X),X)=f(g(Y,Z),Z) ; Z = a";
+unify "X = f(Y,Z); Y=h(Z)";
 
 (* Constant clash *)
 unify "f(a, X) = f(X, h(Y))";
