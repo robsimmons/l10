@@ -51,7 +51,11 @@ let
 
    (* Print out the unification instance for a given variable *)
    fun printunif db (x, seen) = 
+      (* Variable has already been seen *)
       if SetX.member seen x then seen 
+
+      (* Variable hasn't been seen yet *)
+      (* Print the other vars in this equivalence class; add to seen set *)
       else let 
          fun folder (y, seen') = 
             if Symbol.eq (x, y) 
@@ -67,17 +71,22 @@ let
        ; seen)
       end
 
-   (* Seed unification *)
+   (* Seed the database with all the potentially unifiable terms. *)
    val unif_db = 
       foldr Unification.Assert.unify Unification.empty
          (map getEq (String.fields (fn x => x = #";") input))
 
-in case Unification.Query.failuresList unif_db of 
+in 
+   (* Test the database for success or failure *)
+   case Unification.Query.failuresList unif_db of 
       [] => 
        ( print "Unification success!\n"
        ; ignore (Unification.Query.vars (printunif unif_db) SetX.empty unif_db))
     | errmsg :: _ => print ("Unification failure: "^ errmsg ^"\n")
 end;
+
+
+(* A couple of tests *)
 
 (* Success *)
 unify "f(g(h(X),X),X)=f(g(Y,Z),Z) ; Z = a";
