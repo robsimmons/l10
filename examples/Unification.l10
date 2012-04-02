@@ -50,5 +50,7 @@ occurschecks X (cons T Ts) -> occurscheck X T, occurschecks X Ts.
 occurscheck X (v X) -> failure ("Occurs check").
 occurscheck X (f F Ts) -> occurschecks X Ts.
 occurscheck X (v Y), occurscheck Y T -> occurscheck X T.
- // ^-- Kristina's suggestion. Is it general enough?
-
+ // ^-- Haven't proven that this is general enough.
+ // This line should work, though:
+ // occurscheck X (v Y), unify Y T -> occurscheck X T
+ 
