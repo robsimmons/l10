@@ -51,6 +51,6 @@ occurscheck X (v X) -> failure ("Occurs check").
 occurscheck X (f F Ts) -> occurschecks X Ts.
 occurscheck X (v Y), occurscheck Y T -> occurscheck X T.
  // ^-- Haven't proven that this is general enough.
- // This line should work, though:
- // occurscheck X (v Y), unify Y T -> occurscheck X T
+ // This rule would work even if the above rule doesn't:
+ // occurscheck X T, unify T S -> occurscheck X S.
  
