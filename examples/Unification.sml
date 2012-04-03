@@ -1,6 +1,12 @@
+(* Use: 
+ $ cd ~/l10
+ $ bin/elton examples/Unification.l10 
+ $ sml examples/Unification.sml
+ *)
+
 CM.make "$SMACKAGE/cmlib/v1/cmlib.cm";
 structure SetX = SymbolRedBlackSet;
-use "Unification.l10.sml";
+use "examples/Unification.l10.sml";
 
 
 (* Printing terms *)
