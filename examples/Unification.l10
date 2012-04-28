@@ -49,8 +49,10 @@ unifys (cons T Ts) (cons S Ss) -> unify T S, unifys Ts Ss.
 occurschecks X (cons T Ts) -> occurscheck X T, occurschecks X Ts.
 occurscheck X (v X) -> failure ("Occurs check").
 occurscheck X (f F Ts) -> occurschecks X Ts.
+
 occurscheck X (v Y), occurscheck Y T -> occurscheck X T.
- // ^-- Haven't proven that this is general enough.
- // This rule would work even if the above rule doesn't:
- // occurscheck X T, unify T S -> occurscheck X S.
- 
+occurscheck X (v Y), unify (v Y) (v Z) -> occurschecks X (v Z).
+ // As an alterative to these two rules, you can use this rule
+ // occurscheck X (v Y), unify (v Y) S -> occurscheck X S.
+ // Open question: is there a counterexample if the second rule
+ // is missing? 
