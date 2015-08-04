@@ -11,6 +11,7 @@ struct
    datatype t = 
       SymConst of Symbol.symbol 
     | NatConst of IntInf.int
+    | WordConst of Word32.word
     | StrConst of string
     | Root of Symbol.symbol * t list
     | Var of Symbol.symbol option * Type.t option
@@ -20,6 +21,7 @@ struct
    datasort term = 
       SymConst of Symbol.symbol 
     | NatConst of IntInf.int
+    | WordConst of Word32.word
     | StrConst of string
     | Var of Symbol.symbol option * Type.t none
     | Root of Symbol.symbol * term conslist
@@ -27,6 +29,7 @@ struct
    datasort term_t = 
       SymConst of Symbol.symbol 
     | NatConst of IntInf.int
+    | WordConst of Word32.word
     | StrConst of string
     | Var of Symbol.symbol some * Type.t some
     | Root of Symbol.symbol * term_t conslist
@@ -34,12 +37,14 @@ struct
    datasort ground = 
       SymConst of Symbol.symbol 
     | NatConst of IntInf.int
+    | WordConst of Word32.word
     | StrConst of string
     | Root of Symbol.symbol * ground conslist
   
    datasort shape = 
       SymConst of Symbol.symbol 
     | NatConst of IntInf.int
+    | WordConst of Word32.word
     | StrConst of string
     | Path of int list * Type.t
     | Root of Symbol.symbol * shape conslist
@@ -47,6 +52,7 @@ struct
    datasort moded = 
       SymConst of Symbol.symbol 
     | NatConst of IntInf.int
+    | WordConst of Word32.word
     | StrConst of string
     | Mode of Mode.t * Type.t none
     | Root of Symbol.symbol * moded conslist
@@ -54,6 +60,7 @@ struct
    datasort moded_t = 
       SymConst of Symbol.symbol 
     | NatConst of IntInf.int
+    | WordConst of Word32.word
     | StrConst of string
     | Mode of Mode.t * Type.t some
     | Root of Symbol.symbol * moded_t conslist
@@ -73,6 +80,7 @@ struct
       case (term1, term2) of
          (SymConst c1, SymConst c2) => Symbol.eq (c1, c2)
        | (NatConst n1, NatConst n2) => n1 = n2
+       | (WordConst w1, WordConst w2) => w1 = w2
        | (StrConst s1, StrConst s2) => s1 = s2
        | (Var (NONE, _), (Var (NONE, _))) => true
        | (Var (SOME v1, _), Var (SOME v2, _)) => Symbol.eq (v1, v2)
@@ -95,6 +103,7 @@ struct
       case term of 
          SymConst c => Symbol.toValue c
        | NatConst i => IntInf.toString i
+       | WordConst w => Word32.toString w
        | StrConst s => "\"" ^ s ^ "\""
        | Var (NONE, _) => "_"
        | Var (SOME x, _) => 
@@ -126,6 +135,7 @@ struct
       case term of 
          SymConst c => SOME (SymConst c)
        | NatConst n => SOME (NatConst n)
+       | WordConst n => SOME (WordConst n)
        | StrConst s => SOME (StrConst s)
        | Var (NONE, _) => NONE
        | Var (SOME x, _) => DictX.find map x
@@ -145,6 +155,7 @@ struct
       case term of
          SymConst c => SymConst c
        | NatConst n => NatConst n
+       | WordConst n => WordConst n
        | StrConst s => StrConst s
        | Var (NONE, ty) => Var (NONE, ty)
        | Var (SOME y, ty) => 
@@ -204,6 +215,8 @@ struct
        | (SymConst c, SymConst c') =>
             if Symbol.eq (c, c') then subst else raise Gen' (* clash *)
        | (NatConst n, NatConst n') =>
+            if n = n' then subst else raise Gen' (* clash *)
+       | (WordConst n, WordConst n') =>
             if n = n' then subst else raise Gen' (* clash *)
        | (StrConst s, StrConst s') =>
             if s = s' then subst else raise Gen' (* clash *)

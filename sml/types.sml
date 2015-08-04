@@ -192,6 +192,7 @@ fun tc_term pos (env as (dict, max)) typ term =
                                      ^ Int.toString (Class.arrows class) 
                                      ^ " argument(s), was given none")))
     | Term.NatConst n => (require pos typ Type.nat; (env, Term.NatConst n))
+    | Term.WordConst n => (require pos typ Type.word; (env, Term.WordConst n))
     | Term.StrConst s => (require pos typ Type.string; (env, Term.StrConst s))
     | Term.Root (f, spine) => 
         (case Tab.find Tab.consts f of
@@ -291,6 +292,7 @@ fun seek_typ pos dict [] =
                 NONE => seek_typ pos dict terms
               | SOME typ => (Class.base typ))
         | Term.NatConst _ => Type.nat
+        | Term.WordConst _ => Type.word
         | Term.StrConst _ => Type.string
         | Term.Root (f, _) =>
             (case Tab.find Tab.consts f of

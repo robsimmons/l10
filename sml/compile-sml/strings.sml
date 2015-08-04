@@ -68,6 +68,8 @@ fun typ t =
     | Class.Builtin =>
          if Symbol.eq (t, Type.nat)
          then "IntInf.int"
+         else if Symbol.eq (t, Type.word)
+         then "Word32.word"
          else if Symbol.eq (t, Type.string)
          then "String.string"
          else raise Fail ("Dunno about builtin `" ^ Symbol.toValue t ^ "`")
@@ -79,6 +81,8 @@ fun dict t =
     | Class.Builtin =>
          if Symbol.eq (t, Type.nat)
          then "IntInfRedBlackDict"
+         else if Symbol.eq (t, Type.word)
+         then "Word32RedBlackDict"
          else if Symbol.eq (t, Type.string)
          then "StringRedBlackDict"
          else raise Fail ("Dunno about builtin `" ^ Symbol.toValue t ^ "`")
@@ -137,6 +141,8 @@ fun eq t thing1 thing2 =
     | Class.Builtin => 
          if Symbol.eq (t, Type.nat)
          then "(EQUAL = IntInf.compare (" ^ thing1 ^ ", " ^ thing2 ^ "))"
+         else if Symbol.eq (t, Type.word)
+         then "(EQUAL = Word32.compare (" ^ thing1 ^ ", " ^ thing2 ^ "))"
          else if Symbol.eq (t, Type.string)
          then "(EQUAL = String.compare (" ^ thing1 ^ ", " ^ thing2 ^ "))"
          else raise Fail ("Dunno about builtin `" ^ Symbol.toValue t ^ "`")
@@ -162,6 +168,8 @@ fun str t thing =
     | Class.Builtin => 
          if Symbol.eq (t, Type.nat)
          then "(IntInf.toString " ^ thing ^ ")"
+         else if Symbol.eq (t, Type.word)
+         then "(Word32.toString " ^ thing ^ ")"
          else if Symbol.eq (t, Type.string)
          then "(\"\\\"\" ^ " ^ thing ^ " ^ \"\\\"\")"
          else raise Fail ("Dunno about builtin `" ^ Symbol.toValue t ^ "`")
@@ -173,6 +181,8 @@ fun hash t thing =
     | Class.Builtin =>
          if Symbol.eq (t, Type.nat)
          then "(IntInfHashable.hash "^thing^")"
+         else if Symbol.eq (t, Type.word)
+         then "(Word32Hashable.hash "^thing^")"
          else if Symbol.eq (t, Type.string)
          then "(StringHashable.hash "^thing^")"
          else raise Fail ("Dunno about builtin `"^Symbol.toValue t^"`")

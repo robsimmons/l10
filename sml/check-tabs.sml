@@ -78,6 +78,7 @@ structure SearchTab = Multitab(type entrytp = Ast.term list * Ast.world list)
          ; typebind (Symbol.fromValue "_plus", plustyp)
          ; insert types Type.t Class.Extensible
          ; insert types Type.nat Class.Builtin
+         ; insert types Type.word Class.Builtin
          ; insert types Type.string Class.Builtin
          ; insert types Type.world Class.Type
          ; insert types Type.rel Class.Type

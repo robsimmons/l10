@@ -166,6 +166,7 @@ struct
     ; SymbolHashTable.reset representations n
     ; bind plus
     ; bind (Decl.Type (pos, Type.nat, Class.Builtin))
+    ; bind (Decl.Type (pos, Type.word, Class.Builtin))
     ; bind (Decl.Type (pos, Type.string, Class.Builtin))
     ; bind (Decl.Type (pos, Type.world, Class.Type))
     ; bind (Decl.Type (pos, Type.rel, Class.Type))

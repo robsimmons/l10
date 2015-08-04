@@ -248,7 +248,9 @@ List.concat (List.map
 "",
 "   exception NotImpl",
 "   val union = fn _ => raise NotImpl",
+"   val insert' = fn _ => raise NotImpl",
 "   val operate = fn _ => raise NotImpl",
+"   val operate' = fn _ => raise NotImpl",
 "   val isEmpty = fn _ => raise NotImpl",
 "   val size = fn _ => raise NotImpl",
 "   val toList = fn _ => raise NotImpl",
@@ -258,6 +260,7 @@ List.concat (List.map
 "   val foldr = fn _ => raise NotImpl",
 "   val app = fn _ => raise NotImpl",
 "   val remove = fn _ => raise NotImpl",
+"   val remove' = fn _ => raise NotImpl",
 "end"
 ]
 end
