@@ -20,7 +20,7 @@ sml/l10.cmlex.sml: sml/l10.cmlex
 sml/l10.cmyacc.sml: sml/l10.cmyacc
 	cmyacc sml/l10.cmyacc
 
-mlton: sml/*.sml sml/compile-sml/*.sml bin
+mlton: sml/*.sml sml/compile-sml/*.sml sml/l10.cmlex.sml sml/l10.cmyacc.sml bin
 	$(MLTON) bin/elton sml/elton.mlb
 
 smlnj: sml/*.sml sml/compile-sml/*.sml bin
